@@ -5,7 +5,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://outlive.diy'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'outlive.diy — design and stress-test a Bitcoin custody plan',
+  title: 'outlive.diy: design and stress-test a Bitcoin custody plan',
   description:
     'A local-only tool for designing a Bitcoin self-custody and recovery plan and finding where it breaks. It never accepts seed words, keys or addresses, and it makes no network calls.',
   applicationName: 'outlive.diy',

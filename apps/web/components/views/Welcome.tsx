@@ -3,7 +3,6 @@
 import { ArrowRight, FileUp } from 'lucide-react'
 import { EXAMPLES } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
-import { Logo } from '@/components/brand/Logo.tsx'
 import { useStore } from '@/lib/store.ts'
 import { href } from '@/lib/router.ts'
 import { OpenFileButton } from '@/components/file/OpenFileButton.tsx'
@@ -22,9 +21,7 @@ export function Welcome() {
 
   return (
     <main id="main" className="mx-auto w-full max-w-3xl px-5 py-16 lg:py-24">
-      <Logo size={40} className="text-accent" />
-
-      <h1 className="mt-7 text-balance text-3xl font-semibold leading-[1.12] tracking-[-0.025em] text-strong sm:text-[2.6rem]">
+      <h1 className="text-balance text-3xl font-semibold leading-[1.12] tracking-[-0.025em] text-strong sm:text-[2.6rem]">
         Design a Bitcoin custody plan, then find out where it breaks.
       </h1>
 

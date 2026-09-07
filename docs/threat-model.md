@@ -19,6 +19,19 @@ a host that is not on a short allowlist.
 The page is a static export with no server component, no API route and no
 runtime environment variables. There is no back end to send anything to.
 
+Two honest caveats about the policy, because a claim nobody can check is not
+worth making:
+
+- `script-src` includes `'unsafe-inline'`. It has to: the framework inlines its
+  own bootstrap data into the document, and a static export cannot carry a
+  nonce. What that costs is real but narrow, because the lines that actually
+  prevent data leaving (`connect-src 'none'`, `img-src 'self' data:`,
+  `form-action 'none'`) hold regardless of what script runs.
+- Content-Security-Policy does not restrict ordinary navigation. It stops a
+  request, a form post and a beacon; it does not stop a link. The protection
+  here is that there is no code that would follow one, and the repository check
+  fails if a link to an unlisted host appears in the source.
+
 ## What it will not accept
 
 The model has no field capable of holding a secret. `packages/core/src/model/types.ts`

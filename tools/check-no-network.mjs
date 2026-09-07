@@ -94,7 +94,7 @@ function inspect(file) {
       const before = source.slice(0, match.index)
       const line = before.split('\n').length
       if (/no-network-allow:/.test(source.split('\n')[line - 2] ?? '')) continue
-      problems.push(`${where}:${line}  ${rule.what} — ${rule.why}`)
+      problems.push(`${where}:${line}  ${rule.what}: ${rule.why}`)
     }
   }
 
@@ -108,7 +108,7 @@ function inspect(file) {
     }
     if (ALLOWED_HOSTS.has(host)) continue
     const line = source.slice(0, source.indexOf(url)).split('\n').length
-    problems.push(`${where}:${line}  reference to ${host} — not an allowed host`)
+    problems.push(`${where}:${line}  reference to ${host}, which is not an allowed host`)
   }
 }
 

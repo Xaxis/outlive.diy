@@ -34,6 +34,9 @@ jobs:
       - name: The checked-in fonts match the packages they came from
         run: node tools/sync-fonts.mjs --check
 
+      - name: The house style holds
+        run: node tools/check-prose.mjs
+
       - run: yarn workspace @outlive/core type-check
       - run: yarn workspace @outlive/web type-check
       - run: yarn workspace @outlive/web lint

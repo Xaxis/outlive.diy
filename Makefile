@@ -12,7 +12,7 @@ SHELL := /bin/bash
 
 .PHONY: help install dev build start offline clean \
         check check-fast test coverage lint type-check format format-check \
-        guard-data guard-check fonts fonts-check no-network deploy preview
+        guard-data guard-check fonts fonts-check no-network prose deploy preview
 
 help: ## List available targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -80,7 +80,10 @@ fonts-check: ## The checked-in fonts match the packages they came from
 no-network: ## No source in the app can reach the network
 	@node tools/check-no-network.mjs
 
-check-fast: guard-check fonts-check no-network type-check lint format-check test ## Everything except the site build
+prose: ## The house style holds: no em dashes, no emoji
+	@node tools/check-prose.mjs
+
+check-fast: guard-check fonts-check no-network prose type-check lint format-check test ## Everything except the site build
 
 check: check-fast build ## Everything CI runs
 
