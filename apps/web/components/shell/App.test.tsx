@@ -281,3 +281,34 @@ describe('undo', () => {
     expect(useStore.getState().plans[0].locations[0].label).not.toBe(before)
   })
 })
+
+describe('composing a failure by hand', () => {
+  it('agrees with the scenario table when the same thing is switched off', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    window.location.hash = '#/scenarios'
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+
+    const heading = await screen.findByRole('heading', { name: /compose your own/i })
+    const panel = heading.closest('section') as HTMLElement
+    const composer = within(panel)
+
+    const vault = () => within(composer.getByText('Vault').closest('li') as HTMLElement)
+
+    // Nothing switched off: the vault works, with a key to spare.
+    expect(vault().getByText(/1 spare key beyond the threshold/i)).toBeInTheDocument()
+
+    // Losing Site B alone is survivable: Key B's device is at Site A, so its
+    // backup being unreachable does not take the key with it.
+    await user.click(composer.getByRole('button', { name: 'Site B', pressed: false }))
+    expect(vault().getByText(/survives/i)).toBeInTheDocument()
+
+    // Site A as well, and there is neither a threshold nor a descriptor left.
+    await user.click(composer.getByRole('button', { name: 'Site A', pressed: false }))
+    expect(vault().getByText(/unspendable/i)).toBeInTheDocument()
+    expect(vault().getByText(/configuration cannot be recovered/i)).toBeInTheDocument()
+  })
+})

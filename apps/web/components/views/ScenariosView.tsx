@@ -5,6 +5,7 @@ import { CircleCheck, CircleSlash, CircleX, ShieldX } from 'lucide-react'
 import { indexPlan, type ScenarioKind, type ScenarioResult, type Verdict } from '@outlive/core'
 import { Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Segmented } from '@/components/ui/Field.tsx'
+import { CustomScenario } from '@/components/scenarios/CustomScenario.tsx'
 import { useActivePlan } from '@/lib/store.ts'
 import { useScenarioResults } from '@/lib/analysis.ts'
 import { href } from '@/lib/router.ts'
@@ -147,6 +148,10 @@ export function ScenariosView() {
           </table>
         </Panel>
       )}
+
+      <div className="mt-6">
+        <CustomScenario plan={plan} />
+      </div>
 
       <p className="mt-4 max-w-3xl text-xs leading-relaxed text-faint">
         Loss scenarios assume you are alive and know where your own things are. Compromise scenarios
