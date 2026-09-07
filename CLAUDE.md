@@ -46,8 +46,12 @@ part that reasons, and it is only testable if nothing else is bolted to it.
 make check       # everything CI runs
 make check-fast  # the same without the site build
 make dev         # the app, locally
-make test        # the engine's suite alone
+make test        # both suites
+make test-core   # the engine's alone
 ```
+
+Neither suite can see the interface. `docs/checking-the-interface.md` says how
+to point a browser at it, which is how the defects that mattered were found.
 
 ## Things that will bite you
 
@@ -88,7 +92,17 @@ concerns change is the _order_ findings are read in, never whether they appear.
 
 **Print is a first-class target.** The runbook, the recovery routes and the
 successor letter get stored on paper next to the backups, because a recovery
-document that only exists on the machine you have lost is not one.
+document that only exists on the machine you have lost is not one. Render them
+to PDF and read them before changing their layout.
+
+**Nothing is encoded in colour alone.** Severity is named as well as coloured,
+in-text links are underlined, and every step of the text ramp clears 4.5:1
+against every ground it sits on. `apps/web/lib/palette.test.ts` enforces the
+last of those; the other two need a person.
+
+**An empty plan is not a clean bill of health.** Every derived view says so
+explicitly, in the same words, because silence from a program that has been
+given nothing reads as reassurance on a tool whose job is to be unflattering.
 
 **Runbook progress lives in the plan file,** not in browser storage. Building one
 of these takes weeks; "half done, and here is which half" is state worth saving
