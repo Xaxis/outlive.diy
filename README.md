@@ -102,6 +102,13 @@ is no back end to miss: the whole application is one document and some
 JavaScript. The two typefaces are requested by path and will fall back to your
 system stack when opened this way, which is the only difference.
 
+## Deploying
+
+Static export on Vercel, configured by `vercel.json`. `make deploy` for
+production, `make preview` for a preview. The DNS records the domain needs, and
+the response headers that make the no-network claim enforceable, are in
+`docs/deploying.md`.
+
 ## Licence
 
 MIT. See `LICENSE`.
