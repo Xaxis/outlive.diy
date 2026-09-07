@@ -19,6 +19,8 @@ import { extname, join, relative } from 'node:path'
 const ROOT = new URL('..', import.meta.url).pathname
 const SCANNED = [join(ROOT, 'apps/web'), join(ROOT, 'packages/core/src')]
 const SKIP = new Set(['node_modules', '.next', '.next-dev', 'out', 'dist', 'coverage'])
+// Written by the framework on every build, and it says at the top not to edit it.
+const SKIP_FILES = new Set(['next-env.d.ts'])
 const EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.css', '.html'])
 
 /**
@@ -76,7 +78,7 @@ function walk(dir) {
     if (SKIP.has(entry)) continue
     const full = join(dir, entry)
     if (statSync(full).isDirectory()) walk(full)
-    else if (EXTENSIONS.has(extname(full))) inspect(full)
+    else if (EXTENSIONS.has(extname(full)) && !SKIP_FILES.has(entry)) inspect(full)
   }
 }
 

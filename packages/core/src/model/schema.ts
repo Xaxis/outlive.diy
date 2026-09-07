@@ -206,6 +206,7 @@ export const planSchema = z.object({
   keys: z.array(keySchema),
   wallets: z.array(walletSchema),
   verifications: z.array(verificationSchema),
+  progress: z.record(z.string().max(120), isoDate),
 })
 
 export const planFileSchema = z.object({

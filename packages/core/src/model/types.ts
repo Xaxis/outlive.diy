@@ -348,6 +348,15 @@ export interface Plan {
   keys: Key[]
   wallets: Wallet[]
   verifications: Verification[]
+  /**
+   * Build runbook steps that have been done, by step id, with the date.
+   *
+   * Kept in the plan rather than in the browser because the runbook is a
+   * multi-week job with travel in it, and progress through it is part of what
+   * the plan *is*: half-built is a state worth being able to hand to somebody
+   * else, or to open on another machine.
+   */
+  progress: Record<string, IsoDate>
 }
 
 /** A saved file holds the plan the user runs and any candidates beside it. */
