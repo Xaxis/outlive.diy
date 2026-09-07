@@ -74,7 +74,7 @@ export function FindingsView() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <PrintHeader title="Findings" />
+      <PrintHeader />
 
       <ViewHeader
         eyebrow="Diagnosis"

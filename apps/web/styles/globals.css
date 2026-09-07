@@ -445,10 +445,37 @@ body {
     border-color: #c8ccd2;
   }
 
+  /* A bordered box that runs across a page break has a top on one page and a
+     bottom on the next, which reads as a printing fault rather than a design.
+     Anything that long loses its frame and keeps its content. */
+  .print-unframed,
+  .print-unframed .panel,
+  .print-unframed .card {
+    border: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
   /* Never split a procedure step, a finding, or a table row across a page. */
   .print-block {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  /* Screen padding is generous because a screen scrolls. Paper does not, and a
+     findings list at screen density runs to twice the pages it needs. */
+  .print-block {
+    padding: 0;
+  }
+  .print-block > * {
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+  }
+
+  /* The severity edge is an inset shadow, which browsers do not print. The
+     severity is named in the text beside it, so the frame can simply go. */
+  .sev-edge {
+    box-shadow: none;
   }
   .print-page {
     break-after: page;

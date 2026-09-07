@@ -42,7 +42,7 @@ export function LetterView() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PrintHeader title="Successor letter" />
+      <PrintHeader />
 
       <ViewHeader
         eyebrow="Documents"
@@ -61,7 +61,7 @@ export function LetterView() {
 
       <div className="space-y-8">
         {letters.map((letter) => (
-          <article key={letter.to} className="print-page">
+          <article key={letter.to} className="print-page print-unframed">
             <Panel className="p-6">
               <header className="border-b border-line pb-4">
                 <p className="eyebrow">To be opened after my death</p>

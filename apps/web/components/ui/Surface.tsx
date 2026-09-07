@@ -69,9 +69,9 @@ export function ViewHeader({
   return (
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
-        {eyebrow ? <p className="eyebrow mb-1">{eyebrow}</p> : null}
+        {eyebrow ? <p className="eyebrow no-print mb-1">{eyebrow}</p> : null}
         <h1 className="text-[1.35rem] font-semibold tracking-[-0.01em] text-strong">{title}</h1>
-        {question ? <p className="mt-1 max-w-2xl text-sm text-muted">{question}</p> : null}
+        {question ? <p className="no-print mt-1 max-w-2xl text-sm text-muted">{question}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2 no-print">{actions}</div> : null}
     </header>

@@ -50,7 +50,7 @@ export function RunbookView() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PrintHeader title="Build runbook" />
+      <PrintHeader />
 
       <ViewHeader
         eyebrow="Documents"
@@ -79,7 +79,7 @@ export function RunbookView() {
           </div>
           <div className="mono text-xs text-faint no-print">{plan.name}</div>
         </div>
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-sunken">
+        <div className="no-print mt-3 h-1.5 overflow-hidden rounded-full bg-sunken">
           <div
             className="h-full rounded-full bg-accent transition-[width]"
             style={{ width: `${Math.round((completed / runbook.steps.length) * 100)}%` }}
@@ -116,7 +116,7 @@ export function RunbookView() {
 
       <div className="space-y-8">
         {runbook.phases.map((group, phaseIndex) => (
-          <section key={group.phase} className="print-block">
+          <section key={group.phase}>
             <header className="mb-3 border-b border-line pb-2">
               <p className="eyebrow">Phase {phaseIndex + 1}</p>
               <h2 className="text-base font-semibold text-strong">{PHASE_TITLE[group.phase]}</h2>

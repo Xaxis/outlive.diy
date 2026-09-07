@@ -49,7 +49,7 @@ export function RecoveryView() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PrintHeader title="Recovery routes" />
+      <PrintHeader />
 
       <ViewHeader
         eyebrow="Documents"

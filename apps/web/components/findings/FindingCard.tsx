@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { ChevronRight, Wrench } from 'lucide-react'
 import { CATEGORY_LABEL, RULES, type Finding, type Ref } from '@outlive/core'
-import { SeverityDot } from '@/components/ui/Severity.tsx'
+import { SeverityDot, SEVERITY_LABEL } from '@/components/ui/Severity.tsx'
 import { cn } from '@/lib/cn.ts'
 
 /** Where an entity is edited, so a finding can send you to the thing it is about. */
@@ -48,6 +48,12 @@ export function FindingCard({
           </span>
           <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.6875rem] text-faint">
             <span className="mono">{finding.rule}</span>
+            <span aria-hidden>·</span>
+            {/* Named, not only coloured. A dot is no encoding at all on a mono
+                printer or to a reader who cannot separate red from orange. */}
+            <span data-sev={finding.severity} className="sev-text font-medium">
+              {SEVERITY_LABEL[finding.severity]}
+            </span>
             <span aria-hidden>·</span>
             <span>{CATEGORY_LABEL[finding.category]}</span>
             {finding.world ? (
