@@ -30,6 +30,7 @@ import {
   letterLabel,
   numberLabel,
   parsePlanFile,
+  parseVendorData,
   today,
   type Device,
   type Id,
@@ -49,10 +50,12 @@ import {
   makeFile,
   readPreferences,
   readStoredFile,
+  readVendorData,
   saveToDisk,
   suggestedFilename,
   writePreferences,
   writeStoredFile,
+  writeVendorData,
   type Persistence,
   type Preferences,
 } from './storage.ts'
@@ -141,6 +144,8 @@ export const useStore = create<StoreState>()(
     hydrate: () => {
       const preferences = readPreferences()
       const stored = preferences.persistence === 'local' ? readStoredFile() : null
+      const vendors = readVendorData()
+      const parsedVendors = vendors === null ? null : parseVendorData(vendors)
       set((state) => {
         state.preferences = preferences
         state.ready = true
@@ -148,6 +153,7 @@ export const useStore = create<StoreState>()(
           state.plans = stored.plans
           state.activeId = stored.activePlanId ?? stored.plans[0].id
         }
+        if (parsedVendors?.ok) state.vendorData = parsedVendors.value
       })
     },
 
@@ -529,10 +535,12 @@ export const useStore = create<StoreState>()(
       })
     },
 
-    setVendorData: (data) =>
+    setVendorData: (data) => {
       set((state) => {
         state.vendorData = data
-      }),
+      })
+      writeVendorData(data)
+    },
 
     notify: (toast) =>
       set((state) => {

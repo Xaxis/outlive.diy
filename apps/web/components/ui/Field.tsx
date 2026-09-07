@@ -1,31 +1,47 @@
 'use client'
 
-import { useId, useState, type ReactNode } from 'react'
+import { createContext, useContext, useId, useState, type ReactNode } from 'react'
 import { inspect, type GuardHit } from '@outlive/core'
 import { AlertTriangle, ShieldAlert } from 'lucide-react'
 import { cn } from '@/lib/cn.ts'
+
+/**
+ * The id of the label a field is wrapping, so that whatever control ends up
+ * inside can name itself from it.
+ *
+ * Passing `htmlFor` down would work for a single input and break for the
+ * several fields here that hold a group of chips or a control plus a shortcut
+ * row. Naming by reference works for all of them, and means a control is never
+ * left unlabelled because of how its field happened to be composed.
+ */
+const FieldLabelContext = createContext<string | undefined>(undefined)
+
+export function useFieldLabel(): string | undefined {
+  return useContext(FieldLabelContext)
+}
 
 export function Field({
   label,
   help,
   children,
-  htmlFor,
   className,
 }: {
   label: string
   help?: string
   children: ReactNode
-  htmlFor?: string
   className?: string
 }) {
+  const labelId = useId()
   return (
-    <div className={cn('space-y-1.5', className)}>
-      <label className="label" htmlFor={htmlFor}>
-        {label}
-      </label>
-      {children}
-      {help ? <p className="text-xs leading-snug text-faint">{help}</p> : null}
-    </div>
+    <FieldLabelContext value={labelId}>
+      <div className={cn('space-y-1.5', className)}>
+        <span className="label" id={labelId}>
+          {label}
+        </span>
+        {children}
+        {help ? <p className="text-xs leading-snug text-faint">{help}</p> : null}
+      </div>
+    </FieldLabelContext>
   )
 }
 
@@ -57,6 +73,7 @@ export function GuardedInput({
   const [hits, setHits] = useState<GuardHit[]>([])
   const [committed, setCommitted] = useState(value)
   const fallbackId = useId()
+  const labelledBy = useFieldLabel()
   const fieldId = id ?? fallbackId
 
   // The committed value can change underneath this field: an undo, a plan
@@ -83,6 +100,7 @@ export function GuardedInput({
     <div className="space-y-1.5">
       <Tag
         id={fieldId}
+        aria-labelledby={labelledBy}
         className={cn(
           multiline ? 'textarea' : 'input',
           refusal && 'border-critical bg-critical/[0.06]'
@@ -137,9 +155,11 @@ export function Select<T extends string>({
   id?: string
   placeholder?: string
 }) {
+  const labelledBy = useFieldLabel()
   return (
     <select
       id={id}
+      aria-labelledby={labelledBy}
       className="select"
       value={value ?? ''}
       onChange={(event) => onChange((event.target.value || null) as T | null)}
@@ -171,10 +191,12 @@ export function NumberInput({
   id?: string
   nullable?: boolean
 }) {
+  const labelledBy = useFieldLabel()
   return (
     <div className="flex items-center gap-2">
       <input
         id={id}
+        aria-labelledby={labelledBy}
         type="number"
         inputMode="numeric"
         className="input max-w-[8rem]"
@@ -215,6 +237,7 @@ export function Toggle({
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={label}
         onClick={() => onChange(!checked)}
         className={cn(
           'mt-0.5 h-[1.1rem] w-8 flex-none rounded-full border transition-colors',
@@ -286,8 +309,9 @@ export function ChipSet<T extends string>({
   onChange: (next: T[]) => void
   options: { value: T; label: string }[]
 }) {
+  const labelledBy = useFieldLabel()
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div role="group" aria-labelledby={labelledBy} className="flex flex-wrap gap-1.5">
       {options.map((option) => {
         const active = values.includes(option.value)
         return (

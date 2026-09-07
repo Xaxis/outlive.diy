@@ -1,9 +1,17 @@
 'use client'
 
-import type { Device, DeviceKind, Plan, SupplyChain } from '@outlive/core'
+import {
+  lookupVendor,
+  type Device,
+  type DeviceKind,
+  type Plan,
+  type SupplyChain,
+} from '@outlive/core'
 import { Field, GuardedInput, Select, Toggle } from '@/components/ui/Field.tsx'
 import { Callout } from '@/components/ui/Surface.tsx'
 import { useEntityUpdater } from '@/lib/edit.ts'
+import { useStore } from '@/lib/store.ts'
+import { href } from '@/lib/router.ts'
 import { DEVICE_KIND, SUPPLY_CHAIN } from '@/lib/describe.ts'
 
 const KINDS = Object.keys(DEVICE_KIND) as DeviceKind[]
@@ -11,7 +19,9 @@ const ROUTES = Object.keys(SUPPLY_CHAIN) as SupplyChain[]
 
 export function DeviceInspector({ plan, device }: { plan: Plan; device: Device }) {
   const update = useEntityUpdater('device')
+  const vendorData = useStore((state) => state.vendorData)
   const set = (patch: Partial<Device>) => update(device.id, patch)
+  const vendorEntry = vendorData ? lookupVendor(vendorData, device.vendor) : null
 
   return (
     <div className="space-y-5">
@@ -120,6 +130,42 @@ export function DeviceInspector({ plan, device }: { plan: Plan; device: Device }
           Anyone who picks this device up can sign with it. That is fine for a signer holding a hot
           key and a small balance, and it is not fine for anything else.
         </Callout>
+      ) : null}
+
+      {vendorEntry && vendorData ? (
+        <div className="rounded-[var(--radius-card)] border border-line bg-sunken p-3">
+          <p className="eyebrow mb-1.5">From your vendor file, as of {vendorData.asOf}</p>
+          <ul className="space-y-1 text-xs leading-relaxed text-muted">
+            {vendorEntry.architecture ? <li>Architecture: {vendorEntry.architecture}</li> : null}
+            {vendorEntry.secureElement !== undefined ? (
+              <li>{vendorEntry.secureElement ? 'Has a secure element' : 'No secure element'}</li>
+            ) : null}
+            {vendorEntry.airGapCapable !== undefined ? (
+              <li>{vendorEntry.airGapCapable ? 'Can run air-gapped' : 'Cannot run air-gapped'}</li>
+            ) : null}
+            {vendorEntry.storesWalletConfig !== undefined ? (
+              <li>
+                {vendorEntry.storesWalletConfig
+                  ? 'Stores the multisig wallet configuration'
+                  : 'Does not store the multisig wallet configuration'}
+              </li>
+            ) : null}
+            {(vendorEntry.advisories ?? []).map((advisory) => (
+              <li key={advisory.id}>
+                {advisory.id} ({advisory.date}): {advisory.summary}
+              </li>
+            ))}
+            {vendorEntry.notes ? <li>{vendorEntry.notes}</li> : null}
+          </ul>
+          <p className="mt-2 border-t border-line pt-2 text-[0.6875rem] leading-relaxed text-faint">
+            These are claims from a file you loaded, not conclusions this program reached. Nothing
+            in the analysis uses them.{' '}
+            <a href={href('file')} className="text-accent underline-offset-2 hover:underline">
+              Manage the file
+            </a>
+            .
+          </p>
+        </div>
       ) : null}
 
       <Field label="Notes">

@@ -150,6 +150,24 @@ export function eraseEverything(): void {
   invalidate()
 }
 
+/** The optional vendor data file, kept apart from the plan because it is not one. */
+export function readVendorData(): unknown {
+  return safeRead(VENDOR_KEY)
+}
+
+export function writeVendorData(data: unknown): void {
+  if (data === null) {
+    try {
+      window.localStorage.removeItem(VENDOR_KEY)
+    } catch {
+      // Nothing to do; the storage list shows what remains.
+    }
+    invalidate()
+    return
+  }
+  safeWrite(VENDOR_KEY, data)
+}
+
 export function makeFile(plans: Plan[], activePlanId: string | null): PlanFile {
   return {
     schemaVersion: SCHEMA_VERSION,

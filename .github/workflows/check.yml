@@ -31,9 +31,13 @@ jobs:
       - name: The application has no way to reach the network
         run: node tools/check-no-network.mjs
 
+      - name: The checked-in fonts match the packages they came from
+        run: node tools/sync-fonts.mjs --check
+
       - run: yarn workspace @outlive/core type-check
       - run: yarn workspace @outlive/web type-check
       - run: yarn workspace @outlive/web lint
       - run: yarn prettier --check .
       - run: yarn workspace @outlive/core test
+      - run: yarn workspace @outlive/web test
       - run: yarn workspace @outlive/web build

@@ -20,7 +20,6 @@ import {
   storedKeysServerSnapshot,
   storedKeysSnapshot,
   subscribeStorage,
-  VENDOR_KEY,
 } from '@/lib/storage.ts'
 
 /**
@@ -213,15 +212,10 @@ export function FileView() {
                       return
                     }
                     setVendorData(result.value as VendorData)
-                    try {
-                      window.localStorage.setItem(VENDOR_KEY, JSON.stringify(result.value))
-                    } catch {
-                      // Storage may be unavailable; the data still applies for this session.
-                    }
                     notify({
                       tone: 'ok',
                       message: 'Vendor data loaded',
-                      detail: `As of ${result.value.asOf}.`,
+                      detail: `As of ${result.value.asOf}. Nothing in the analysis uses it; it appears as dated notes beside your devices.`,
                     })
                   } catch {
                     notify({ tone: 'error', message: 'That file is not valid JSON' })

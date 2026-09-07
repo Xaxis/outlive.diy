@@ -12,7 +12,7 @@ SHELL := /bin/bash
 
 .PHONY: help install dev build start clean \
         check check-fast test coverage lint type-check format format-check \
-        guard-data guard-check no-network deploy preview
+        guard-data guard-check fonts fonts-check no-network deploy preview
 
 help: ## List available targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -33,8 +33,15 @@ start: ## Serve the built static site
 # --- verification ------------------------------------------------------------
 # Each of these is a claim the repository makes about itself.
 
-test: ## The engine's test suite. The engine is the product.
+test: ## Both test suites: the engine, and the interface driven end to end
 	@yarn workspace @outlive/core test
+	@yarn workspace @outlive/web test
+
+test-core: ## The engine's suite alone
+	@yarn workspace @outlive/core test
+
+test-web: ## The interface's suite alone
+	@yarn workspace @outlive/web test
 
 coverage: ## The engine's test suite, with coverage
 	@yarn workspace @outlive/core coverage
@@ -58,10 +65,16 @@ guard-data: ## Regenerate the checked-in BIP-39 wordlist
 guard-check: ## The checked-in wordlist matches the canonical one
 	@node tools/gen-bip39-wordlist.mjs --check
 
+fonts: ## Copy the checked-in fonts from their packages
+	@node tools/sync-fonts.mjs
+
+fonts-check: ## The checked-in fonts match the packages they came from
+	@node tools/sync-fonts.mjs --check
+
 no-network: ## No source in the app can reach the network
 	@node tools/check-no-network.mjs
 
-check-fast: guard-check no-network type-check lint format-check test ## Everything except the site build
+check-fast: guard-check fonts-check no-network type-check lint format-check test ## Everything except the site build
 
 check: check-fast build ## Everything CI runs
 
