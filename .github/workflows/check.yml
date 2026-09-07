@@ -44,3 +44,9 @@ jobs:
       - run: yarn workspace @outlive/core test
       - run: yarn workspace @outlive/web test
       - run: yarn workspace @outlive/web build
+
+      # The build must not edit the repository. A generated file that is also
+      # committed makes the format check pass locally and fail here, every time,
+      # which is exactly how this went unnoticed for a day.
+      - name: The build leaves the tree clean
+        run: git diff --exit-code

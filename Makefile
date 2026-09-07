@@ -85,7 +85,20 @@ prose: ## The house style holds: no em dashes, no emoji
 
 check-fast: guard-check fonts-check no-network prose type-check lint format-check test ## Everything except the site build
 
-check: check-fast build ## Everything CI runs
+# CI starts from a clean checkout and asserts `git diff --exit-code` after the
+# build. Locally there is usually work in progress, so the same claim is made by
+# comparing the tree before and after instead of requiring it to be clean.
+check: check-fast ## Everything CI runs
+	@before=$$(git status --porcelain); \
+	$(MAKE) --no-print-directory build; \
+	after=$$(git status --porcelain); \
+	if [ "$$before" != "$$after" ]; then \
+	  echo; \
+	  echo "The build modified tracked files. A generated file that is also"; \
+	  echo "committed makes the format check pass here and fail in CI, forever."; \
+	  diff <(echo "$$before") <(echo "$$after") || true; \
+	  exit 1; \
+	fi
 
 clean: ## Remove build output
 	@rm -rf apps/web/.next apps/web/.next-dev apps/web/out packages/core/coverage
