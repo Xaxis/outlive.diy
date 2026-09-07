@@ -15,25 +15,32 @@ outputDirectory   apps/web/out
 framework         null   (it is a static directory, not a Next.js server)
 ```
 
-From a checkout with `VERCEL_TOKEN` in `.env`:
+The GitHub repository is connected, with `main` as the production branch. A
+push to `main` deploys production and a pull request gets its own preview, so
+in normal use nobody runs a deploy command at all.
+
+The deploy does not wait for the `check` workflow, because the two run against
+the same commit at the same time. A red check on a green deploy means the
+commit is live and wrong, and the fix is to push the correction, which is the
+same fix as everywhere else on a project with one branch.
+
+From a checkout with `VERCEL_TOKEN` in `.env`, for the times when the
+integration is not the right tool:
 
 ```bash
 make preview   # a preview deployment
 make deploy    # production
 ```
 
-`vercel git connect` could not attach the GitHub repository from the CLI, which
-usually means the Vercel GitHub App is not installed on the account. Connecting
-it in the Vercel dashboard, under the project's Git settings, turns every push
-to `main` into a deploy and makes the two commands above unnecessary. That is
-worth doing, and is better than putting a deploy token into GitHub Actions
-secrets, which duplicates a credential for no gain.
+The token stays in `.env` and out of GitHub Actions secrets. Actions has no
+reason to deploy now that Vercel does it, and a second copy of a credential is
+a second thing to leak.
 
 ## DNS
 
 `outlive.diy` is registered at Namecheap and both it and `www` are attached to
-the project. As of writing, the nameservers still point at Namecheap's parking
-page, so the records have to be set under **Domain, Advanced DNS**:
+the project. The nameservers stay at Namecheap, so the records are set by hand
+under **Domain, Advanced DNS**, and these are the ones in place:
 
 | Type  | Host  | Value                                  |
 | ----- | ----- | -------------------------------------- |
@@ -41,8 +48,8 @@ page, so the records have to be set under **Domain, Advanced DNS**:
 | A     | `@`   | `216.150.16.1`                         |
 | CNAME | `www` | `99818ac90fed2397.vercel-dns-016.com.` |
 
-Delete the parking-page `CNAME www` and the `A @` pointing at
-`162.255.119.192` first, or they will conflict.
+The parking-page `CNAME www` and the `A @` pointing at `162.255.119.192` have
+to go first, or they conflict with these.
 
 `www` is configured in Vercel to redirect to the apex with a 308, so the site
 has one address.

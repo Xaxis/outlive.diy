@@ -107,9 +107,10 @@ else here is: by opening it and watching.
 
 ## Deploying
 
-Static export on Vercel, configured by `vercel.json`. `make deploy` for
-production, `make preview` for a preview. The DNS records the domain needs, and
-the response headers that make the no-network claim enforceable, are in
+Static export on Vercel, configured by `vercel.json`. A push to `main` deploys
+production and a pull request gets a preview; `make deploy` and `make preview`
+do the same from a checkout. The DNS records the domain needs, and the response
+headers that make the no-network claim enforceable, are in
 `docs/deploying.md`.
 
 ## Licence
