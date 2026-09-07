@@ -45,6 +45,7 @@ export function FileView() {
   const notify = useStore((state) => state.notify)
 
   const [confirmErase, setConfirmErase] = useState(false)
+  const [confirmRemove, setConfirmRemove] = useState<{ id: string; name: string } | null>(null)
   const vendorInput = useRef<HTMLInputElement>(null)
   const keys = useSyncExternalStore(subscribeStorage, storedKeysSnapshot, storedKeysServerSnapshot)
 
@@ -149,7 +150,7 @@ export function FileView() {
                   variant="ghost"
                   size="sm"
                   aria-label={`Remove ${plan.name}`}
-                  onClick={() => removePlan(plan.id)}
+                  onClick={() => setConfirmRemove({ id: plan.id, name: plan.name })}
                 >
                   <Trash2 className="size-3.5" aria-hidden />
                 </Button>
@@ -271,6 +272,32 @@ export function FileView() {
           you tell it, and is not advice.
         </Callout>
       </div>
+
+      <Dialog
+        open={confirmRemove !== null}
+        onClose={() => setConfirmRemove(null)}
+        title={`Remove ${confirmRemove?.name ?? 'this plan'}?`}
+        description="It closes here. If it is not also saved to a file, it is gone."
+        footer={
+          <>
+            <Button onClick={() => setConfirmRemove(null)}>Cancel</Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                if (confirmRemove) removePlan(confirmRemove.id)
+                setConfirmRemove(null)
+              }}
+            >
+              Remove it
+            </Button>
+          </>
+        }
+      >
+        <p>
+          Undo will bring it back while this tab is open. Nothing will after that, because nothing
+          here is anywhere else.
+        </p>
+      </Dialog>
 
       <Dialog
         open={confirmErase}

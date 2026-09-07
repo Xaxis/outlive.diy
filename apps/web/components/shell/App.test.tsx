@@ -521,3 +521,23 @@ describe('opening a file over unsaved work', () => {
     expect(useStore.getState().plans[0].name).toBe('Opened from disk')
   })
 })
+
+describe('removing a plan', () => {
+  it('asks first, and undo brings it back', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/file')
+    await user.click(await screen.findByRole('button', { name: /remove two of three/i }))
+    expect(await screen.findByRole('dialog')).toHaveTextContent(/remove two of three/i)
+    expect(useStore.getState().plans).toHaveLength(1)
+
+    await user.click(screen.getByRole('button', { name: /remove it/i }))
+    expect(useStore.getState().plans).toHaveLength(0)
+
+    useStore.getState().undo()
+    expect(useStore.getState().plans).toHaveLength(1)
+  })
+})
