@@ -11,7 +11,7 @@ import type { Finding } from './findings.ts'
 import { escalate, makeFinding, walletWeight } from './findings.ts'
 import type { AnalysisContext } from './context.ts'
 import { isMultisig, splitGroups, walletKeyIds, walletsUsingKey } from '../model/selectors.ts'
-import type { Key, Wallet } from '../model/types.ts'
+import type { Key } from '../model/types.ts'
 
 function list(items: readonly string[]): string {
   if (items.length === 0) return 'nothing'
@@ -394,9 +394,4 @@ export function analyseStructure(ctx: AnalysisContext): Finding[] {
   }
 
   return findings
-}
-
-/** Exported for the runbook, which needs the same notion of "not described yet". */
-export function isIncomplete(wallet: Wallet): boolean {
-  return wallet.paths.length === 0 || wallet.paths.some((path) => path.keyIds.length === 0)
 }

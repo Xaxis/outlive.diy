@@ -6,7 +6,7 @@
  * depend on" has exactly one answer.
  */
 
-import type { Backup, Device, Id, Key, Location, Person, Plan, SpendPath, Wallet } from './types.ts'
+import type { Backup, Device, Id, Key, Location, Person, Plan, Wallet } from './types.ts'
 
 export type Index<T> = ReadonlyMap<Id, T>
 
@@ -39,13 +39,6 @@ export function indexPlan(plan: Plan): PlanIndex {
   }
 }
 
-export function label(index: PlanIndex, type: keyof PlanIndex, id: Id | null): string {
-  if (id === null) return 'unassigned'
-  if (type === 'backups') return index.backups.get(id)?.backup.label ?? 'unknown backup'
-  const found = (index[type] as Index<{ label: string }>).get(id)
-  return found?.label ?? 'unknown'
-}
-
 /** Every key any spend path of the wallet can use. */
 export function walletKeyIds(wallet: Wallet): Id[] {
   const seen = new Set<Id>()
@@ -63,15 +56,6 @@ export function isMultisig(wallet: Wallet): boolean {
   return wallet.paths.some((path) => path.threshold > 1 || path.keyIds.length > 1)
 }
 
-export function primaryPath(wallet: Wallet): SpendPath | null {
-  return (
-    wallet.paths.find((path) => path.kind === 'primary') ??
-    wallet.paths.find((path) => path.timelockDays === 0) ??
-    wallet.paths[0] ??
-    null
-  )
-}
-
 /** Every place a key's material or unlock secret can be found. */
 export function keyLocationIds(plan: Plan, key: Key): Id[] {
   const places = new Set<Id>()
@@ -81,20 +65,6 @@ export function keyLocationIds(plan: Plan, key: Key): Id[] {
   const device = key.deviceId ? plan.devices.find((d) => d.id === key.deviceId) : undefined
   if (device?.pin.locationId) places.add(device.pin.locationId)
   return [...places]
-}
-
-/** Keys with anything at all at this location. */
-export function keysAtLocation(plan: Plan, locationId: Id): Key[] {
-  return plan.keys.filter((key) => keyLocationIds(plan, key).includes(locationId))
-}
-
-/** Locations that fail together with this one, itself included. */
-export function disasterCohort(plan: Plan, locationId: Id): Id[] {
-  const location = plan.locations.find((l) => l.id === locationId)
-  if (!location || location.disasterGroup === null) return [locationId]
-  return plan.locations
-    .filter((other) => other.disasterGroup === location.disasterGroup)
-    .map((other) => other.id)
 }
 
 export function disasterGroups(plan: Plan): Map<string, Location[]> {

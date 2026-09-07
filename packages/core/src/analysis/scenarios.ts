@@ -14,7 +14,7 @@
  * in that room and nowhere else.
  */
 
-import type { Id, Plan, Ref, Wallet } from '../model/types.ts'
+import type { Id, Plan, Ref } from '../model/types.ts'
 import { disasterGroups, locationsReachableBy } from '../model/selectors.ts'
 import type { AnalysisContext } from './context.ts'
 import {
@@ -351,8 +351,4 @@ export function enumerateScenarios(ctx: AnalysisContext): Scenario[] {
   }
   scenarios.push(coercionScenario(ctx))
   return scenarios
-}
-
-export function walletsAt(plan: Plan, ids: readonly Id[]): Wallet[] {
-  return plan.wallets.filter((wallet) => ids.includes(wallet.id))
 }

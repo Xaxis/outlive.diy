@@ -7,7 +7,7 @@
  * the findings list has an entry for.
  */
 
-import type { Id, Plan } from '../model/types.ts'
+import type { Id } from '../model/types.ts'
 import { evaluateWallet } from './availability.ts'
 import { locationCompromisedScenario } from './scenarios.ts'
 import type { AnalysisContext } from './context.ts'
@@ -120,18 +120,4 @@ export function buildMap(ctx: AnalysisContext): QuorumMap {
     columns,
     unplacedKeyIds: [...unplaced],
   }
-}
-
-/** Keys whose material appears at more than one place, for the map's link lines. */
-export function spreadOfKey(map: QuorumMap, keyId: Id): Id[] {
-  return map.cells.filter((cell) => cell.keyId === keyId).map((cell) => cell.locationId)
-}
-
-export function planIsEmpty(plan: Plan): boolean {
-  return (
-    plan.keys.length === 0 &&
-    plan.wallets.length === 0 &&
-    plan.locations.length === 0 &&
-    plan.people.length === 0
-  )
 }

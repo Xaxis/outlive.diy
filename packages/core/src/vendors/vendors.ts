@@ -7,13 +7,14 @@
  * stale facts with the same confidence as structural reasoning is worse than
  * one that presents none.
  *
- * So none of it lives in the analysis. This module reads a dated file the user
- * supplies and produces *notes*, which the interface shows next to the date
- * they were true. Every analysis in this engine runs identically with the file
- * absent, which is the default.
+ * So none of it lives in the analysis. This module only validates a dated file
+ * the user supplies and looks entries up in it; the interface shows what it
+ * says beside the date it was said, captioned as a claim from that file rather
+ * than a conclusion this program reached. Every analysis in this engine runs
+ * identically with the file absent, which is the default.
  */
 
-import type { IsoDate, Plan } from '../model/types.ts'
+import type { IsoDate } from '../model/types.ts'
 
 export const VENDOR_DATA_VERSION = 1
 
@@ -45,29 +46,6 @@ export interface VendorData {
   /** Where the author got it. Free text. */
   source: string
   vendors: VendorEntry[]
-}
-
-/**
- * The shipped default is empty on purpose.
- *
- * Shipping a populated table would make this build the authority on facts it
- * cannot keep current. The format is documented, the importer is one click, and
- * an empty file is an honest statement that this program knows nothing about
- * your hardware.
- */
-export const EMPTY_VENDOR_DATA: VendorData = {
-  version: VENDOR_DATA_VERSION,
-  asOf: '1970-01-01',
-  source: 'No vendor data loaded.',
-  vendors: [],
-}
-
-export interface VendorNote {
-  deviceId: string
-  vendor: string
-  /** What the file says, stated as the file's claim rather than as a fact. */
-  claim: string
-  asOf: IsoDate
 }
 
 export function parseVendorData(
@@ -104,46 +82,6 @@ export function lookupVendor(data: VendorData, vendor: string | null): VendorEnt
   if (!vendor) return null
   const needle = vendor.trim().toLowerCase()
   return data.vendors.find((entry) => entry.id.toLowerCase() === needle) ?? null
-}
-
-/**
- * Notes for the devices in a plan. Never findings: this file is somebody's
- * research, and the engine does not adopt it as its own reasoning.
- */
-export function vendorNotes(plan: Plan, data: VendorData): VendorNote[] {
-  const notes: VendorNote[] = []
-  for (const device of plan.devices) {
-    const entry = lookupVendor(data, device.vendor)
-    if (!entry) continue
-    const claims: string[] = []
-    if (entry.architecture && entry.architecture !== device.architecture) {
-      claims.push(`architecture recorded as "${entry.architecture}"`)
-    }
-    if (entry.secureElement !== undefined) {
-      claims.push(entry.secureElement ? 'has a secure element' : 'has no secure element')
-    }
-    if (entry.airGapCapable !== undefined && entry.airGapCapable !== device.airGapped) {
-      claims.push(entry.airGapCapable ? 'can be run air-gapped' : 'cannot be run air-gapped')
-    }
-    if (
-      entry.storesWalletConfig !== undefined &&
-      entry.storesWalletConfig !== device.storesWalletConfig
-    ) {
-      claims.push(
-        entry.storesWalletConfig
-          ? 'stores the multisig wallet configuration'
-          : 'does not store the multisig wallet configuration'
-      )
-    }
-    for (const advisory of entry.advisories ?? []) {
-      claims.push(`advisory ${advisory.id} (${advisory.date}): ${advisory.summary}`)
-    }
-    if (entry.notes) claims.push(entry.notes)
-    for (const claim of claims) {
-      notes.push({ deviceId: device.id, vendor: entry.name, claim, asOf: data.asOf })
-    }
-  }
-  return notes
 }
 
 /** How stale the file is, in days, for the interface to show plainly. */

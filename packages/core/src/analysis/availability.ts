@@ -329,10 +329,6 @@ export function evaluateWallet(plan: Plan, wallet: Wallet, world: World): Wallet
   }
 }
 
-export function evaluatePlan(plan: Plan, world: World): Map<Id, WalletAvailability> {
-  return new Map(plan.wallets.map((wallet) => [wallet.id, evaluateWallet(plan, wallet, world)]))
-}
-
 /** The set of keys an actor in this world could sign with. */
 export function usableKeys(plan: Plan, world: World): Key[] {
   return plan.keys.filter((key) => evaluateKey(plan, key, world).usable)
