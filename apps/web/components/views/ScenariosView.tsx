@@ -8,6 +8,8 @@ import { Segmented } from '@/components/ui/Field.tsx'
 import { CustomScenario } from '@/components/scenarios/CustomScenario.tsx'
 import { useActivePlan } from '@/lib/store.ts'
 import { useScenarioResults } from '@/lib/analysis.ts'
+import { planIsStarted } from '@/lib/describe.ts'
+import { NothingYet } from '@/components/shell/NothingYet.tsx'
 import { href } from '@/lib/router.ts'
 import { cn } from '@/lib/cn.ts'
 
@@ -63,6 +65,19 @@ export function ScenariosView() {
   const [onlyAlarming, setOnlyAlarming] = useState<'all' | 'bad'>('bad')
 
   if (!plan || !index) return null
+
+  if (!planIsStarted(plan)) {
+    return (
+      <div className="mx-auto max-w-6xl">
+        <ViewHeader
+          eyebrow="Diagnosis"
+          title="Stress test"
+          question="Every way this plan comes apart, run at once."
+        />
+        <NothingYet what="there is nothing to take away from it." />
+      </div>
+    )
+  }
 
   const definition = GROUPS.find((entry) => entry.id === group)!
   const rows = results

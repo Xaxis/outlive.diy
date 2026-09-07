@@ -4,7 +4,9 @@ export type Section = 'profile' | 'locations' | 'people' | 'devices' | 'keys' | 
 
 export interface SectionDefinition {
   id: Section
+  /** Plural, as it appears on the tab. */
   label: string
+  /** Singular, as it appears above one of them in the inspector. */
   singular: string
   kind: EntityKind | null
   blurb: string

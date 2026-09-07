@@ -100,6 +100,7 @@ export function DesignView() {
           report={report}
           kind={definition.kind}
           singular={definition.singular}
+          plural={definition.label}
           blurb={definition.blurb}
         />
       )}

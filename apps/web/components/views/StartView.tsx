@@ -172,6 +172,7 @@ export function StartView() {
             report={report}
             kind={definition.kind}
             singular={definition.singular}
+            plural={definition.label}
             blurb={definition.blurb}
           />
         ) : null}

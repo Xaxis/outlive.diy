@@ -10,6 +10,8 @@ import { Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Segmented } from '@/components/ui/Field.tsx'
 import { useActivePlan } from '@/lib/store.ts'
 import { useRecovery } from '@/lib/analysis.ts'
+import { planIsStarted } from '@/lib/describe.ts'
+import { NothingYet } from '@/components/shell/NothingYet.tsx'
 import { cn } from '@/lib/cn.ts'
 
 /**
@@ -25,6 +27,20 @@ export function RecoveryView() {
   const [filter, setFilter] = useState<'all' | 'possible' | 'impossible'>('all')
 
   if (!plan) return null
+
+  if (!planIsStarted(plan)) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <ViewHeader
+          eyebrow="Documents"
+          title="Recovery routes"
+          question="What to do, in order, for each way this can go wrong."
+        />
+        <NothingYet what="there is nothing that could go wrong with it." />
+      </div>
+    )
+  }
+
   const index = indexPlan(plan)
 
   const visible = routes.filter((route) =>

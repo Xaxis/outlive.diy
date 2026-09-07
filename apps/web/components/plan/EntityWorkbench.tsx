@@ -50,12 +50,14 @@ export function EntityWorkbench({
   report,
   kind,
   singular,
+  plural,
   blurb,
 }: {
   plan: Plan
   report: AnalysisReport | null
   kind: EntityKind
   singular: string
+  plural: string
   blurb: string
 }) {
   const selection = useStore((state) => state.selection)
@@ -79,7 +81,7 @@ export function EntityWorkbench({
   if (entities.length === 0) {
     return (
       <EmptyState
-        title={`No ${singular.toLowerCase()} yet`}
+        title={`No ${plural.toLowerCase()} yet`}
         body={blurb}
         action={
           <Button variant="primary" icon={<Plus className="size-4" aria-hidden />} onClick={add}>

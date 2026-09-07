@@ -311,3 +311,46 @@ describe('composing a failure by hand', () => {
     expect(vault().getByText(/configuration cannot be recovered/i)).toBeInTheDocument()
   })
 })
+
+describe('an empty plan', () => {
+  // A derived page given nothing is technically correct and completely
+  // misleading, so every one of them has to say so rather than go quiet.
+  const derived: [string, string][] = [
+    ['#/findings', 'the silence below means nothing'],
+    ['#/map', 'nothing to place on it'],
+    ['#/scenarios', 'nothing to take away from it'],
+    ['#/runbook', 'no steps to order'],
+    ['#/recovery', 'nothing that could go wrong'],
+  ]
+
+  for (const [hash, phrase] of derived) {
+    it(`says so on ${hash}`, async () => {
+      reset()
+      const user = userEvent.setup()
+      render(<App />)
+      await user.click(await screen.findByRole('button', { name: /start a plan/i }))
+
+      window.location.hash = hash
+      window.dispatchEvent(new HashChangeEvent('hashchange'))
+
+      expect(await screen.findByText(/nothing to work from yet/i)).toBeInTheDocument()
+      expect(screen.getByText(new RegExp(phrase, 'i'))).toBeInTheDocument()
+    })
+  }
+
+  it('never claims a clean bill of health for it', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByRole('button', { name: /start a plan/i }))
+
+    window.location.hash = '#/findings'
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+
+    expect(await screen.findByText(/nothing to work from yet/i)).toBeInTheDocument()
+    // "Nothing found" is the clean-bill-of-health heading, and it must not
+    // appear for a plan that has not been described. (The one-time scope notice
+    // uses similar words on purpose, so match the heading rather than prose.)
+    expect(screen.queryByRole('heading', { name: /nothing found/i })).not.toBeInTheDocument()
+  })
+})

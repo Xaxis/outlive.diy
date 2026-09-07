@@ -7,6 +7,8 @@ import { PrintHeader } from '@/components/shell/PrintHeader.tsx'
 import { Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { useActivePlan, useStore } from '@/lib/store.ts'
 import { useRunbook } from '@/lib/analysis.ts'
+import { planIsStarted } from '@/lib/describe.ts'
+import { NothingYet } from '@/components/shell/NothingYet.tsx'
 import { cn } from '@/lib/cn.ts'
 
 /**
@@ -33,11 +35,15 @@ export function RunbookView() {
   const completed = runbook.steps.filter(done).length
   const gatesDone = runbook.gates.filter(done).length
 
-  if (runbook.steps.length === 0) {
+  if (!planIsStarted(plan) || runbook.steps.length === 0) {
     return (
       <div className="mx-auto max-w-3xl">
-        <ViewHeader eyebrow="Documents" title="Build runbook" />
-        <p className="text-sm text-muted">Describe a plan first and this writes itself.</p>
+        <ViewHeader
+          eyebrow="Documents"
+          title="Build runbook"
+          question="Ordered steps from nothing to the plan you designed."
+        />
+        <NothingYet what="there are no steps to order." />
       </div>
     )
   }

@@ -19,6 +19,8 @@ import { FindingCard, SUBJECT_SECTION } from '@/components/findings/FindingCard.
 import { useActivePlan, useStore } from '@/lib/store.ts'
 import { useReport } from '@/lib/analysis.ts'
 import { useRoute } from '@/lib/router.ts'
+import { planIsStarted } from '@/lib/describe.ts'
+import { NothingYet } from '@/components/shell/NothingYet.tsx'
 import { cn } from '@/lib/cn.ts'
 
 export function FindingsView() {
@@ -102,61 +104,67 @@ export function FindingsView() {
         </div>
       ) : null}
 
-      <div className="mb-5 space-y-3">
-        <SeverityBar counts={report.counts} onSelect={setSeverity} selected={severity} />
-        {presentCategories.length > 1 ? (
-          <div className="flex flex-wrap gap-1.5 no-print">
-            {presentCategories.map((entry) => (
-              <button
-                key={entry}
-                type="button"
-                onClick={() => setCategory(category === entry ? null : entry)}
-                title={CATEGORY_QUESTION[entry]}
-                className={cn(
-                  'chip transition-colors',
-                  category === entry
-                    ? 'border-accent/60 bg-accent/10 text-strong'
-                    : 'hover:border-line-strong hover:text-body'
-                )}
-              >
-                {CATEGORY_LABEL[entry]}
-                <span className="mono text-faint">
-                  {report.findings.filter((finding) => finding.category === entry).length}
-                </span>
-              </button>
-            ))}
-          </div>
-        ) : null}
-      </div>
-
-      {category ? (
-        <p className="mb-4 border-l-2 border-accent/50 pl-3 text-sm italic text-muted">
-          {CATEGORY_QUESTION[category]}
-        </p>
-      ) : null}
-
-      {visible.length === 0 ? (
-        <div className="card border-dashed p-6">
-          <h2 className="text-sm font-semibold text-strong">
-            {report.findings.length === 0 ? 'Nothing found' : 'Nothing in that filter'}
-          </h2>
-          <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-muted">
-            {report.findings.length === 0
-              ? 'This program could not find a problem with the plan as described. That is a smaller claim than it sounds like: it has not seen your keys, cannot verify anything you told it, and only knows the failures it has rules for. The staleness section is the one to read next, because a plan nobody has tested is a plan nobody has tested.'
-              : 'Clear the filters to see the rest.'}
-          </p>
-        </div>
+      {!planIsStarted(plan) ? (
+        <NothingYet what="the silence below means nothing." />
       ) : (
-        <div className="space-y-1.5">
-          {visible.map((finding) => (
-            <FindingCard
-              key={finding.id}
-              finding={finding}
-              labelOf={labelOf}
-              onOpenSubject={openSubject}
-            />
-          ))}
-        </div>
+        <>
+          <div className="mb-5 space-y-3">
+            <SeverityBar counts={report.counts} onSelect={setSeverity} selected={severity} />
+            {presentCategories.length > 1 ? (
+              <div className="flex flex-wrap gap-1.5 no-print">
+                {presentCategories.map((entry) => (
+                  <button
+                    key={entry}
+                    type="button"
+                    onClick={() => setCategory(category === entry ? null : entry)}
+                    title={CATEGORY_QUESTION[entry]}
+                    className={cn(
+                      'chip transition-colors',
+                      category === entry
+                        ? 'border-accent/60 bg-accent/10 text-strong'
+                        : 'hover:border-line-strong hover:text-body'
+                    )}
+                  >
+                    {CATEGORY_LABEL[entry]}
+                    <span className="mono text-faint">
+                      {report.findings.filter((finding) => finding.category === entry).length}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          {category ? (
+            <p className="mb-4 border-l-2 border-accent/50 pl-3 text-sm italic text-muted">
+              {CATEGORY_QUESTION[category]}
+            </p>
+          ) : null}
+
+          {visible.length === 0 ? (
+            <div className="card max-w-2xl border-dashed p-6">
+              <h2 className="text-sm font-semibold text-strong">
+                {report.findings.length === 0 ? 'Nothing found' : 'Nothing in that filter'}
+              </h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                {report.findings.length === 0
+                  ? 'This program could not find a problem with the plan as described. That is a smaller claim than it sounds like: it has not seen your keys, cannot verify anything you told it, and only knows the failures it has rules for. Read the checks next, because a plan nobody has tested is a plan nobody has tested.'
+                  : 'Clear the filters to see the rest.'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {visible.map((finding) => (
+                <FindingCard
+                  key={finding.id}
+                  finding={finding}
+                  labelOf={labelOf}
+                  onOpenSubject={openSubject}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   )

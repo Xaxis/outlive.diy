@@ -110,7 +110,7 @@ export function EmptyState({
   icon?: ReactNode
 }) {
   return (
-    <div className="card flex flex-col items-start gap-3 border-dashed p-6">
+    <div className="card flex max-w-2xl flex-col items-start gap-3 border-dashed p-6">
       {icon ? <div className="text-faint">{icon}</div> : null}
       <div>
         <h3 className="text-sm font-semibold text-strong">{title}</h3>

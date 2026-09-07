@@ -5,6 +5,7 @@ import { CircleDot, FileKey2, KeyRound, Lock, Puzzle, ShieldEllipsis } from 'luc
 import { buildMap, createContext, indexPlan, type Holding } from '@outlive/core'
 import { Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { useActivePlan } from '@/lib/store.ts'
+import { NothingYet } from '@/components/shell/NothingYet.tsx'
 import { describeTravel, TIER } from '@/lib/describe.ts'
 import { cn } from '@/lib/cn.ts'
 
@@ -45,9 +46,7 @@ export function MapView() {
     return (
       <div className="mx-auto max-w-4xl">
         <ViewHeader eyebrow="Diagnosis" title="Map" question="Where quorum concentrates." />
-        <p className="text-sm text-muted">
-          The map needs at least one place and one key. Describe those under Design first.
-        </p>
+        <NothingYet what="there is nothing to place on it: the map needs at least one place and one key." />
       </div>
     )
   }
