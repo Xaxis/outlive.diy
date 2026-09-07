@@ -1,0 +1,459 @@
+import { describe, expect, it } from 'vitest'
+import { analyze } from './analyze.ts'
+import {
+  createBackup,
+  createConfigBackup,
+  createDevice,
+  createKey,
+  createLocation,
+  createPerson,
+  createPlan,
+  createSpendPath,
+  createVerification,
+  createWallet,
+} from '../model/factory.ts'
+import type { Plan } from '../model/types.ts'
+import { exampleById } from '../model/examples.ts'
+
+const TODAY = '2026-03-01'
+
+function rules(plan: Plan): string[] {
+  return analyze(plan, { today: TODAY }).findings.map((finding) => finding.rule)
+}
+
+function findingFor(plan: Plan, rule: string) {
+  return analyze(plan, { today: TODAY }).findings.find((finding) => finding.rule === rule)
+}
+
+/** Two sites, two keys, a 2-of-2 wallet with a descriptor copy at each site. */
+function twoOfTwo(overrides: Partial<Plan> = {}): Plan {
+  return createPlan({
+    locations: [
+      createLocation({ id: 'a', label: 'Site A', disasterGroup: 'north' }),
+      createLocation({ id: 'b', label: 'Site B', disasterGroup: 'south', travelMinutes: 90 }),
+    ],
+    devices: [
+      createDevice({ id: 'd1', label: 'Signer A', vendor: 'One' }),
+      createDevice({ id: 'd2', label: 'Signer B', vendor: 'Two' }),
+    ],
+    keys: [
+      createKey({
+        id: 'k1',
+        label: 'Key A',
+        deviceId: 'd1',
+        deviceLocationId: 'a',
+        backups: [createBackup({ id: 'b1', locationId: 'a' })],
+      }),
+      createKey({
+        id: 'k2',
+        label: 'Key B',
+        deviceId: 'd2',
+        deviceLocationId: 'b',
+        backups: [createBackup({ id: 'b2', locationId: 'b' })],
+      }),
+    ],
+    wallets: [
+      createWallet({
+        id: 'w',
+        label: 'Vault',
+        paths: [createSpendPath({ id: 'p', threshold: 2, keyIds: ['k1', 'k2'] })],
+        configBackups: [
+          createConfigBackup({ id: 'c1', locationId: 'a' }),
+          createConfigBackup({ id: 'c2', locationId: 'b' }),
+        ],
+      }),
+    ],
+    ...overrides,
+  })
+}
+
+describe('structure', () => {
+  it('refuses to let a multisig exist without its descriptor', () => {
+    const plan = twoOfTwo()
+    plan.wallets[0] = { ...plan.wallets[0], configBackups: [] }
+    expect(rules(plan)).toContain('S010')
+  })
+
+  it('sees through a quorum that is really one device', () => {
+    const plan = twoOfTwo()
+    plan.keys[1] = { ...plan.keys[1], deviceId: 'd1' }
+    const finding = findingFor(plan, 'S012')
+    expect(finding?.severity).toBe('critical')
+    expect(finding?.detail).toContain('2-of-2')
+  })
+
+  it('catches a threshold nobody can reach', () => {
+    const plan = twoOfTwo()
+    plan.wallets[0] = {
+      ...plan.wallets[0],
+      paths: [createSpendPath({ id: 'p', threshold: 3, keyIds: ['k1', 'k2'] })],
+    }
+    expect(rules(plan)).toContain('S002')
+  })
+
+  it('calls out a passphrase kept with the seed it protects', () => {
+    const plan = twoOfTwo()
+    plan.keys[0] = {
+      ...plan.keys[0],
+      passphrase: {
+        enabled: true,
+        storage: 'written',
+        locationIds: ['a'],
+        splitThreshold: null,
+        knownBy: [],
+      },
+    }
+    expect(rules(plan)).toContain('S014')
+  })
+
+  it('calls out a key that exists only on a device', () => {
+    const plan = twoOfTwo()
+    plan.keys[0] = { ...plan.keys[0], backups: [] }
+    expect(rules(plan)).toContain('S006')
+  })
+
+  it('says nothing about a wallet configuration when the wallet is single-signature', () => {
+    const plan = createPlan({
+      locations: [createLocation({ id: 'a' })],
+      keys: [createKey({ id: 'k', backups: [createBackup({ id: 'b', locationId: 'a' })] })],
+      wallets: [
+        createWallet({
+          id: 'w',
+          tier: 'active',
+          stake: 'small',
+          paths: [createSpendPath({ id: 'p', threshold: 1, keyIds: ['k'] })],
+        }),
+      ],
+    })
+    expect(rules(plan)).not.toContain('S010')
+  })
+})
+
+describe('loss', () => {
+  it('reports a single location that takes a wallet with it', () => {
+    const plan = twoOfTwo()
+    const finding = findingFor(plan, 'L001')
+    expect(finding).toBeDefined()
+    expect(finding?.title).toContain('Site A')
+  })
+
+  it('reports the absence of spare capacity once, not once per key', () => {
+    const plan = twoOfTwo()
+    const found = rules(plan).filter((rule) => rule === 'L007')
+    expect(found).toHaveLength(1)
+    expect(rules(plan)).not.toContain('L002')
+  })
+
+  it('reports a disaster group only when it is worse than its members', () => {
+    const together = twoOfTwo()
+    together.locations = together.locations.map((location) => ({
+      ...location,
+      disasterGroup: 'one city',
+    }))
+    // Each site individually already breaks the 2-of-2, so the group adds
+    // nothing that has not been said.
+    expect(rules(together)).not.toContain('L005')
+
+    const threeOfFour = createPlan({
+      locations: [
+        createLocation({ id: 'a', label: 'Site A', disasterGroup: 'city' }),
+        createLocation({ id: 'b', label: 'Site B', disasterGroup: 'city' }),
+        createLocation({ id: 'c', label: 'Site C', disasterGroup: 'coast' }),
+      ],
+      keys: ['a', 'b', 'c'].map((place, index) =>
+        createKey({
+          id: `k${index}`,
+          label: `Key ${index}`,
+          backups: [createBackup({ id: `b${index}`, locationId: place })],
+        })
+      ),
+      wallets: [
+        createWallet({
+          id: 'w',
+          paths: [createSpendPath({ id: 'p', threshold: 2, keyIds: ['k0', 'k1', 'k2'] })],
+          configBackups: [createConfigBackup({ id: 'cfg', locationId: 'c' })],
+        }),
+      ],
+    })
+    expect(rules(threeOfFour)).toContain('L005')
+  })
+
+  it('reports a lone copy of the wallet configuration', () => {
+    const plan = twoOfTwo()
+    plan.wallets[0] = {
+      ...plan.wallets[0],
+      configBackups: [createConfigBackup({ id: 'c1', locationId: 'a' })],
+    }
+    expect(rules(plan)).toContain('L008')
+  })
+})
+
+describe('compromise', () => {
+  it('reports one location that is enough on its own', () => {
+    const plan = twoOfTwo()
+    // Move Key B's backup next to Key A's.
+    plan.keys[1] = {
+      ...plan.keys[1],
+      backups: [createBackup({ id: 'b2', locationId: 'a' })],
+    }
+    const finding = findingFor(plan, 'C001')
+    expect(finding?.title).toContain('Site A')
+    expect(finding?.severity).toBe('critical')
+  })
+
+  it('reports a vendor that covers a threshold', () => {
+    const plan = twoOfTwo()
+    plan.devices[1] = { ...plan.devices[1], vendor: 'One' }
+    expect(rules(plan)).toContain('C003')
+  })
+
+  it('reports a person who can already spend', () => {
+    const plan = twoOfTwo({
+      people: [createPerson({ id: 'p', label: 'Helper 1', role: 'aware' })],
+    })
+    plan.locations = plan.locations.map((location) => ({
+      ...location,
+      access: [{ personId: 'p', condition: 'always', delayDays: 0 }],
+    }))
+    expect(rules(plan)).toContain('C002')
+  })
+
+  it('says when the passphrases are buying nothing', () => {
+    const plan = twoOfTwo()
+    // Everything for both keys, passphrases included, sits at Site A.
+    plan.keys = plan.keys.map((key) => ({
+      ...key,
+      deviceLocationId: 'a',
+      backups: [createBackup({ id: `bk-${key.id}`, locationId: 'a' })],
+      passphrase: {
+        enabled: true,
+        storage: 'written' as const,
+        locationIds: ['a'],
+        splitThreshold: null,
+        knownBy: [],
+      },
+    }))
+    expect(rules(plan)).toContain('C006')
+  })
+})
+
+describe('correlation', () => {
+  it('reports a quorum behind one vendor', () => {
+    const plan = twoOfTwo()
+    plan.devices[1] = { ...plan.devices[1], vendor: 'One' }
+    const finding = findingFor(plan, 'R001')
+    expect(finding?.detail).toContain('2-of-2')
+  })
+
+  it('reports a quorum inside one disaster group', () => {
+    const plan = twoOfTwo()
+    plan.locations = plan.locations.map((location) => ({ ...location, disasterGroup: 'one city' }))
+    expect(rules(plan)).toContain('R003')
+  })
+
+  it('stays quiet when the vendors genuinely differ', () => {
+    expect(rules(twoOfTwo())).not.toContain('R001')
+  })
+})
+
+describe('coercion', () => {
+  it('reports what one session reaches', () => {
+    const plan = twoOfTwo()
+    const finding = findingFor(plan, 'X001')
+    expect(finding?.severity).toBe('critical')
+    expect(finding?.title).toContain('Vault')
+  })
+
+  it('stays quiet when a site is beyond the session', () => {
+    const plan = twoOfTwo()
+    plan.locations[1] = { ...plan.locations[1], travelMinutes: 2000 }
+    expect(rules(plan)).not.toContain('X001')
+  })
+
+  it('reports a plan with no source of delay at all', () => {
+    expect(rules(twoOfTwo())).toContain('X003')
+  })
+})
+
+describe('succession', () => {
+  const withHeir = () =>
+    twoOfTwo({
+      people: [
+        createPerson({
+          id: 'h',
+          label: 'Successor 1',
+          role: 'successor',
+          technicalSkill: 'competent',
+          knowsPlanExists: true,
+          knowsWhereInstructionsAre: true,
+        }),
+      ],
+    })
+
+  it('reports coins nobody can reach after death', () => {
+    const plan = withHeir()
+    expect(rules(plan)).toContain('U001')
+  })
+
+  it('is satisfied once the heir has after-death access to enough', () => {
+    const plan = withHeir()
+    plan.locations = plan.locations.map((location) => ({
+      ...location,
+      access: [{ personId: 'h', condition: 'after-death', delayDays: 30 }],
+    }))
+    expect(rules(plan)).not.toContain('U001')
+  })
+
+  it('reports an heir who can already spend today', () => {
+    const plan = withHeir()
+    plan.locations = plan.locations.map((location) => ({
+      ...location,
+      access: [{ personId: 'h', condition: 'always', delayDays: 0 }],
+    }))
+    const found = rules(plan)
+    expect(found).toContain('U002')
+    // The same fact must not also appear as a generic compromise finding.
+    expect(found).not.toContain('C002')
+  })
+
+  it('reports an heir who has not been told', () => {
+    const plan = withHeir()
+    plan.people[0] = { ...plan.people[0], knowsPlanExists: false }
+    expect(rules(plan)).toContain('U003')
+  })
+
+  it('reports a memorised passphrase as a succession failure', () => {
+    const plan = withHeir()
+    plan.locations = plan.locations.map((location) => ({
+      ...location,
+      access: [{ personId: 'h', condition: 'after-death', delayDays: 30 }],
+    }))
+    plan.keys[0] = {
+      ...plan.keys[0],
+      passphrase: {
+        enabled: true,
+        storage: 'memorized',
+        locationIds: [],
+        splitThreshold: null,
+        knownBy: [],
+      },
+    }
+    const finding = findingFor(plan, 'U001')
+    expect(finding?.detail).toContain('memorised passphrase')
+  })
+
+  it('reports the gap between what an heir must know and must not', () => {
+    const plan = withHeir()
+    plan.keys[1] = { ...plan.keys[1], backups: [createBackup({ id: 'b2', locationId: 'a' })] }
+    plan.locations = plan.locations.map((location) => ({
+      ...location,
+      access: [{ personId: 'h', condition: 'after-death', delayDays: 10 }],
+    }))
+    expect(rules(plan)).toContain('U007')
+  })
+})
+
+describe('staleness', () => {
+  it('says once that nothing has been verified, rather than once per object', () => {
+    const found = rules(twoOfTwo())
+    expect(found.filter((rule) => rule === 'T006')).toHaveLength(1)
+    expect(found).not.toContain('T002')
+    expect(found).not.toContain('T003')
+  })
+
+  it('reports an overdue check', () => {
+    const plan = twoOfTwo({
+      verifications: [
+        createVerification({
+          id: 'v',
+          kind: 'backup-restore',
+          subject: { type: 'key', id: 'k1' },
+          lastVerifiedAt: '2024-01-01',
+          intervalDays: 365,
+        }),
+      ],
+    })
+    const finding = findingFor(plan, 'T001')
+    expect(finding?.title).toContain('overdue')
+  })
+
+  it('reports what has never been done once something has', () => {
+    const plan = twoOfTwo({
+      verifications: [
+        createVerification({
+          id: 'v',
+          kind: 'backup-restore',
+          subject: { type: 'key', id: 'k1' },
+          lastVerifiedAt: '2026-02-01',
+          intervalDays: 365,
+        }),
+      ],
+    })
+    const found = rules(plan)
+    expect(found).not.toContain('T006')
+    expect(found).toContain('T003')
+  })
+})
+
+describe('the worked examples', () => {
+  it('the beginner setup fails in the ways it is meant to show', () => {
+    const plan = exampleById('one-signer')
+    expect(plan).not.toBeNull()
+    const found = rules(plan as Plan)
+    // One place holds everything: losing it and it being opened are both fatal.
+    expect(found).toContain('L001')
+    expect(found).toContain('C001')
+    expect(found).toContain('S015')
+    expect(found).toContain('T006')
+  })
+
+  it('the repaired plan closes the findings it was meant to close', () => {
+    const before = rules(exampleById('two-of-three') as Plan)
+    const after = rules(exampleById('two-of-three-repaired') as Plan)
+    // Two sites in one city, and two signers from one vendor.
+    expect(before).toContain('R003')
+    expect(before).toContain('R001')
+    expect(after).not.toContain('R003')
+    expect(after).not.toContain('R001')
+    // One copy of the descriptor.
+    expect(before).toContain('L008')
+    expect(after).not.toContain('L008')
+    // A successor who did not know where to start.
+    expect(before).toContain('U004')
+    expect(after).not.toContain('U004')
+  })
+
+  it('does not claim the repaired plan is finished', () => {
+    const after = analyze(exampleById('two-of-three-repaired') as Plan, { today: TODAY })
+    expect(after.findings.length).toBeGreaterThan(0)
+  })
+})
+
+describe('the report itself', () => {
+  it('is ordered worst first', () => {
+    const order = ['critical', 'high', 'medium', 'low', 'info']
+    const findings = analyze(exampleById('two-of-three') as Plan, { today: TODAY }).findings
+    const positions = findings.map((finding) => order.indexOf(finding.severity))
+    expect(positions).toEqual([...positions].sort((a, b) => a - b))
+  })
+
+  it('gives every finding a remediation', () => {
+    for (const example of ['one-signer', 'two-of-three', 'two-of-three-repaired']) {
+      for (const finding of analyze(exampleById(example) as Plan, { today: TODAY }).findings) {
+        expect(finding.remediation.length, `${example} ${finding.rule}`).toBeGreaterThan(20)
+        expect(finding.detail.length, `${example} ${finding.rule}`).toBeGreaterThan(20)
+      }
+    }
+  })
+
+  it('gives every finding a stable id', () => {
+    const first = analyze(exampleById('two-of-three') as Plan, { today: TODAY }).findings
+    const second = analyze(exampleById('two-of-three') as Plan, { today: TODAY }).findings
+    expect(first.map((f) => f.id)).toEqual(second.map((f) => f.id))
+    expect(new Set(first.map((f) => f.id)).size).toBe(first.length)
+  })
+
+  it('says nothing at all about an empty plan', () => {
+    expect(analyze(createPlan(), { today: TODAY }).findings).toEqual([])
+  })
+})

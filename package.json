@@ -1,0 +1,38 @@
+{
+  "name": "outlive",
+  "version": "0.1.0",
+  "private": true,
+  "description": "outlive.diy: design and stress-test a Bitcoin self-custody and recovery plan, locally, without ever touching key material.",
+  "license": "MIT",
+  "packageManager": "yarn@1.22.22",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "yarn workspace @outlive/web dev",
+    "build": "yarn workspace @outlive/web build",
+    "start": "yarn workspace @outlive/web start",
+    "lint": "yarn workspace @outlive/web lint",
+    "type-check": "yarn workspaces run type-check",
+    "test": "yarn workspace @outlive/core test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "make check"
+  },
+  "devDependencies": {
+    "@scure/bip39": "^2.4.0",
+    "prettier": "^3.9.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Xaxis/outlive.diy.git"
+  },
+  "homepage": "https://outlive.diy",
+  "bugs": {
+    "url": "https://github.com/Xaxis/outlive.diy/issues"
+  },
+  "engines": {
+    "node": "^22.13.0 || >=24"
+  }
+}

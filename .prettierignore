@@ -1,0 +1,8 @@
+node_modules
+.next
+.next-dev
+out
+dist
+coverage
+yarn.lock
+packages/core/src/guard/bip39-english.ts

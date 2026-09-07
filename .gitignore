@@ -1,0 +1,27 @@
+# Secrets. The .env at the repository root is never committed; .env.example
+# documents the shape of it instead.
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+.yarn/cache
+.yarn/install-state.gz
+
+# Build output
+.next/
+.next-dev/
+out/
+dist/
+*.tsbuildinfo
+coverage/
+
+# Hosting
+.vercel
+
+# Editors and OS
+.idea/
+*.iml
+.DS_Store
+.vscode/

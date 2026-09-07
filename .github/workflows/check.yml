@@ -1,0 +1,39 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+
+      # Each of these is a claim the repository makes about itself. The
+      # no-network check is the one that matters most: it is the basis on which
+      # anybody would put their custody structure into this app at all.
+      - name: The checked-in BIP-39 wordlist is the canonical one
+        run: node tools/gen-bip39-wordlist.mjs --check
+
+      - name: The application has no way to reach the network
+        run: node tools/check-no-network.mjs
+
+      - run: yarn workspace @outlive/core type-check
+      - run: yarn workspace @outlive/web type-check
+      - run: yarn workspace @outlive/web lint
+      - run: yarn prettier --check .
+      - run: yarn workspace @outlive/core test
+      - run: yarn workspace @outlive/web build
