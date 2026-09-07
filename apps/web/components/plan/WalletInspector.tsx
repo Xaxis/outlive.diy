@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/Button.tsx'
 import { Callout, SectionHeading } from '@/components/ui/Surface.tsx'
 import { useEntityUpdater, usePlanEdit } from '@/lib/edit.ts'
 import { BACKUP_MEDIUM, PATH_KIND, STAKE, TIER, TIER_NOTE } from '@/lib/describe.ts'
+import { PolicyTimeline } from './PolicyTimeline.tsx'
 
 const TIERS = Object.keys(TIER) as WalletTier[]
 const STAKES = Object.keys(STAKE) as Stake[]
@@ -200,6 +201,12 @@ export function WalletInspector({ plan, wallet }: { plan: Plan; wallet: Wallet }
             </Button>
           }
         />
+        {wallet.paths.length > 0 ? (
+          <div className="mb-3">
+            <PolicyTimeline wallet={wallet} />
+          </div>
+        ) : null}
+
         {wallet.paths.length === 0 ? (
           <Callout tone="danger">
             {wallet.label} has no spend path, so the plan does not describe any combination of keys

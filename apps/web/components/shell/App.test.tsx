@@ -541,3 +541,22 @@ describe('removing a plan', () => {
     expect(useStore.getState().plans).toHaveLength(1)
   })
 })
+
+describe('a policy with a timelock', () => {
+  it('is drawn, and a plain m-of-n is not', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, repaired'))
+
+    goto('#/design/wallets')
+    // The vault has an everyday path and an inheritance path that waits.
+    expect(await screen.findByText(/when each way opens/i)).toBeInTheDocument()
+    expect(screen.getByText(/after 180d/i)).toBeInTheDocument()
+
+    // The phone wallet is one way to spend, available now. A picture of that
+    // would be a picture of the number beside it.
+    await user.click(screen.getByText('Daily'))
+    expect(screen.queryByText(/when each way opens/i)).not.toBeInTheDocument()
+  })
+})
