@@ -777,3 +777,55 @@ describe('the fields the interface asks about are the fields the engine uses', (
     expect(rules(plan)).not.toContain('U008')
   })
 })
+
+describe('two mistakes that look like good practice', () => {
+  it('S023: a key reused between a hot wallet and a vault', () => {
+    // The two-of-three example ships with exactly this: Key A signs the vault
+    // and is also the whole of the phone wallet.
+    const found = rules(exampleById('two-of-three') as Plan)
+    expect(found).toContain('S023')
+
+    const plan = twoOfTwo()
+    plan.wallets = [
+      ...plan.wallets,
+      createWallet({
+        id: 'hot',
+        label: 'Phone',
+        tier: 'hot',
+        stake: 'small',
+        paths: [createSpendPath({ id: 'hp', threshold: 1, keyIds: ['k1'] })],
+      }),
+    ]
+    const finding = findingFor(plan, 'S023')
+    expect(finding?.title).toContain('Phone')
+    expect(finding?.title).toContain('Vault')
+
+    // A separate key for the phone is the fix, and it closes the finding.
+    plan.keys = [...plan.keys, createKey({ id: 'k3', label: 'Key C' })]
+    plan.wallets[plan.wallets.length - 1] = {
+      ...plan.wallets[plan.wallets.length - 1],
+      paths: [createSpendPath({ id: 'hp', threshold: 1, keyIds: ['k3'] })],
+    }
+    expect(rules(plan)).not.toContain('S023')
+  })
+
+  it('C007: a descriptor is not a secret, and it is a permanent view', () => {
+    const plan = twoOfTwo({
+      people: [createPerson({ id: 'law', label: 'Professional 1', role: 'professional' })],
+    })
+    plan.locations[1] = {
+      ...plan.locations[1],
+      access: [{ personId: 'law', condition: 'always', delayDays: 0 }],
+    }
+    const finding = findingFor(plan, 'C007')
+    expect(finding?.title).toContain('Professional 1')
+    expect(finding?.detail).toContain('cannot spend')
+
+    // Access that only opens after death is not a live view of the balance.
+    plan.locations[1] = {
+      ...plan.locations[1],
+      access: [{ personId: 'law', condition: 'after-death', delayDays: 30 }],
+    }
+    expect(rules(plan)).not.toContain('C007')
+  })
+})

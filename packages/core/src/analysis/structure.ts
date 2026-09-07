@@ -321,6 +321,30 @@ export function analyseStructure(ctx: AnalysisContext): Finding[] {
     }
   }
 
+  // --- a key doing duty in two tiers ----------------------------------------
+  //
+  // Tiers exist so that the exposure of the loose one does not reach the
+  // careful one. A key in both is a hole straight through that.
+  for (const key of plan.keys) {
+    const using = walletsUsingKey(plan, key.id).filter((wallet) => !wallet.decoy)
+    const hot = using.filter((wallet) => wallet.tier === 'hot')
+    const cold = using.filter((wallet) => wallet.tier === 'vault')
+    if (hot.length === 0 || cold.length === 0) continue
+    add(
+      makeFinding(plan, {
+        rule: 'S023',
+        key: key.id,
+        title: `${key.label} spends both ${list(hot.map((w) => w.label))} and ${list(cold.map((w) => w.label))}`,
+        detail: `${key.label} is used by a hot wallet and by a vault. A hot key lives on a machine that opens email, so ${list(cold.map((w) => w.label))} has quietly inherited that machine's exposure for one of its keys, and whoever takes the easy one is then a single key from the hard one.`,
+        remediation: `Give ${list(hot.map((w) => w.label))} its own key, generated separately, and remove ${key.label} from it.`,
+        subjects: [
+          { type: 'key', id: key.id },
+          ...using.map((wallet) => ({ type: 'wallet' as const, id: wallet.id })),
+        ],
+      })
+    )
+  }
+
   // --- what the horizon costs -----------------------------------------------
   //
   // The horizon is how long the plan has to keep working without anybody

@@ -12,7 +12,7 @@ import { escalate, makeFinding, walletWeight } from './findings.ts'
 import type { AnalysisContext } from './context.ts'
 import { evaluateWallet } from './availability.ts'
 import { locationCompromisedScenario, personCompromisedScenario } from './scenarios.ts'
-import { devicesByVendor, walletKeyIds } from '../model/selectors.ts'
+import { devicesByVendor, isMultisig, walletKeyIds } from '../model/selectors.ts'
 import type { Id, Plan, Wallet } from '../model/types.ts'
 
 function names(items: readonly string[]): string {
@@ -183,6 +183,44 @@ export function analyseCompromise(ctx: AnalysisContext): CompromiseResult {
         )} can also go. Without a PIN, holding the device is enough to sign with it.`,
         remediation: `Set a PIN on ${device.label}.`,
         subjects: [{ type: 'device', id: device.id }],
+      })
+    )
+  }
+
+  // --- a descriptor somebody else can read ------------------------------------
+  //
+  // The reason it is safe to copy is the reason it is worth thinking about
+  // where the copies go: it cannot spend, and it can be watched.
+  for (const wallet of plan.wallets) {
+    if (wallet.decoy || !isMultisig(wallet)) continue
+    const readers = new Map<Id, string>()
+    for (const backup of wallet.configBackups) {
+      if (backup.locationId === null) continue
+      const location = ctx.index.locations.get(backup.locationId)
+      if (!location) continue
+      if (location.custodianId) {
+        readers.set(
+          location.custodianId,
+          ctx.index.people.get(location.custodianId)?.label ?? 'someone'
+        )
+      }
+      for (const access of location.access) {
+        if (access.condition !== 'always') continue
+        readers.set(access.personId, ctx.index.people.get(access.personId)?.label ?? 'someone')
+      }
+    }
+    if (readers.size === 0) continue
+    findings.push(
+      makeFinding(plan, {
+        rule: 'C007',
+        key: wallet.id,
+        title: `${names([...readers.values()])} can read ${wallet.label}'s configuration`,
+        detail: `A copy of ${wallet.label}'s descriptor sits where ${names([...readers.values()])} can reach it today. It cannot spend, which is why it is safe to have copies at all, and it does show every address the wallet will ever use and every balance it has ever held, permanently and without needing to ask again.`,
+        remediation: `Either keep ${wallet.label}'s configuration only where its keys are, or decide deliberately that ${names([...readers.values()])} may watch the balance, and record that you decided it.`,
+        subjects: [
+          { type: 'wallet', id: wallet.id },
+          ...[...readers.keys()].map((id) => ({ type: 'person' as const, id })),
+        ],
       })
     )
   }

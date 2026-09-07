@@ -110,6 +110,7 @@ export type RuleId =
   | 'S020'
   | 'S021'
   | 'S022'
+  | 'S023'
   // loss
   | 'L001'
   | 'L002'
@@ -126,6 +127,7 @@ export type RuleId =
   | 'C004'
   | 'C005'
   | 'C006'
+  | 'C007'
   // correlation
   | 'R001'
   | 'R002'
@@ -335,6 +337,13 @@ export const RULES: Record<RuleId, Rule> = Object.fromEntries(
         'Over the horizon you gave, a business is acquired, changes its terms, is compelled, or simply stops answering. None of those arrive with notice, and a key you cannot reach without them is a key somebody else controls.'
       ),
       rule(
+        'S023',
+        'structure',
+        'high',
+        'One key spending both a hot wallet and a vault',
+        'A hot key lives on a machine that opens email and runs whatever it was told to. Reusing it in the vault hands the vault that exposure for one of its keys, and an attacker who takes the easy one is then a single key from the hard one.'
+      ),
+      rule(
         'L001',
         'loss',
         'critical',
@@ -434,6 +443,13 @@ export const RULES: Record<RuleId, Rule> = Object.fromEntries(
         'It adds a step for you and nothing for an attacker who is already in the room.'
       ),
 
+      rule(
+        'C007',
+        'compromise',
+        'medium',
+        'A wallet configuration where somebody else can read it',
+        'The descriptor cannot spend, which is why it is safe to copy, and it can be watched. Whoever holds one sees every address the wallet will ever use and every balance it has ever held, permanently and without asking again.'
+      ),
       rule(
         'R001',
         'correlation',
