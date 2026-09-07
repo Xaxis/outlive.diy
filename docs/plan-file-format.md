@@ -54,5 +54,19 @@ The full shape, with the reasoning behind each field, is in
 
 ## Editing it by hand
 
-Nothing stops you. If you break it, the Open button will tell you which field
-and why, one line per problem.
+Nothing stops you, and the format is built expecting it.
+
+Anything that can be defaulted safely is optional. A plan needs only an id, a
+name, a kind and two dates; every list, every flag and every setting fills
+itself in if you leave it out. The defaults are the cautious ones, so a device
+you did not describe is not air-gapped, does not store the wallet configuration
+and came from somewhere unrecorded, and each of those produces a finding rather
+than silence.
+
+What is still required is identity and structure, because those cannot be
+guessed: an object with no id, a date that is not a date, a threshold that is
+not a number. Guessing them would produce a plan you did not write, and then
+show you an analysis of it.
+
+If you break it, the Open button tells you which field and why, one line per
+problem.

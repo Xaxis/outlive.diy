@@ -12,6 +12,19 @@ import { z } from 'zod'
 import type { Plan, PlanFile } from './types.ts'
 import { SCHEMA_VERSION } from './types.ts'
 
+/**
+ * How strict to be.
+ *
+ * A plan is a file the user owns, which means it will be hand-edited, kept for
+ * years, and opened by a build that is not the one that wrote it. Refusing it
+ * over a boolean somebody deleted would be pedantry dressed as safety.
+ *
+ * So: anything that can be defaulted safely is defaulted, and the defaults are
+ * the cautious ones. Anything that cannot be guessed, which is identity and
+ * structure, is still required, because guessing those would produce a plan the
+ * user did not write and would then be shown an analysis of.
+ */
+
 const isoDate = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'expected a calendar date in YYYY-MM-DD form')
@@ -41,13 +54,13 @@ export const locationSchema = z.object({
     'on-person',
     'other',
   ]),
-  travelMinutes: z.number().int().min(0).max(100000).nullable(),
-  disasterGroup: z.string().max(60).nullable(),
-  access: z.array(accessSchema),
-  custodianId: id.nullable(),
-  requiresUserPresence: z.boolean(),
-  tamperEvident: z.boolean(),
-  notes,
+  travelMinutes: z.number().int().min(0).max(100000).nullable().default(null),
+  disasterGroup: z.string().max(60).nullable().default(null),
+  access: z.array(accessSchema).default([]),
+  custodianId: id.nullable().default(null),
+  requiresUserPresence: z.boolean().default(false),
+  tamperEvident: z.boolean().default(false),
+  notes: notes.default(''),
 })
 
 export const deviceSchema = z.object({
@@ -62,18 +75,22 @@ export const deviceSchema = z.object({
     'service-cosigner',
     'other',
   ]),
-  vendor: z.string().max(60).nullable(),
-  model: z.string().max(60).nullable(),
-  architecture: z.string().max(60).nullable(),
-  airGapped: z.boolean(),
-  pin: z.object({
-    storage: z.enum(['memorized', 'written', 'none']),
-    locationId: id.nullable(),
-    knownBy: z.array(id),
-  }),
-  storesWalletConfig: z.boolean(),
-  supplyChain: z.enum(['direct-from-vendor', 'reseller', 'second-hand', 'unknown']),
-  notes,
+  vendor: z.string().max(60).nullable().default(null),
+  model: z.string().max(60).nullable().default(null),
+  architecture: z.string().max(60).nullable().default(null),
+  airGapped: z.boolean().default(false),
+  pin: z
+    .object({
+      storage: z.enum(['memorized', 'written', 'none']).default('memorized'),
+      locationId: id.nullable().default(null),
+      knownBy: z.array(id).default([]),
+    })
+    .default({ storage: 'memorized', locationId: null, knownBy: [] }),
+  storesWalletConfig: z.boolean().default(false),
+  supplyChain: z
+    .enum(['direct-from-vendor', 'reseller', 'second-hand', 'unknown'])
+    .default('unknown'),
+  notes: notes.default(''),
 })
 
 const backupMedium = z.enum(['steel', 'paper', 'encrypted-digital', 'plain-digital', 'memorized'])
@@ -82,29 +99,38 @@ export const backupSchema = z.object({
   id,
   label,
   medium: backupMedium,
-  locationId: id.nullable(),
+  locationId: id.nullable().default(null),
   split: z
     .object({ groupId: z.string().min(1).max(64), threshold: z.number().int().min(1).max(32) })
-    .nullable(),
+    .nullable()
+    .default(null),
   tamperEvident: z.boolean(),
-  notes,
+  notes: notes.default(''),
 })
 
 export const keySchema = z.object({
   id,
   label,
-  heldBy: id.nullable(),
-  deviceId: id.nullable(),
-  deviceLocationId: id.nullable(),
-  backups: z.array(backupSchema),
-  passphrase: z.object({
-    enabled: z.boolean(),
-    storage: z.enum(['memorized', 'written', 'split']),
-    locationIds: z.array(id),
-    splitThreshold: z.number().int().min(1).max(32).nullable(),
-    knownBy: z.array(id),
-  }),
-  notes,
+  heldBy: id.nullable().default(null),
+  deviceId: id.nullable().default(null),
+  deviceLocationId: id.nullable().default(null),
+  backups: z.array(backupSchema).default([]),
+  passphrase: z
+    .object({
+      enabled: z.boolean().default(false),
+      storage: z.enum(['memorized', 'written', 'split']).default('memorized'),
+      locationIds: z.array(id).default([]),
+      splitThreshold: z.number().int().min(1).max(32).nullable().default(null),
+      knownBy: z.array(id).default([]),
+    })
+    .default({
+      enabled: false,
+      storage: 'memorized',
+      locationIds: [],
+      splitThreshold: null,
+      knownBy: [],
+    }),
+  notes: notes.default(''),
 })
 
 export const spendPathSchema = z.object({
@@ -112,8 +138,8 @@ export const spendPathSchema = z.object({
   label,
   kind: z.enum(['primary', 'recovery', 'inheritance']),
   threshold: z.number().int().min(1).max(32),
-  keyIds: z.array(id),
-  timelockDays: days,
+  keyIds: z.array(id).default([]),
+  timelockDays: days.default(0),
 })
 
 export const walletSchema = z.object({
@@ -121,23 +147,31 @@ export const walletSchema = z.object({
   label,
   tier: z.enum(['hot', 'active', 'vault']),
   stake: z.enum(['small', 'moderate', 'large']),
-  paths: z.array(spendPathSchema),
-  configBackups: z.array(
-    z.object({ id, label, locationId: id.nullable(), medium: backupMedium, notes })
-  ),
-  decoy: z.boolean(),
-  notes,
+  paths: z.array(spendPathSchema).default([]),
+  configBackups: z
+    .array(
+      z.object({
+        id,
+        label,
+        locationId: id.nullable().default(null),
+        medium: backupMedium.default('paper'),
+        notes: notes.default(''),
+      })
+    )
+    .default([]),
+  decoy: z.boolean().default(false),
+  notes: notes.default(''),
 })
 
 export const personSchema = z.object({
   id,
   label,
   role: z.enum(['cosigner', 'successor', 'executor', 'key-agent', 'aware', 'professional']),
-  technicalSkill: z.enum(['none', 'basic', 'competent', 'expert']),
-  knowsPlanExists: z.boolean(),
-  knowsWhereInstructionsAre: z.boolean(),
-  availability: z.enum(['immediate', 'days', 'weeks', 'unknown']),
-  notes,
+  technicalSkill: z.enum(['none', 'basic', 'competent', 'expert']).default('none'),
+  knowsPlanExists: z.boolean().default(false),
+  knowsWhereInstructionsAre: z.boolean().default(false),
+  availability: z.enum(['immediate', 'days', 'weeks', 'unknown']).default('unknown'),
+  notes: notes.default(''),
 })
 
 export const verificationSchema = z.object({
@@ -167,29 +201,31 @@ export const verificationSchema = z.object({
     ]),
     id,
   }),
-  lastVerifiedAt: isoDate.nullable(),
-  intervalDays: days,
-  notes,
+  lastVerifiedAt: isoDate.nullable().default(null),
+  intervalDays: days.default(365),
+  notes: notes.default(''),
 })
 
 export const profileSchema = z.object({
-  concerns: z.array(
-    z.enum([
-      'loss',
-      'theft',
-      'coercion',
-      'fire-flood',
-      'death',
-      'incapacity',
-      'legal-seizure',
-      'insider',
-      'supply-chain',
-    ])
-  ),
-  recoveryToleranceDays: days,
-  horizonYears: z.number().int().min(0).max(200),
-  jurisdictionCount: z.number().int().min(1).max(50),
-  travelsFrequently: z.boolean(),
+  concerns: z
+    .array(
+      z.enum([
+        'loss',
+        'theft',
+        'coercion',
+        'fire-flood',
+        'death',
+        'incapacity',
+        'legal-seizure',
+        'insider',
+        'supply-chain',
+      ])
+    )
+    .default(['loss', 'theft', 'fire-flood', 'death']),
+  recoveryToleranceDays: days.default(30),
+  horizonYears: z.number().int().min(0).max(200).default(30),
+  jurisdictionCount: z.number().int().min(1).max(50).default(1),
+  travelsFrequently: z.boolean().default(false),
 })
 
 export const planSchema = z.object({
@@ -199,22 +235,28 @@ export const planSchema = z.object({
   kind: z.enum(['current', 'draft']),
   createdAt: isoDate,
   updatedAt: isoDate,
-  profile: profileSchema,
-  locations: z.array(locationSchema),
-  people: z.array(personSchema),
-  devices: z.array(deviceSchema),
-  keys: z.array(keySchema),
-  wallets: z.array(walletSchema),
-  verifications: z.array(verificationSchema),
-  progress: z.record(z.string().max(120), isoDate),
+  profile: profileSchema.default({
+    concerns: ['loss', 'theft', 'fire-flood', 'death'],
+    recoveryToleranceDays: 30,
+    horizonYears: 30,
+    jurisdictionCount: 1,
+    travelsFrequently: false,
+  }),
+  locations: z.array(locationSchema).default([]),
+  people: z.array(personSchema).default([]),
+  devices: z.array(deviceSchema).default([]),
+  keys: z.array(keySchema).default([]),
+  wallets: z.array(walletSchema).default([]),
+  verifications: z.array(verificationSchema).default([]),
+  progress: z.record(z.string().max(120), isoDate).default({}),
 })
 
 export const planFileSchema = z.object({
   schemaVersion: z.number().int().min(1),
-  generator: z.string().max(200),
-  savedAt: isoDate,
+  generator: z.string().max(200).default('unknown'),
+  savedAt: isoDate.default('1970-01-01'),
   plans: z.array(planSchema).min(1),
-  activePlanId: id.nullable(),
+  activePlanId: id.nullable().default(null),
 })
 
 // Compile-time proof that the runtime schema and the hand-written types in

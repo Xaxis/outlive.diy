@@ -96,3 +96,100 @@ describe('the plan file format', () => {
     }
   })
 })
+
+describe('a file somebody edited by hand', () => {
+  // Plans are files the user owns, which means they will be opened in a text
+  // editor. Refusing one over a boolean somebody deleted is pedantry dressed
+  // as safety, so anything with a safe default gets one, and the defaults are
+  // the cautious ones.
+
+  const minimal = {
+    schemaVersion: SCHEMA_VERSION,
+    plans: [
+      {
+        schemaVersion: SCHEMA_VERSION,
+        id: 'plan_mine',
+        name: 'Mine',
+        kind: 'current',
+        createdAt: '2026-01-01',
+        updatedAt: '2026-01-01',
+      },
+    ],
+  }
+
+  it('opens with nothing but identity and dates', () => {
+    const parsed = parsePlanFile(structuredClone(minimal))
+    expect(parsed.ok ? [] : parsed.problems).toEqual([])
+    if (!parsed.ok) return
+    const plan = parsed.value.plans[0]
+    expect(plan.locations).toEqual([])
+    expect(plan.wallets).toEqual([])
+    expect(plan.progress).toEqual({})
+    expect(plan.profile.horizonYears).toBe(30)
+  })
+
+  it('defaults cautiously rather than flatteringly', () => {
+    const parsed = parsePlanFile({
+      ...structuredClone(minimal),
+      plans: [
+        {
+          ...minimal.plans[0],
+          devices: [{ id: 'd', label: 'Signer A', kind: 'hardware-signer' }],
+          keys: [{ id: 'k', label: 'Key A', deviceId: 'd' }],
+        },
+      ],
+    })
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) return
+    const [device] = parsed.value.plans[0].devices
+    // Every one of these defaults produces a finding rather than silence.
+    expect(device.airGapped).toBe(false)
+    expect(device.storesWalletConfig).toBe(false)
+    expect(device.supplyChain).toBe('unknown')
+    expect(parsed.value.plans[0].keys[0].backups).toEqual([])
+  })
+
+  it('still refuses a file with no identity, because that cannot be guessed', () => {
+    const parsed = parsePlanFile({
+      schemaVersion: SCHEMA_VERSION,
+      plans: [{ schemaVersion: SCHEMA_VERSION, name: 'No id' }],
+    })
+    expect(parsed.ok).toBe(false)
+  })
+
+  it('still refuses a date that is not a date', () => {
+    const parsed = parsePlanFile({
+      ...structuredClone(minimal),
+      plans: [{ ...minimal.plans[0], updatedAt: 'last Tuesday' }],
+    })
+    expect(parsed.ok).toBe(false)
+    expect(parsed.ok ? '' : parsed.problems.join(' ')).toContain('YYYY-MM-DD')
+  })
+
+  it('analyses what it filled in, without pretending it is complete', () => {
+    const parsed = parsePlanFile({
+      ...structuredClone(minimal),
+      plans: [
+        {
+          ...minimal.plans[0],
+          locations: [{ id: 'a', label: 'Site A', kind: 'home' }],
+          keys: [{ id: 'k', label: 'Key A' }],
+          wallets: [
+            {
+              id: 'w',
+              label: 'Vault',
+              tier: 'vault',
+              stake: 'large',
+              paths: [{ id: 'p', label: 'Everyday', kind: 'primary', threshold: 1, keyIds: ['k'] }],
+            },
+          ],
+        },
+      ],
+    })
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) return
+    const report = analyze(parsed.value.plans[0], { today: '2026-03-01' })
+    // A key with neither a device nor a backup is the first thing it says.
+    expect(report.findings.map((finding) => finding.rule)).toContain('S005')
+  })
+})
