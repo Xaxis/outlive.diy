@@ -457,3 +457,242 @@ describe('the report itself', () => {
     expect(analyze(createPlan(), { today: TODAY }).findings).toEqual([])
   })
 })
+
+describe('structure, one rule at a time', () => {
+  // Each of these is small on purpose: a rule that only fires as part of a
+  // large plan is a rule nobody can reason about when it fires on theirs.
+  const single = (overrides: Partial<Plan> = {}): Plan =>
+    createPlan({
+      locations: [createLocation({ id: 'a', label: 'Site A', disasterGroup: 'here' })],
+      keys: [
+        createKey({
+          id: 'k',
+          label: 'Key A',
+          backups: [createBackup({ id: 'b', locationId: 'a', medium: 'steel' })],
+        }),
+      ],
+      wallets: [
+        createWallet({
+          id: 'w',
+          label: 'Vault',
+          paths: [createSpendPath({ id: 'p', threshold: 1, keyIds: ['k'] })],
+        }),
+      ],
+      ...overrides,
+    })
+
+  it('S004: a vault on a single key', () => {
+    expect(rules(single())).toContain('S004')
+  })
+
+  it('S005: a key with neither a device nor a backup', () => {
+    const plan = single()
+    plan.keys[0] = { ...plan.keys[0], backups: [] }
+    expect(rules(plan)).toContain('S005')
+  })
+
+  it('S007: paper behind a vault key', () => {
+    const plan = single()
+    plan.keys[0].backups[0] = { ...plan.keys[0].backups[0], medium: 'paper' }
+    expect(rules(plan)).toContain('S007')
+  })
+
+  it('S008: key material in an unencrypted file', () => {
+    const plan = single()
+    plan.keys[0].backups[0] = { ...plan.keys[0].backups[0], medium: 'plain-digital' }
+    expect(rules(plan)).toContain('S008')
+  })
+
+  it('S009: a backup with no recorded place', () => {
+    const plan = single()
+    plan.keys[0].backups[0] = { ...plan.keys[0].backups[0], locationId: null }
+    expect(rules(plan)).toContain('S009')
+  })
+
+  it('S011: a split with fewer shares than its threshold', () => {
+    const plan = single()
+    plan.keys[0] = {
+      ...plan.keys[0],
+      backups: [
+        createBackup({ id: 's1', locationId: 'a', split: { groupId: 'g', threshold: 3 } }),
+        createBackup({ id: 's2', locationId: 'a', split: { groupId: 'g', threshold: 3 } }),
+      ],
+    }
+    expect(rules(plan)).toContain('S011')
+  })
+
+  it('S013: a passphrase that exists only in one head', () => {
+    const plan = single()
+    plan.keys[0] = {
+      ...plan.keys[0],
+      passphrase: {
+        enabled: true,
+        storage: 'memorized',
+        locationIds: [],
+        splitThreshold: null,
+        knownBy: [],
+      },
+    }
+    expect(rules(plan)).toContain('S013')
+  })
+
+  it('S016: a hot wallet carrying most of it', () => {
+    const plan = single()
+    plan.wallets[0] = { ...plan.wallets[0], tier: 'hot', stake: 'large' }
+    expect(rules(plan)).toContain('S016')
+    // Unless it is the decoy, whose whole job is to be handed over.
+    plan.wallets[0] = { ...plan.wallets[0], decoy: true }
+    expect(rules(plan)).not.toContain('S016')
+  })
+
+  it('S017: a co-signer who signs nothing', () => {
+    const plan = single({
+      people: [createPerson({ id: 'p', label: 'Co-signer 1', role: 'cosigner' })],
+    })
+    expect(rules(plan)).toContain('S017')
+  })
+
+  it('S018: a location with no disaster group, but only once there are two', () => {
+    const one = single()
+    one.locations[0] = { ...one.locations[0], disasterGroup: null }
+    expect(rules(one)).not.toContain('S018')
+
+    const two = single()
+    two.locations = [
+      { ...two.locations[0], disasterGroup: null },
+      createLocation({ id: 'b', label: 'Site B', disasterGroup: null }),
+    ]
+    expect(rules(two)).toContain('S018')
+  })
+
+  it('S019: a PIN written where the device is kept', () => {
+    const plan = single({
+      devices: [
+        createDevice({
+          id: 'd',
+          label: 'Signer A',
+          pin: { storage: 'written', locationId: 'a', knownBy: [] },
+        }),
+      ],
+    })
+    plan.keys[0] = { ...plan.keys[0], deviceId: 'd', deviceLocationId: 'a' }
+    expect(rules(plan)).toContain('S019')
+  })
+
+  it('S020: a wallet with no path that opens today', () => {
+    const plan = single()
+    plan.wallets[0] = {
+      ...plan.wallets[0],
+      paths: [
+        createSpendPath({
+          id: 'p',
+          label: 'Inheritance',
+          kind: 'inheritance',
+          threshold: 1,
+          keyIds: ['k'],
+          timelockDays: 180,
+        }),
+      ],
+    }
+    expect(rules(plan)).toContain('S020')
+  })
+
+  it('S001 and S003: a wallet with nothing behind it', () => {
+    const empty = single()
+    empty.wallets[0] = { ...empty.wallets[0], paths: [] }
+    expect(rules(empty)).toContain('S001')
+
+    const pathless = single()
+    pathless.wallets[0] = {
+      ...pathless.wallets[0],
+      paths: [createSpendPath({ id: 'p', threshold: 1, keyIds: [] })],
+    }
+    expect(rules(pathless)).toContain('S003')
+  })
+})
+
+describe('the rules that need a particular shape to fire', () => {
+  it('C005: an unlocked device where someone else can walk in', () => {
+    const plan = twoOfTwo({
+      people: [createPerson({ id: 'p', label: 'Housemate 1', role: 'aware' })],
+    })
+    plan.locations[0] = {
+      ...plan.locations[0],
+      access: [{ personId: 'p', condition: 'always', delayDays: 0 }],
+    }
+    plan.devices[0] = {
+      ...plan.devices[0],
+      pin: { storage: 'none', locationId: null, knownBy: [] },
+    }
+    const finding = findingFor(plan, 'C005')
+    expect(finding?.title).toContain('Signer A')
+    expect(finding?.detail).toContain('Housemate 1')
+  })
+
+  it('R002: one architecture across two makers', () => {
+    const plan = twoOfTwo()
+    plan.devices = plan.devices.map((device) => ({ ...device, architecture: 'Chip family Q' }))
+    const found = rules(plan)
+    expect(found).toContain('R002')
+    // And not R001, because the makers genuinely differ. Saying both would be
+    // the same fact twice.
+    expect(found).not.toContain('R001')
+  })
+
+  it('R004: one person reaching a quorum of backups without being able to spend', () => {
+    const plan = twoOfTwo({
+      people: [createPerson({ id: 'p', label: 'Helper 1', role: 'aware' })],
+    })
+    // They can reach both backups, and cannot spend, because the descriptor is
+    // somewhere they cannot go.
+    plan.keys = plan.keys.map((key) => ({
+      ...key,
+      deviceId: null,
+      deviceLocationId: null,
+      backups: [createBackup({ id: `bk-${key.id}`, locationId: 'a' })],
+    }))
+    plan.locations[0] = {
+      ...plan.locations[0],
+      access: [{ personId: 'p', condition: 'always', delayDays: 0 }],
+    }
+    plan.wallets[0] = {
+      ...plan.wallets[0],
+      configBackups: [createConfigBackup({ id: 'c', locationId: 'b' })],
+    }
+    const found = rules(plan)
+    expect(found).toContain('R004')
+    expect(found).not.toContain('C002')
+  })
+
+  it('R005: every device down one supply route', () => {
+    const plan = twoOfTwo()
+    plan.devices = plan.devices.map((device) => ({
+      ...device,
+      supplyChain: 'second-hand' as const,
+    }))
+    expect(rules(plan)).toContain('R005')
+    plan.devices = plan.devices.map((device) => ({
+      ...device,
+      supplyChain: 'direct-from-vendor' as const,
+    }))
+    expect(rules(plan)).not.toContain('R005')
+  })
+
+  it('X004: coercion is a stated concern and nothing is expendable', () => {
+    const plan = twoOfTwo()
+    plan.profile = { ...plan.profile, concerns: ['coercion'] }
+    expect(rules(plan)).toContain('X004')
+    plan.wallets = [
+      ...plan.wallets,
+      createWallet({
+        id: 'decoy',
+        label: 'Pocket',
+        tier: 'hot',
+        stake: 'small',
+        decoy: true,
+        paths: [createSpendPath({ id: 'dp', threshold: 1, keyIds: ['k1'] })],
+      }),
+    ]
+    expect(rules(plan)).not.toContain('X004')
+  })
+})
