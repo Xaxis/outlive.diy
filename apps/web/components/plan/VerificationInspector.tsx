@@ -114,15 +114,18 @@ export function VerificationInspector({
             value={verification.lastVerifiedAt}
             onChange={(next) => set({ lastVerifiedAt: next })}
           />
-          {verification.lastVerifiedAt === null ? (
+          {/* The commonest act on this screen is "I just did this", and it
+              should not need a date picker. */}
+          {verification.lastVerifiedAt !== today() ? (
             <Button size="sm" onClick={() => set({ lastVerifiedAt: today() })}>
               Done today
             </Button>
-          ) : (
+          ) : null}
+          {verification.lastVerifiedAt !== null ? (
             <Button size="sm" variant="ghost" onClick={() => set({ lastVerifiedAt: null })}>
               Clear
             </Button>
-          )}
+          ) : null}
         </div>
       </Field>
 

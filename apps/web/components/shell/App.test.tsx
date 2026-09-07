@@ -437,3 +437,30 @@ describe('a change that closes nothing', () => {
     expect(await screen.findByText(/concentrated in "Home city"/i)).toBeInTheDocument()
   })
 })
+
+describe('keeping a plan current', () => {
+  it('marks an overdue check done in one click, and the finding goes', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/findings')
+    expect(
+      await screen.findByText(/a backup restore test is \d+ days overdue/i)
+    ).toBeInTheDocument()
+
+    goto('#/design/checks')
+    const [check] = await screen.findAllByText(/restore a backup and check it matches/i)
+    await user.click(check)
+    await user.click(await screen.findByRole('button', { name: /done today/i }))
+
+    const plan = useStore.getState().plans[0]
+    const done = plan.verifications.find((entry) => entry.id === 'ver_restore_a')
+    expect(done?.lastVerifiedAt).toBe(new Date().toISOString().slice(0, 10))
+
+    // And the finding that was about it is gone from the list.
+    goto('#/findings')
+    expect(screen.queryByText(/a backup restore test is \d+ days overdue/i)).not.toBeInTheDocument()
+  })
+})

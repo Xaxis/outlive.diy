@@ -91,7 +91,9 @@ export function analyseStaleness(ctx: AnalysisContext): Finding[] {
         title: `${describeKind(verification.kind)} is ${entry.overdueDays} days overdue`,
         detail: `Last done on ${entry.lastVerifiedAt}, on a ${verification.intervalDays}-day cycle. What it stood for has quietly gone back to being an assumption.`,
         remediation: `Do it again, then record the date. If the interval is unrealistic, change the interval rather than living with it overdue.`,
-        subjects: [verification.subject],
+        // Both the thing being checked and the check itself, so the check's own
+        // card carries the mark rather than only the key it is about.
+        subjects: [verification.subject, { type: 'verification', id: verification.id }],
       })
     )
   }
