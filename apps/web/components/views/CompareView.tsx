@@ -67,7 +67,10 @@ export function CompareView() {
           <ArrowRight className="mb-2 size-4 text-faint" aria-hidden />
           <div className="min-w-[12rem] flex-1">
             <p className="label mb-1.5">This plan</p>
-            <p className="input cursor-default">{plan.name}</p>
+            <p className="flex h-[2.1rem] items-center text-sm font-medium text-strong">
+              {plan.name}
+              {plan.kind === 'draft' ? <span className="chip ml-2">draft</span> : null}
+            </p>
           </div>
         </div>
       </Panel>

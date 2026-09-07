@@ -21,7 +21,14 @@ import { Button } from '@/components/ui/Button.tsx'
 import { useActivePlan, useStore } from '@/lib/store.ts'
 import { useReport, useRunbook } from '@/lib/analysis.ts'
 import { href, useRoute } from '@/lib/router.ts'
-import { describePolicy, planIsStarted, STAKE, TIER, VERIFICATION_KIND } from '@/lib/describe.ts'
+import {
+  describePolicy,
+  planIsStarted,
+  plural,
+  STAKE,
+  TIER,
+  VERIFICATION_KIND,
+} from '@/lib/describe.ts'
 import { cn } from '@/lib/cn.ts'
 
 function WalletState({ availability }: { availability: WalletAvailability }) {
@@ -98,7 +105,7 @@ export function OverviewView() {
       <ViewHeader
         eyebrow={plan.kind === 'draft' ? 'Draft plan' : 'Current plan'}
         title={plan.name}
-        question={`Last changed ${plan.updatedAt}. ${plan.keys.length} keys, ${plan.wallets.length} wallets, ${plan.locations.length} places, ${plan.people.length} people.`}
+        question={`Last changed ${plan.updatedAt}. ${plural(plan.keys.length, 'key')}, ${plural(plan.wallets.length, 'wallet')}, ${plural(plan.locations.length, 'place')}, ${plural(plan.people.length, 'person', 'people')}.`}
         actions={
           <>
             <Button onClick={() => forkAsDraft(plan.id)}>Try a change as a draft</Button>

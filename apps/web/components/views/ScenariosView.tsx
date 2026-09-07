@@ -73,27 +73,22 @@ export function ScenariosView() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <ViewHeader
-        eyebrow="Diagnosis"
-        title="Stress test"
-        question={definition.question}
-        actions={
-          <Segmented
-            value={onlyAlarming}
-            onChange={setOnlyAlarming}
-            options={[
-              { value: 'bad', label: 'Only the bad ones' },
-              { value: 'all', label: 'Everything' },
-            ]}
-          />
-        }
-      />
+      <ViewHeader eyebrow="Diagnosis" title="Stress test" question={definition.question} />
 
-      <div className="mb-4">
+      {/* Both switches change the same table, so they belong in the same row. */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Segmented
           value={group}
           onChange={setGroup}
           options={GROUPS.map((entry) => ({ value: entry.id, label: entry.label }))}
+        />
+        <Segmented
+          value={onlyAlarming}
+          onChange={setOnlyAlarming}
+          options={[
+            { value: 'bad', label: 'Only the bad ones' },
+            { value: 'all', label: 'Everything' },
+          ]}
         />
       </div>
 

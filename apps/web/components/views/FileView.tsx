@@ -66,9 +66,11 @@ export function FileView() {
             <li>
               <strong className="font-medium text-strong">No requests.</strong> The page loads once
               and then never asks for anything. Its Content-Security-Policy sets{' '}
-              <code className="mono text-xs text-body">connect-src &apos;none&apos;</code>, so a
-              request would be refused by the browser even if the code tried. The build fails if any
-              source in the app gains a way to make one.
+              <code className="mono whitespace-nowrap text-xs text-body">
+                connect-src &apos;none&apos;
+              </code>
+              , so a request would be refused by the browser even if the code tried. The build fails
+              if any source in the app gains a way to make one.
             </li>
             <li>
               <strong className="font-medium text-strong">No third parties.</strong> No analytics,

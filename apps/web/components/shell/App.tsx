@@ -93,9 +93,9 @@ export function App() {
         ) : null}
 
         <main id="main" className="min-w-0 flex-1 px-4 py-6 lg:px-8 lg:py-8">
-          <div className="mx-auto max-w-6xl">
-            <ScopeNotice />
-          </div>
+          {/* Full width of the content area, so it reads as a banner rather
+              than as a column that nearly lines up with the one below it. */}
+          <ScopeNotice />
           <View />
         </main>
       </div>

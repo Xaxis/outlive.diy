@@ -230,12 +230,11 @@ describe('rehearsing a recovery', () => {
     window.dispatchEvent(new HashChangeEvent('hashchange'))
 
     const before = useStore.getState().plans[0].verifications.length
+    // Routes with no recoverable path offer no rehearsal at all, so every
+    // button on the page belongs to a route with steps.
     const buttons = await screen.findAllByRole('button', { name: /rehearse this route/i })
-    // Routes with no recoverable path have nothing to walk, and say so by
-    // being disabled rather than by opening an empty checklist.
-    const rehearse = buttons.find((button) => !(button as HTMLButtonElement).disabled)
-    expect(rehearse).toBeDefined()
-    await user.click(rehearse as HTMLElement)
+    expect(buttons.every((button) => !(button as HTMLButtonElement).disabled)).toBe(true)
+    await user.click(buttons[0])
 
     // Not offered until the whole route has been walked.
     const partial = screen.getByRole('button', { name: /0 of \d+ done/i })

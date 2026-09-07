@@ -45,6 +45,8 @@
     sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
+  --breakpoint-xs: 26rem;
+
   --radius-card: 0.625rem;
   --radius-control: 0.5rem;
 }

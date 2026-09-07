@@ -20,7 +20,7 @@ export function Welcome() {
   const openExample = useStore((state) => state.openExample)
 
   return (
-    <main id="main" className="mx-auto w-full max-w-3xl px-5 py-16 lg:py-24">
+    <main id="main" className="mx-auto w-full max-w-3xl px-5 py-14 lg:py-20">
       <h1 className="text-balance text-3xl font-semibold leading-[1.12] tracking-[-0.025em] text-strong sm:text-[2.6rem]">
         Design a Bitcoin custody plan, then find out where it breaks.
       </h1>
@@ -49,7 +49,7 @@ export function Welcome() {
       </div>
 
       {/* The two promises, before anything is typed. */}
-      <dl className="mt-14 space-y-4 border-t border-line pt-8 text-[0.9375rem] leading-relaxed">
+      <dl className="mt-12 space-y-4 border-t border-line pt-7 text-[0.9375rem] leading-relaxed">
         <div>
           <dt className="font-medium text-strong">It refuses key material.</dt>
           <dd className="text-muted">
@@ -72,7 +72,7 @@ export function Welcome() {
         </div>
       </dl>
 
-      <section className="mt-14 border-t border-line pt-8">
+      <section className="mt-12 border-t border-line pt-7">
         <h2 className="text-sm font-semibold text-strong">Start from a worked example</h2>
         <p className="mt-1 text-sm text-muted">
           Each is a plan somebody plausibly has. Open two and compare them.
@@ -104,7 +104,7 @@ export function Welcome() {
         </ul>
       </section>
 
-      <footer className="mt-14 border-t border-line pt-8 text-xs leading-relaxed text-faint">
+      <footer className="mt-12 border-t border-line pt-7 text-xs leading-relaxed text-faint">
         <p className="max-w-2xl">
           It models structure. It does not know your real threat, cannot verify anything you tell
           it, and is not advice. A plan with no findings here is a plan this program could not find

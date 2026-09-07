@@ -156,12 +156,21 @@ export function MapView() {
             ))}
           </tbody>
 
-          <tfoot>
+          <tfoot className="border-t-2 border-line-strong">
+            <tr className="bg-sunken">
+              <th
+                scope="col"
+                colSpan={map.columns.length + 1}
+                className="sticky left-0 px-3 pb-1 pt-2.5 text-left"
+              >
+                <span className="eyebrow">What each place is enough for</span>
+              </th>
+            </tr>
             {plan.wallets.map((wallet) => (
-              <tr key={wallet.id} className="border-t border-line-strong">
+              <tr key={wallet.id} className="border-t border-line bg-sunken">
                 <th
                   scope="row"
-                  className="sticky left-0 z-10 bg-surface p-3 text-left text-[0.8125rem] font-medium text-strong"
+                  className="sticky left-0 z-10 bg-sunken p-3 text-left text-[0.8125rem] font-medium text-strong"
                 >
                   {wallet.label}
                   <span className="mono block text-[0.6875rem] font-normal text-faint">
@@ -173,7 +182,7 @@ export function MapView() {
                   const quorum = column.quorum.find((entry) => entry.walletId === wallet.id)
                   if (!quorum || quorum.threshold === 0) {
                     return (
-                      <td key={column.locationId} className="p-3 text-faint">
+                      <td key={column.locationId} className="bg-sunken p-3 text-faint">
                         ·
                       </td>
                     )
@@ -182,7 +191,10 @@ export function MapView() {
                   return (
                     <td
                       key={column.locationId}
-                      className={cn('p-3', column.concentratesQuorum && 'bg-critical/[0.04]')}
+                      className={cn(
+                        'bg-sunken p-3',
+                        column.concentratesQuorum && 'bg-critical/[0.07]'
+                      )}
                     >
                       <span
                         className={cn(
@@ -211,10 +223,10 @@ export function MapView() {
         </table>
       </Panel>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className={cn('mt-4 grid gap-4', map.unplacedKeyIds.length > 0 && 'lg:grid-cols-2')}>
         <Panel className="p-4">
           <p className="eyebrow mb-2">What the symbols mean</p>
-          <ul className="grid gap-1.5 text-xs text-muted sm:grid-cols-2">
+          <ul className="grid gap-1.5 text-xs text-muted sm:grid-cols-2 lg:grid-cols-3">
             {(Object.keys(HOLDING_LABEL) as Holding[]).map((holding) => {
               const Icon = HOLDING_ICON[holding]
               return (

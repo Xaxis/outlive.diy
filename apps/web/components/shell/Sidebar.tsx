@@ -90,7 +90,10 @@ export function Sidebar({
   onNavigate?: () => void
 }) {
   return (
-    <nav aria-label="Sections" className="flex flex-col gap-5 p-3">
+    <nav
+      aria-label="Sections"
+      className="flex min-h-[calc(100dvh-3.05rem)] flex-col gap-5 p-3 lg:min-h-0 lg:flex-1"
+    >
       {navigation(report, letterCount).map((group) => (
         <div key={group.title}>
           <p className="eyebrow px-2 pb-1.5">{group.title}</p>
@@ -136,7 +139,7 @@ export function Sidebar({
         </div>
       ))}
 
-      <div className="mt-auto px-2 pt-2">
+      <div className="mt-auto border-t border-line px-2 pt-3">
         <a
           href={href('reasoning')}
           className="flex items-center gap-1.5 text-[0.6875rem] text-faint no-underline transition-colors hover:text-muted"

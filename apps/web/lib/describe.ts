@@ -154,9 +154,18 @@ export function describeTravel(minutes: number | null): string {
   if (minutes === null) return 'unknown distance'
   if (minutes === 0) return 'here'
   if (minutes < 60) return `${minutes} min away`
-  const hours = minutes / 60
-  if (hours < 24) return `${hours % 1 === 0 ? hours : hours.toFixed(1)} h away`
-  return `${Math.round(hours / 24)} days away`
+  if (minutes < 24 * 60) {
+    const hours = Math.floor(minutes / 60)
+    const rest = minutes % 60
+    return rest === 0 ? `${hours}h away` : `${hours}h ${rest}m away`
+  }
+  const days = Math.round(minutes / (24 * 60))
+  return `${days} ${days === 1 ? 'day' : 'days'} away`
+}
+
+/** "3 keys", "1 key". Counting things is not worth a mistake. */
+export function plural(count: number, one: string, many = `${one}s`): string {
+  return `${count} ${count === 1 ? one : many}`
 }
 
 export function planIsStarted(plan: Plan): boolean {

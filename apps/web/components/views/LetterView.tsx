@@ -64,11 +64,13 @@ export function LetterView() {
           <article key={letter.to} className="print-page">
             <Panel className="p-6">
               <header className="border-b border-line pb-4">
-                <p className="eyebrow">{letter.title}</p>
+                <p className="eyebrow">To be opened after my death</p>
                 <h2 className="mt-1 text-lg font-semibold text-strong">For {letter.to}</h2>
               </header>
 
-              <div className="mt-5 space-y-6">
+              {/* A letter read under grief, once, by somebody who did not
+                  choose to be reading it. Prose measure, not panel width. */}
+              <div className="mt-5 max-w-[68ch] space-y-6">
                 {letter.sections.map((section) => (
                   <section key={section.heading} className="print-block">
                     <h3 className="text-sm font-semibold text-strong">{section.heading}</h3>

@@ -31,12 +31,12 @@ function PlanSwitcher({ plans, activeId }: { plans: Plan[]; activeId: string }) 
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex max-w-[16rem] items-center gap-1.5 rounded-[var(--radius-control)] border border-line px-2 py-1 text-xs text-body transition-colors hover:border-line-strong"
+        className="flex min-w-0 max-w-[9rem] items-center gap-1.5 rounded-[var(--radius-control)] border border-line px-2 py-1 text-xs text-body transition-colors hover:border-line-strong sm:max-w-[16rem]"
         aria-expanded={open}
       >
         <span className="truncate">{active.name}</span>
         {active.kind === 'draft' ? (
-          <span className="chip border-accent/50 text-accent">draft</span>
+          <span className="chip hidden border-accent/50 text-accent sm:inline-flex">draft</span>
         ) : null}
         <ChevronDown className="size-3.5 flex-none text-faint" aria-hidden />
       </button>
@@ -118,7 +118,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-canvas/85 backdrop-blur no-print">
-      <div className="flex items-center gap-3 px-3 py-2">
+      <div className="flex min-w-0 items-center gap-2 px-3 py-2 sm:gap-3">
         <Button
           variant="ghost"
           size="sm"
@@ -151,24 +151,29 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
                 <HardDriveDownload className="size-3" aria-hidden />
                 {persistence === 'local' ? 'in this browser' : 'in memory only'}
               </a>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={undo}
-                disabled={!canUndo}
-                aria-label="Undo"
-              >
-                <Undo2 className="size-4" aria-hidden />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={redo}
-                disabled={!canRedo}
-                aria-label="Redo"
-              >
-                <Redo2 className="size-4" aria-hidden />
-              </Button>
+              {/* On a phone there is no keyboard shortcut to fall back on, but
+                  there is also no room in the row. Saving is the one that has
+                  to survive, so undo and redo stand down first. */}
+              <span className="hidden items-center gap-1 sm:flex">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={undo}
+                  disabled={!canUndo}
+                  aria-label="Undo"
+                >
+                  <Undo2 className="size-4" aria-hidden />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={redo}
+                  disabled={!canRedo}
+                  aria-label="Redo"
+                >
+                  <Redo2 className="size-4" aria-hidden />
+                </Button>
+              </span>
               <Button
                 variant="default"
                 size="sm"

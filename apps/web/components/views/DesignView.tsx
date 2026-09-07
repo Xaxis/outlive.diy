@@ -76,6 +76,20 @@ export function DesignView() {
             </button>
           )
         })}
+        {definition.kind ? (
+          <Button
+            variant="primary"
+            size="sm"
+            className="ml-auto"
+            icon={<Plus className="size-3.5" aria-hidden />}
+            onClick={() => {
+              const id = addEntity(definition.kind!)
+              if (id) select({ type: definition.kind!, id })
+            }}
+          >
+            Add {definition.singular.toLowerCase()}
+          </Button>
+        ) : null}
       </nav>
 
       {definition.kind === null ? (

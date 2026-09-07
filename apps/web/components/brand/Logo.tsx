@@ -56,7 +56,9 @@ export function Wordmark({ size = 20 }: { size?: number }) {
   return (
     <span className="flex items-center gap-2">
       <Logo size={size} className="text-accent" />
-      <span className="mono text-[0.95rem] font-bold tracking-[-0.03em] text-strong">
+      {/* The name is the first thing that can go when a phone's top row runs
+          out of space. The mark alone still says where you are. */}
+      <span className="mono hidden text-[0.95rem] font-bold tracking-[-0.03em] text-strong xs:inline">
         outlive<span className="text-accent">.diy</span>
       </span>
     </span>

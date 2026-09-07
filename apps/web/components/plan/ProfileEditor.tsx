@@ -30,7 +30,7 @@ export function ProfileEditor({ plan }: { plan: Plan }) {
   const edit = usePlanEdit()
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid items-start gap-4 lg:grid-cols-2">
       <Panel className="p-4">
         <SectionHeading
           title="What are you planning against?"

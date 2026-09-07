@@ -47,6 +47,10 @@ export function Rehearsal({ route }: { route: RecoveryRoute }) {
     })
   }
 
+  // A route with no steps has nothing to walk, and a disabled button beside a
+  // finding that already says "no route" is noise on top of bad news.
+  if (route.steps.length === 0) return null
+
   if (!active) {
     return (
       <div className="no-print mt-4 border-t border-line pt-3">
@@ -54,7 +58,6 @@ export function Rehearsal({ route }: { route: RecoveryRoute }) {
           size="sm"
           icon={<ClipboardCheck className="size-3.5" aria-hidden />}
           onClick={() => setActive(true)}
-          disabled={route.steps.length === 0}
         >
           Rehearse this route
         </Button>

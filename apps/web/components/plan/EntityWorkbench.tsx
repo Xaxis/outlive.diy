@@ -94,7 +94,10 @@ export function EntityWorkbench({
     report ? (findingsFor(report, kind, id)[0]?.severity ?? null) : null
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(14rem,19rem)_1fr]">
+    // A text field one thousand pixels wide is a text field nobody can scan.
+    // The inspector column stops at a readable measure and the row is left
+    // aligned, rather than the form stretching to whatever the window is.
+    <div className="grid items-start gap-4 lg:grid-cols-[minmax(13rem,18rem)_minmax(0,42rem)]">
       <div className="space-y-2">
         <ul className="space-y-2">
           {entities.map((entity) => {

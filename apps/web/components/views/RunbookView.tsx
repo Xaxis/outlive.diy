@@ -131,7 +131,7 @@ export function RunbookView() {
                       onClick={() => toggle(step)}
                       aria-pressed={done(step)}
                       aria-label={done(step) ? 'Mark not done' : 'Mark done'}
-                      className="mt-0.5 flex-none no-print"
+                      className="no-print mt-[0.15rem] flex-none self-start"
                     >
                       {done(step) ? (
                         <CheckCircle2 className="size-4 text-ok" aria-hidden />
@@ -142,7 +142,7 @@ export function RunbookView() {
                         />
                       )}
                     </button>
-                    <span className="print-only mt-0.5 flex-none">☐</span>
+                    <span className="print-only mt-0.5 flex-none self-start">☐</span>
                     <div className="min-w-0">
                       <p className="flex flex-wrap items-baseline gap-2 text-[0.875rem] font-medium text-strong">
                         {step.title}
@@ -155,7 +155,7 @@ export function RunbookView() {
                           </span>
                         ) : null}
                       </p>
-                      <p className="mt-1 text-[0.8125rem] leading-relaxed text-muted">
+                      <p className="mt-1 max-w-[62ch] text-[0.8125rem] leading-relaxed text-muted">
                         {step.detail}
                       </p>
                     </div>

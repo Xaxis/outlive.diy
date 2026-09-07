@@ -147,7 +147,7 @@ export function FindingsView() {
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {visible.map((finding) => (
             <FindingCard
               key={finding.id}

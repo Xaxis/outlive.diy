@@ -20,6 +20,11 @@ interface Step {
   label: string
   /** Whether this step has been answered, for the rail. */
   done: (plan: Plan) => boolean
+  /**
+   * A step that is legitimately skippable. It never shows a tick, because a
+   * tick against something nobody did is the rail telling a small lie.
+   */
+  optional?: boolean
   /** What this step is for, in the second person. */
   purpose: string
 }
@@ -42,7 +47,8 @@ const STEPS: Step[] = [
   {
     id: 'people',
     label: 'People',
-    done: () => true,
+    done: (plan) => plan.people.length > 0,
+    optional: true,
     purpose:
       'Optional, and the step most people skip and later regret. A plan nobody has been told about is a plan nobody starts.',
   },
@@ -77,7 +83,8 @@ const STEPS: Step[] = [
   {
     id: 'result',
     label: 'What breaks',
-    done: () => true,
+    done: () => false,
+    optional: true,
     purpose: 'Every way the plan above comes apart, worst first.',
   },
 ]
@@ -129,6 +136,7 @@ export function StartView() {
                 type="button"
                 onClick={() => go(position)}
                 aria-current={current ? 'step' : undefined}
+                title={entry.optional ? 'Optional' : undefined}
                 className={cn(
                   'flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors',
                   current

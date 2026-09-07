@@ -39,14 +39,14 @@ export function FindingCard({
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        className="flex w-full items-start gap-3 p-3.5 text-left"
+        className="flex w-full items-start gap-3 px-3.5 py-2.5 text-left"
       >
         <SeverityDot severity={finding.severity} className="mt-[0.45rem]" />
         <span className="min-w-0 flex-1">
           <span className="block text-[0.875rem] font-medium leading-snug text-strong">
             {finding.title}
           </span>
-          <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.6875rem] text-faint">
+          <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.6875rem] text-faint">
             <span className="mono">{finding.rule}</span>
             <span aria-hidden>·</span>
             <span>{CATEGORY_LABEL[finding.category]}</span>

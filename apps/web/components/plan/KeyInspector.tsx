@@ -183,7 +183,11 @@ export function KeyInspector({ plan, entity }: { plan: Plan; entity: Key }) {
       {plan.people.length > 0 ? (
         <Field
           label="Held by someone else"
-          help="A collaborative custody key. Independent only if you never saw it, and dependent on somebody answering the phone."
+          help={
+            entity.heldBy === null
+              ? 'A key somebody else holds, in collaborative custody. Leave this alone if you hold it.'
+              : 'Independent only if you never saw it, and dependent on somebody answering the phone.'
+          }
         >
           <Select
             value={entity.heldBy}
