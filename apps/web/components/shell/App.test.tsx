@@ -464,3 +464,60 @@ describe('keeping a plan current', () => {
     expect(screen.queryByText(/a backup restore test is \d+ days overdue/i)).not.toBeInTheDocument()
   })
 })
+
+describe('opening a file over unsaved work', () => {
+  const file = JSON.stringify({
+    schemaVersion: 1,
+    generator: 'test',
+    savedAt: '2026-03-01',
+    plans: [
+      {
+        schemaVersion: 1,
+        id: 'plan_opened',
+        name: 'Opened from disk',
+        kind: 'current',
+        createdAt: '2026-03-01',
+        updatedAt: '2026-03-01',
+      },
+    ],
+    activePlanId: 'plan_opened',
+  })
+
+  async function pick(user: ReturnType<typeof userEvent.setup>) {
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    await user.upload(input, new File([file], 'plan.json', { type: 'application/json' }))
+  }
+
+  it('asks before replacing changes that are not saved', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    // Make a change, so there is something to lose.
+    goto('#/design/profile')
+    const name = await screen.findByLabelText('Name')
+    await user.clear(name)
+    await user.type(name, 'Mine')
+    expect(useStore.getState().dirty).toBe(true)
+
+    goto('#/file')
+    await pick(user)
+
+    expect(await screen.findByRole('dialog')).toHaveTextContent(/close what is open first/i)
+    expect(useStore.getState().plans[0].name).toBe('Mine')
+
+    await user.click(screen.getByRole('button', { name: /keep what i have/i }))
+    expect(useStore.getState().plans[0].name).toBe('Mine')
+  })
+
+  it('opens without asking when there is nothing to lose', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await pick(user)
+
+    expect(await screen.findByText(/opened the plan/i)).toBeInTheDocument()
+    expect(useStore.getState().plans[0].name).toBe('Opened from disk')
+  })
+})

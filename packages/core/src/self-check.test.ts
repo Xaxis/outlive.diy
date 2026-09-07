@@ -55,7 +55,7 @@ describe('the program obeys its own guard', () => {
 
 describe('the worked examples are valid plan files', () => {
   for (const example of EXAMPLES) {
-    it(`"${example.name}" round-trips through the schema`, () => {
+    it(`"${example.name}" survives a save and an open unchanged`, () => {
       const plan = example.build()
       const file = {
         schemaVersion: SCHEMA_VERSION,
@@ -67,8 +67,50 @@ describe('the worked examples are valid plan files', () => {
       const parsed = parsePlanFile(JSON.parse(JSON.stringify(file)))
       expect(parsed.ok ? [] : parsed.problems).toEqual([])
       expect(referentialProblems(plan)).toEqual([])
+      // Not merely valid: identical. A save that quietly drops a field is a
+      // save that quietly changes the analysis.
+      if (parsed.ok) expect(parsed.value.plans[0]).toEqual(plan)
+    })
+
+    it(`"${example.name}" analyses identically after a round trip`, () => {
+      const plan = example.build()
+      const parsed = parsePlanFile(
+        JSON.parse(
+          JSON.stringify({
+            schemaVersion: SCHEMA_VERSION,
+            generator: 'test',
+            savedAt: '2026-03-01',
+            plans: [plan],
+            activePlanId: plan.id,
+          })
+        )
+      )
+      expect(parsed.ok).toBe(true)
+      if (!parsed.ok) return
+      const before = analyze(plan, { today: '2026-03-01' })
+      const after = analyze(parsed.value.plans[0], { today: '2026-03-01' })
+      expect(after.findings.map((finding) => finding.id)).toEqual(
+        before.findings.map((finding) => finding.id)
+      )
     })
   }
+
+  it('carries runbook progress across a save', () => {
+    const plan = { ...EXAMPLES[1].build(), progress: { 'verify-key_a': '2026-02-02' } }
+    const parsed = parsePlanFile(
+      JSON.parse(
+        JSON.stringify({
+          schemaVersion: SCHEMA_VERSION,
+          generator: 'test',
+          savedAt: '2026-03-01',
+          plans: [plan],
+          activePlanId: plan.id,
+        })
+      )
+    )
+    expect(parsed.ok).toBe(true)
+    if (parsed.ok) expect(parsed.value.plans[0].progress).toEqual({ 'verify-key_a': '2026-02-02' })
+  })
 })
 
 describe('the plan file format', () => {

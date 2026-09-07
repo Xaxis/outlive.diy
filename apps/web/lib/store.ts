@@ -88,7 +88,12 @@ interface StoreState {
   past: Snapshot[]
   future: Snapshot[]
   toast: Toast | null
-  /** Whether anything has changed since the last save to a file. */
+  /**
+   * Whether anything has changed since the last save to a file. Set by every
+   * action that changes what is open, not only by field edits: renaming,
+   * forking and removing a plan are all things somebody would be unhappy to
+   * lose.
+   */
   dirty: boolean
   /** When the last edit landed, for coalescing a burst of typing into one step. */
   lastEditAt: number
@@ -258,6 +263,7 @@ export const useStore = create<StoreState>()(
         state.plans.push(plan)
         state.activeId = plan.id
         state.selection = null
+        state.dirty = true
       })
       persist(get())
     },
@@ -273,6 +279,7 @@ export const useStore = create<StoreState>()(
         state.plans.push(plan)
         state.activeId = plan.id
         state.selection = null
+        state.dirty = true
       })
       persist(get())
     },
@@ -293,6 +300,7 @@ export const useStore = create<StoreState>()(
         state.plans.push(draft)
         state.compareId = source.id
         state.activeId = draft.id
+        state.dirty = true
       })
       persist(get())
       get().notify({
@@ -307,6 +315,7 @@ export const useStore = create<StoreState>()(
       set((state) => {
         const plan = state.plans.find((entry) => entry.id === id)
         if (plan) plan.name = name
+        state.dirty = true
       })
       persist(get())
     },
@@ -317,6 +326,7 @@ export const useStore = create<StoreState>()(
         state.plans = state.plans.filter((plan) => plan.id !== id)
         if (state.activeId === id) state.activeId = state.plans[0]?.id ?? ''
         if (state.compareId === id) state.compareId = null
+        state.dirty = true
       })
       persist(get())
     },
