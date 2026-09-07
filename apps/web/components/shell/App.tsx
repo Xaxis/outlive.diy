@@ -74,7 +74,10 @@ export function App() {
       firstRender.current = false
       return
     }
-    main.current?.focus?.()
+    // preventScroll, or the browser scrolls main's top to the top of the
+    // viewport and slides the sticky header over the section label. The
+    // scrolling is navigate's job and it has already done it.
+    main.current?.focus?.({ preventScroll: true })
   }, [route.view])
 
   // Local storage cannot be read during render, so the prerendered document is

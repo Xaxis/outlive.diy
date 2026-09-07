@@ -31,6 +31,24 @@ first thing a new user sees.
 and the successor letter to PDF and read them. They are meant to be filed on
 paper next to the backups, and paper does not scroll.
 
+**Click every sidebar link and measure where the heading lands.** Not a
+screenshot: the numbers. Every view should put its heading at the same x and the
+same y with the page scrolled to the top, and if one of them does not, something
+is centring itself or stealing the scroll position. This found both: twelve
+views centred at four different widths, and a focus call that scrolled the
+sticky header over the section label on every navigation.
+
+```js
+for (const label of links) {
+  await page.getByRole('link', { name: label }).click()
+  const box = await page.locator('main h1').first().boundingBox()
+  console.log(label, box.x, box.y, await page.evaluate(() => window.scrollY))
+}
+```
+
+**Open the plan menu on every screen size.** Overlays are where stacking order
+goes wrong, and it only goes wrong where two of them meet.
+
 **The network tab.** Load the app, use it, and confirm nothing is requested
 after the initial load. That check takes ten seconds and is worth more than any
 of the above. A Playwright run can assert it by listening on `request` and
