@@ -108,6 +108,8 @@ export type RuleId =
   | 'S018'
   | 'S019'
   | 'S020'
+  | 'S021'
+  | 'S022'
   // loss
   | 'L001'
   | 'L002'
@@ -130,11 +132,13 @@ export type RuleId =
   | 'R003'
   | 'R004'
   | 'R005'
+  | 'R006'
   // coercion
   | 'X001'
   | 'X002'
   | 'X003'
   | 'X004'
+  | 'X005'
   // succession
   | 'U001'
   | 'U002'
@@ -143,6 +147,7 @@ export type RuleId =
   | 'U005'
   | 'U006'
   | 'U007'
+  | 'U008'
   // staleness
   | 'T001'
   | 'T002'
@@ -316,6 +321,20 @@ export const RULES: Record<RuleId, Rule> = Object.fromEntries(
       ),
 
       rule(
+        'S021',
+        'structure',
+        'medium',
+        'A backup on a medium unlikely to outlast the plan',
+        'Paper browns, fades, gets damp and gets thrown out in a clear-out. A file needs a format, a device and somebody who remembers it exists. Either is a poor bet across decades, and the horizon you gave is decades.'
+      ),
+      rule(
+        'S022',
+        'structure',
+        'medium',
+        'A plan that has to outlive a company',
+        'Over the horizon you gave, a business is acquired, changes its terms, is compelled, or simply stops answering. None of those arrive with notice, and a key you cannot reach without them is a key somebody else controls.'
+      ),
+      rule(
         'L001',
         'loss',
         'critical',
@@ -452,6 +471,13 @@ export const RULES: Record<RuleId, Rule> = Object.fromEntries(
       ),
 
       rule(
+        'R006',
+        'correlation',
+        'high',
+        'Everything inside one legal system',
+        'A seizure order, a change of law and a frozen estate apply to every container in a jurisdiction at once, however far apart the buildings are. Geography is not the only kind of distance.'
+      ),
+      rule(
         'X001',
         'coercion',
         'critical',
@@ -480,6 +506,13 @@ export const RULES: Record<RuleId, Rule> = Object.fromEntries(
         'Under compulsion, having nothing plausible to hand over is its own problem.'
       ),
 
+      rule(
+        'X005',
+        'coercion',
+        'high',
+        'Key material that travels with you',
+        'A border is a place where you can be separated from a device and told to unlock it, with no lawyer, no clock and no obligation on anybody to explain. Carrying it is the one situation where distance protects nothing.'
+      ),
       rule(
         'U001',
         'succession',
@@ -530,6 +563,13 @@ export const RULES: Record<RuleId, Rule> = Object.fromEntries(
         'What they need to act and what they must never learn overlap, and that overlap has to be resolved deliberately.'
       ),
 
+      rule(
+        'U008',
+        'succession',
+        'medium',
+        'A successor nobody has confirmed can be reached',
+        'The whole route depends on somebody answering. Not knowing whether they would is not a small gap in the plan; on the day it matters it is the plan.'
+      ),
       rule(
         'T001',
         'staleness',

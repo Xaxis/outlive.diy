@@ -165,6 +165,33 @@ export function analyseCorrelation(ctx: AnalysisContext, input: CorrelationInput
     }
   }
 
+  // --- one legal system -------------------------------------------------------
+  //
+  // Distance is measured in more than kilometres. Two vaults four hundred miles
+  // apart are one container as far as a seizure order is concerned.
+  if (
+    plan.profile.jurisdictionCount === 1 &&
+    plan.profile.concerns.includes('legal-seizure') &&
+    plan.locations.length >= 2
+  ) {
+    findings.push(
+      makeFinding(plan, {
+        rule: 'R006',
+        key: 'jurisdiction',
+        title: `All ${plan.locations.length} places are inside one legal system`,
+        detail: `Legal seizure is a stated concern and the plan spans one jurisdiction, so ${names(
+          plan.locations.map((location) => location.label)
+        )} are one container as far as a court order, a change of law or a frozen estate is concerned, however far apart they are.`,
+        remediation:
+          'Put one key beyond that legal system, or accept explicitly that geographic separation here is protection against fire and theft and not against law.',
+        subjects: plan.locations.map((location) => ({
+          type: 'location' as const,
+          id: location.id,
+        })),
+      })
+    )
+  }
+
   // --- one supply route -------------------------------------------------------
   const devices = plan.devices.filter((device) => device.kind !== 'service-cosigner')
   if (devices.length >= 2) {

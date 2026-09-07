@@ -14,6 +14,7 @@ import { escalate, makeFinding, walletWeight } from './findings.ts'
 import type { AnalysisContext } from './context.ts'
 import { evaluateWallet } from './availability.ts'
 import { coercionScenario } from './scenarios.ts'
+import { keyLocationIds } from '../model/selectors.ts'
 import type { Wallet } from '../model/types.ts'
 
 function names(items: readonly string[]): string {
@@ -86,6 +87,31 @@ export function analyseCoercion(ctx: AnalysisContext): Finding[] {
         subjects: [{ type: 'plan', id: plan.id }],
       })
     )
+  }
+
+  // --- material that crosses borders with you ---------------------------------
+  //
+  // The one situation where distance protects nothing, because the distance is
+  // travelling with the material.
+  if (plan.profile.travelsFrequently) {
+    const carried = plan.locations.filter((location) => location.kind === 'on-person')
+    const onPerson = plan.keys.filter((key) =>
+      keyLocationIds(plan, key).some((id) => carried.some((location) => location.id === id))
+    )
+    if (onPerson.length > 0) {
+      findings.push(
+        makeFinding(plan, {
+          rule: 'X005',
+          key: 'travel',
+          title: `${names(onPerson.map((key) => key.label))} ${onPerson.length === 1 ? 'travels' : 'travel'} with you`,
+          detail:
+            'You travel often and this material is carried. A border crossing is a place where you can be separated from a device and told to unlock it, with no lawyer, no clock and nobody obliged to explain. Everything the coercion analysis assumes is true there, and none of the distance in this plan applies.',
+          remediation:
+            'Carry nothing that is part of a threshold. If something must travel, make it a key the wallet can be spent without.',
+          subjects: onPerson.map((key) => ({ type: 'key' as const, id: key.id })),
+        })
+      )
+    }
   }
 
   if (plan.profile.concerns.includes('coercion') && !plan.wallets.some((wallet) => wallet.decoy)) {

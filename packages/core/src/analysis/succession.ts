@@ -235,6 +235,19 @@ export function analyseSuccession(ctx: AnalysisContext): Finding[] {
       )
     }
 
+    if (person.availability === 'unknown') {
+      findings.push(
+        makeFinding(plan, {
+          rule: 'U008',
+          key: person.id,
+          title: `Nobody has confirmed ${person.label} could be reached`,
+          detail: `${person.label} is the route, and how quickly they could act is recorded as not known. On the day it matters, that is not a detail missing from the plan; it is the plan.`,
+          remediation: `Ask ${person.label} directly, and record what they said. If the answer is that they could not act quickly, that is worth knowing now rather than then.`,
+          subjects: [{ type: 'person', id: person.id }],
+        })
+      )
+    }
+
     const brief = successionBrief(ctx, person)
     if (brief.overlaps && live.length === 0) {
       findings.push(

@@ -11,7 +11,7 @@ import type { Finding } from './findings.ts'
 import { escalate, makeFinding, walletWeight } from './findings.ts'
 import type { AnalysisContext } from './context.ts'
 import { isMultisig, splitGroups, walletKeyIds, walletsUsingKey } from '../model/selectors.ts'
-import type { Key } from '../model/types.ts'
+import type { Backup, Key } from '../model/types.ts'
 
 function list(items: readonly string[]): string {
   if (items.length === 0) return 'nothing'
@@ -318,6 +318,66 @@ export function analyseStructure(ctx: AnalysisContext): Finding[] {
           })
         )
       }
+    }
+  }
+
+  // --- what the horizon costs -----------------------------------------------
+  //
+  // The horizon is how long the plan has to keep working without anybody
+  // maintaining it. Over a decade or two it stops being a number and starts
+  // deciding which media and which counterparties are viable at all.
+
+  const HORIZON_MEDIUM_YEARS = 15
+  const DURABLE: Backup['medium'][] = ['steel']
+
+  if (plan.profile.horizonYears >= HORIZON_MEDIUM_YEARS) {
+    const fragile = plan.keys.filter(
+      (key) =>
+        key.backups.length > 0 && !key.backups.some((backup) => DURABLE.includes(backup.medium))
+    )
+    if (fragile.length > 0) {
+      add(
+        makeFinding(plan, {
+          rule: 'S021',
+          key: 'horizon-medium',
+          title: `${list(fragile.map((key) => key.label))} ${fragile.length === 1 ? 'has' : 'have'} no backup expected to last ${plan.profile.horizonYears} years`,
+          detail: `The plan has to keep working for ${plan.profile.horizonYears} years without maintenance, and ${
+            fragile.length === 1 ? 'this key is' : 'these keys are'
+          } written only on ${list([
+            ...new Set(
+              fragile.flatMap((key) =>
+                key.backups.map((backup) => backup.medium.replace(/-/g, ' '))
+              )
+            ),
+          ])}. Over that period paper browns and gets cleared out, and a file outlives the format, the device or the person who knew it was there.`,
+          remediation:
+            'Add one backup on a fire-and-water durable medium per key, and treat the existing copies as convenience rather than survival.',
+          subjects: fragile.map((key) => ({ type: 'key' as const, id: key.id })),
+        })
+      )
+    }
+  }
+
+  const HORIZON_COUNTERPARTY_YEARS = 15
+  if (plan.profile.horizonYears >= HORIZON_COUNTERPARTY_YEARS) {
+    const agents = plan.people.filter((person) => person.role === 'key-agent')
+    const services = plan.devices.filter((device) => device.kind === 'service-cosigner')
+    const dependent = plan.keys.filter(
+      (key) =>
+        (key.heldBy !== null && agents.some((person) => person.id === key.heldBy)) ||
+        services.some((device) => device.id === key.deviceId)
+    )
+    if (dependent.length > 0) {
+      add(
+        makeFinding(plan, {
+          rule: 'S022',
+          key: 'horizon-counterparty',
+          title: `${list(dependent.map((key) => key.label))} depends on a company for ${plan.profile.horizonYears} years`,
+          detail: `A business is not a durable object on that timescale. It is acquired, changes its terms, is compelled by somebody else, or stops answering, and none of those arrive with notice.`,
+          remediation: `Make sure ${list(dependent.map((key) => key.label))} is replaceable: a spend path that works without it, or a documented route to withdraw before the arrangement ends.`,
+          subjects: dependent.map((key) => ({ type: 'key' as const, id: key.id })),
+        })
+      )
     }
   }
 

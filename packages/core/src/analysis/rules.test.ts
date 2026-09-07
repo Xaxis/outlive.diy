@@ -696,3 +696,84 @@ describe('the rules that need a particular shape to fire', () => {
     expect(rules(plan)).not.toContain('X004')
   })
 })
+
+describe('the fields the interface asks about are the fields the engine uses', () => {
+  // Each of these was collected by the interface, explained in help text, and
+  // then ignored. A question a program does not use is worse than one it does
+  // not ask.
+
+  it('S021: the horizon decides which media are viable', () => {
+    const plan = twoOfTwo()
+    plan.profile = { ...plan.profile, horizonYears: 40 }
+    plan.keys = plan.keys.map((key) => ({
+      ...key,
+      backups: [createBackup({ id: `p-${key.id}`, medium: 'paper', locationId: 'a' })],
+    }))
+    expect(rules(plan)).toContain('S021')
+
+    // Steel is the point of steel.
+    plan.keys = plan.keys.map((key) => ({
+      ...key,
+      backups: [createBackup({ id: `s-${key.id}`, medium: 'steel', locationId: 'a' })],
+    }))
+    expect(rules(plan)).not.toContain('S021')
+
+    // And a five-year plan is not making a thirty-year bet.
+    plan.profile = { ...plan.profile, horizonYears: 5 }
+    plan.keys = plan.keys.map((key) => ({
+      ...key,
+      backups: [createBackup({ id: `p2-${key.id}`, medium: 'paper', locationId: 'a' })],
+    }))
+    expect(rules(plan)).not.toContain('S021')
+  })
+
+  it('S022: the horizon decides whether a company is a safe dependency', () => {
+    const plan = twoOfTwo({
+      people: [createPerson({ id: 'svc', label: 'Key agent 1', role: 'key-agent' })],
+    })
+    plan.profile = { ...plan.profile, horizonYears: 30 }
+    plan.keys[1] = { ...plan.keys[1], heldBy: 'svc' }
+    expect(rules(plan)).toContain('S022')
+
+    plan.profile = { ...plan.profile, horizonYears: 5 }
+    expect(rules(plan)).not.toContain('S022')
+  })
+
+  it('R006: one jurisdiction is one container, however far apart the buildings are', () => {
+    const plan = twoOfTwo()
+    plan.profile = { ...plan.profile, concerns: ['legal-seizure'], jurisdictionCount: 1 }
+    expect(rules(plan)).toContain('R006')
+
+    plan.profile = { ...plan.profile, jurisdictionCount: 2 }
+    expect(rules(plan)).not.toContain('R006')
+  })
+
+  it('X005: material that travels is material distance does not protect', () => {
+    const plan = twoOfTwo()
+    plan.profile = { ...plan.profile, travelsFrequently: true }
+    plan.locations[1] = { ...plan.locations[1], kind: 'on-person' }
+    expect(rules(plan)).toContain('X005')
+
+    plan.profile = { ...plan.profile, travelsFrequently: false }
+    expect(rules(plan)).not.toContain('X005')
+  })
+
+  it('U008: a successor whose availability nobody has asked about', () => {
+    const plan = twoOfTwo({
+      people: [
+        createPerson({
+          id: 'h',
+          label: 'Successor 1',
+          role: 'successor',
+          knowsPlanExists: true,
+          knowsWhereInstructionsAre: true,
+          availability: 'unknown',
+        }),
+      ],
+    })
+    expect(rules(plan)).toContain('U008')
+
+    plan.people[0] = { ...plan.people[0], availability: 'days' }
+    expect(rules(plan)).not.toContain('U008')
+  })
+})
