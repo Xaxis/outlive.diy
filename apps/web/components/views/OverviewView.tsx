@@ -179,7 +179,7 @@ export function OverviewView() {
                   <li key={finding.id}>
                     <button
                       type="button"
-                      onClick={() => navigate({ view: 'findings', section: null })}
+                      onClick={() => navigate({ view: 'findings', section: finding.id })}
                       className="flex w-full items-start gap-2.5 text-left"
                     >
                       <SeverityDot severity={finding.severity} className="mt-[0.45rem]" />

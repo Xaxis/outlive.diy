@@ -62,8 +62,15 @@ export function formatHash(route: Route): string {
 }
 
 function subscribe(callback: () => void) {
+  // popstate as well as hashchange: pushing a fragment and then going back
+  // fires both, and a router that listens to one of them is a back button that
+  // works half the time.
   window.addEventListener('hashchange', callback)
-  return () => window.removeEventListener('hashchange', callback)
+  window.addEventListener('popstate', callback)
+  return () => {
+    window.removeEventListener('hashchange', callback)
+    window.removeEventListener('popstate', callback)
+  }
 }
 
 function getSnapshot() {
@@ -80,11 +87,14 @@ export function useRoute(): [Route, (route: Route, options?: { replace?: boolean
   const navigate = useCallback((route: Route, options: { replace?: boolean } = {}) => {
     const next = formatHash(route)
     if (window.location.hash === next) return
+    // pushState rather than assigning location.hash, so that exactly one event
+    // is dispatched rather than one from the assignment and one from here.
     if (options.replace) window.history.replaceState(null, '', next)
-    else window.location.hash = next
+    else window.history.pushState(null, '', next)
     window.dispatchEvent(new HashChangeEvent('hashchange'))
-    // A view change is a page change as far as a reader is concerned.
-    window.scrollTo({ top: 0 })
+    // A view change is a page change as far as a reader is concerned. Optional
+    // call, because failing to scroll is never worth throwing over.
+    window.scrollTo?.({ top: 0 })
   }, [])
   return [parseHash(hash), navigate]
 }

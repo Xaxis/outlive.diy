@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ChevronRight, Wrench } from 'lucide-react'
 import { CATEGORY_LABEL, RULES, type Finding, type Ref } from '@outlive/core'
 import { SeverityDot, SEVERITY_LABEL } from '@/components/ui/Severity.tsx'
@@ -32,9 +32,18 @@ export function FindingCard({
 }) {
   const [open, setOpen] = useState(defaultOpen ?? false)
   const rule = RULES[finding.rule]
+  const article = useRef<HTMLElement>(null)
+
+  // Arriving from a link to one particular finding, in a list of twenty-three.
+  useEffect(() => {
+    if (!defaultOpen) return
+    // Optional call: not every environment this renders in implements it,
+    // and failing to scroll is never worth throwing over.
+    article.current?.scrollIntoView?.({ block: 'center', behavior: 'auto' })
+  }, [defaultOpen])
 
   return (
-    <article data-sev={finding.severity} className="card sev-edge print-block">
+    <article ref={article} data-sev={finding.severity} className="card sev-edge print-block">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}

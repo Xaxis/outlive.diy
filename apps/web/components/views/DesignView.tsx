@@ -26,29 +26,13 @@ export function DesignView() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <ViewHeader
-        eyebrow="Plan"
-        title="Design"
-        question={definition.blurb}
-        actions={
-          definition.kind ? (
-            <Button
-              variant="primary"
-              icon={<Plus className="size-4" aria-hidden />}
-              onClick={() => {
-                const id = addEntity(definition.kind!)
-                if (id) select({ type: definition.kind!, id })
-              }}
-            >
-              Add
-            </Button>
-          ) : null
-        }
-      />
+      <ViewHeader eyebrow="Plan" title="Design" question={definition.blurb} />
 
+      {/* The add button belongs beside the tabs, next to the list it adds to,
+          rather than floating at the far edge of the header. */}
       <nav
         aria-label="Design sections"
-        className="mb-5 flex flex-wrap gap-1 border-b border-line pb-2"
+        className="mb-5 flex flex-wrap items-center gap-1 border-b border-line pb-2"
       >
         {SECTIONS.map((entry) => {
           const count = entry.kind ? entitiesOf(plan, entry.kind).length : null

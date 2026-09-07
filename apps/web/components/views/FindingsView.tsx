@@ -27,7 +27,7 @@ export function FindingsView() {
   const plan = useActivePlan()
   const report = useReport(plan)
   const select = useStore((state) => state.select)
-  const [, navigate] = useRoute()
+  const [route, navigate] = useRoute()
   const [severity, setSeverity] = useState<Severity | null>(null)
   const [category, setCategory] = useState<FindingCategory | null>(null)
 
@@ -160,6 +160,7 @@ export function FindingsView() {
                   finding={finding}
                   labelOf={labelOf}
                   onOpenSubject={openSubject}
+                  defaultOpen={finding.id === route.section}
                 />
               ))}
             </div>

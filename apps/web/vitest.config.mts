@@ -18,7 +18,9 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'happy-dom',
+    // jsdom rather than happy-dom: these tests drive the fragment router, and
+    // happy-dom does not keep location.hash in step with history changes.
+    environment: 'jsdom',
     globals: true,
     setupFiles: ['./test/setup.ts'],
     include: ['**/*.test.tsx', 'lib/**/*.test.ts'],

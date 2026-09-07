@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { App } from './App.tsx'
 import { useStore } from '@/lib/store.ts'
+
+/** Navigate the fragment router the way the address bar would. */
+function goto(hash: string) {
+  act(() => {
+    window.location.hash = hash
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+  })
+}
 
 function reset() {
   window.localStorage.clear()
@@ -64,8 +72,7 @@ describe('the input guard, in the interface', () => {
     render(<App />)
 
     await user.click(await screen.findByText('One signer, one backup'))
-    window.location.hash = '#/design/locations'
-    window.dispatchEvent(new HashChangeEvent('hashchange'))
+    goto('#/design/locations')
 
     const label = await screen.findByLabelText('Label')
     await user.clear(label)
@@ -90,8 +97,7 @@ describe('the input guard, in the interface', () => {
     render(<App />)
 
     await user.click(await screen.findByText('One signer, one backup'))
-    window.location.hash = '#/design/locations'
-    window.dispatchEvent(new HashChangeEvent('hashchange'))
+    goto('#/design/locations')
 
     const label = await screen.findByLabelText('Label')
     await user.clear(label)
@@ -108,8 +114,7 @@ describe('storage', () => {
     render(<App />)
 
     await user.click(await screen.findByText('One signer, one backup'))
-    window.location.hash = '#/file'
-    window.dispatchEvent(new HashChangeEvent('hashchange'))
+    goto('#/file')
 
     expect(await screen.findByText('outlive.diy/plan-file/v1')).toBeInTheDocument()
 
@@ -152,8 +157,7 @@ describe('every view renders', () => {
       render(<App />)
       await user.click(await screen.findByText('Two of three, three sites'))
 
-      window.location.hash = hash
-      window.dispatchEvent(new HashChangeEvent('hashchange'))
+      goto(hash)
 
       expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument()
     })
@@ -170,8 +174,7 @@ describe('the map and the findings agree', () => {
     // The findings say Site A alone is enough to spend.
     expect(await screen.findByText(/Site A alone is enough to spend/i)).toBeInTheDocument()
 
-    window.location.hash = '#/map'
-    window.dispatchEvent(new HashChangeEvent('hashchange'))
+    goto('#/map')
 
     // And the map's column for Site A says the same, in its own words.
     expect(await screen.findByTitle(/can be spent from this location alone/i)).toBeInTheDocument()
@@ -185,15 +188,13 @@ describe('drafts', () => {
     render(<App />)
     await user.click(await screen.findByText('Two of three, three sites'))
 
-    window.location.hash = '#/overview'
-    window.dispatchEvent(new HashChangeEvent('hashchange'))
+    goto('#/overview')
     await user.click(await screen.findByRole('button', { name: /try a change as a draft/i }))
 
     expect(useStore.getState().plans).toHaveLength(2)
     expect(useStore.getState().compareId).not.toBeNull()
 
-    window.location.hash = '#/compare'
-    window.dispatchEvent(new HashChangeEvent('hashchange'))
+    goto('#/compare')
     // Nothing has been changed yet, so the two runs must be identical.
     expect(await screen.findByText(/the findings are identical/i)).toBeInTheDocument()
   })
@@ -213,8 +214,7 @@ describe('the scope statement', () => {
     expect(screen.queryByText(/before you rely on any of this/i)).not.toBeInTheDocument()
 
     // And it stays dismissed across a reload.
-    window.location.hash = '#/map'
-    window.dispatchEvent(new HashChangeEvent('hashchange'))
+    goto('#/map')
     expect(screen.queryByText(/before you rely on any of this/i)).not.toBeInTheDocument()
   })
 })
@@ -226,8 +226,7 @@ describe('rehearsing a recovery', () => {
     render(<App />)
     await user.click(await screen.findByText('Two of three, three sites'))
 
-    window.location.hash = '#/recovery'
-    window.dispatchEvent(new HashChangeEvent('hashchange'))
+    goto('#/recovery')
 
     const before = useStore.getState().plans[0].verifications.length
     // Routes with no recoverable path offer no rehearsal at all, so every
@@ -258,8 +257,7 @@ describe('undo', () => {
     render(<App />)
     await user.click(await screen.findByText('One signer, one backup'))
 
-    window.location.hash = '#/design/locations'
-    window.dispatchEvent(new HashChangeEvent('hashchange'))
+    goto('#/design/locations')
 
     const before = useStore.getState().plans[0].locations[0].label
     // Opening the example is itself an undoable step, so stop above it.
@@ -288,8 +286,7 @@ describe('composing a failure by hand', () => {
     render(<App />)
     await user.click(await screen.findByText('Two of three, three sites'))
 
-    window.location.hash = '#/scenarios'
-    window.dispatchEvent(new HashChangeEvent('hashchange'))
+    goto('#/scenarios')
 
     const heading = await screen.findByRole('heading', { name: /compose your own/i })
     const panel = heading.closest('section') as HTMLElement
@@ -330,8 +327,7 @@ describe('an empty plan', () => {
       render(<App />)
       await user.click(await screen.findByRole('button', { name: /start a plan/i }))
 
-      window.location.hash = hash
-      window.dispatchEvent(new HashChangeEvent('hashchange'))
+      goto(hash)
 
       expect(await screen.findByText(/nothing to work from yet/i)).toBeInTheDocument()
       expect(screen.getByText(new RegExp(phrase, 'i'))).toBeInTheDocument()
@@ -344,13 +340,38 @@ describe('an empty plan', () => {
     render(<App />)
     await user.click(await screen.findByRole('button', { name: /start a plan/i }))
 
-    window.location.hash = '#/findings'
-    window.dispatchEvent(new HashChangeEvent('hashchange'))
+    goto('#/findings')
 
     expect(await screen.findByText(/nothing to work from yet/i)).toBeInTheDocument()
     // "Nothing found" is the clean-bill-of-health heading, and it must not
     // appear for a plan that has not been described. (The one-time scope notice
     // uses similar words on purpose, so match the heading rather than prose.)
     expect(screen.queryByRole('heading', { name: /nothing found/i })).not.toBeInTheDocument()
+  })
+})
+
+describe('linking to one finding', () => {
+  it('opens it, from the overview, in a list of twenty-three', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/overview')
+    // Wait for the overview to actually be on screen. The findings list has a
+    // button with the same name, so clicking before the switch lands would
+    // silently test the wrong thing.
+    await screen.findByRole('heading', { name: /two of three, three sites/i })
+
+    await user.click(
+      screen.getByRole('button', { name: /losing site a makes vault and daily unspendable/i })
+    )
+
+    // The list is open at that finding, with its remediation showing, rather
+    // than at the top with everything folded away.
+    expect(
+      await screen.findByText(/place a further independent copy of the key material/i)
+    ).toBeInTheDocument()
+    expect(window.location.hash).toContain('L001')
   })
 })
