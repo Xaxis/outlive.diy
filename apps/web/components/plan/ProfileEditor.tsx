@@ -1,9 +1,17 @@
 'use client'
 
 import type { Concern, Plan } from '@outlive/core'
-import { Field, NumberInput, ChipSet, Toggle } from '@/components/ui/Field.tsx'
+import {
+  ChipSet,
+  Field,
+  GuardedInput,
+  NumberInput,
+  Select,
+  Toggle,
+} from '@/components/ui/Field.tsx'
 import { Panel, SectionHeading } from '@/components/ui/Surface.tsx'
 import { usePlanEdit } from '@/lib/edit.ts'
+import { useStore } from '@/lib/store.ts'
 import { CONCERN } from '@/lib/describe.ts'
 
 const CONCERNS: Concern[] = [
@@ -28,9 +36,33 @@ const CONCERNS: Concern[] = [
  */
 export function ProfileEditor({ plan }: { plan: Plan }) {
   const edit = usePlanEdit()
+  const renamePlan = useStore((state) => state.renamePlan)
 
   return (
     <div className="grid items-start gap-4 lg:grid-cols-2">
+      <Panel className="space-y-4 p-4 lg:col-span-2">
+        <SectionHeading title="This plan" />
+        <div className="grid gap-4 sm:max-w-2xl sm:grid-cols-[1fr_14rem]">
+          <Field label="Name" help="Yours to recognise. It appears on every printed page.">
+            <GuardedInput value={plan.name} onCommit={(name) => renamePlan(plan.id, name)} />
+          </Field>
+          <Field label="Kind" help="A draft is a candidate, compared against the one you run.">
+            <Select
+              value={plan.kind}
+              onChange={(kind) =>
+                edit((draft) => {
+                  draft.kind = (kind ?? 'current') as Plan['kind']
+                })
+              }
+              options={[
+                { value: 'current', label: 'The plan I run' },
+                { value: 'draft', label: 'A draft' },
+              ]}
+            />
+          </Field>
+        </div>
+      </Panel>
+
       <Panel className="p-4">
         <SectionHeading
           title="What are you planning against?"

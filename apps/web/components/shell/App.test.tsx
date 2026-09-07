@@ -375,3 +375,38 @@ describe('linking to one finding', () => {
     expect(window.location.hash).toContain('L001')
   })
 })
+
+describe('naming a plan', () => {
+  it('can be renamed after it exists, and the new name sticks', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByRole('button', { name: /start a plan/i }))
+
+    goto('#/design/profile')
+    const name = await screen.findByLabelText('Name')
+    await user.clear(name)
+    await user.type(name, 'Household vault')
+
+    const plans = useStore.getState().plans
+    expect(plans[0].name).toBe('Household vault')
+
+    // And it is what the switcher and every printed page will say.
+    expect(await screen.findAllByText(/household vault/i)).not.toHaveLength(0)
+  })
+
+  it('refuses a name that is key material, like every other field', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByRole('button', { name: /start a plan/i }))
+
+    goto('#/design/profile')
+    const name = await screen.findByLabelText('Name')
+    await user.clear(name)
+    await user.type(name, 'legal winner thank year wave sausage worth useful')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/not stored/i)
+    expect(JSON.stringify(useStore.getState().plans)).not.toContain('sausage')
+  })
+})
