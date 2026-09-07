@@ -410,3 +410,30 @@ describe('naming a plan', () => {
     expect(JSON.stringify(useStore.getState().plans)).not.toContain('sausage')
   })
 })
+
+describe('a change that closes nothing', () => {
+  it('says which findings about that thing are still standing', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/overview')
+    await screen.findByRole('heading', { name: /two of three, three sites/i })
+    await user.click(screen.getByRole('button', { name: /try a change as a draft/i }))
+
+    // Move the bank box out of the home city. It looks like the fix for
+    // "the quorum is concentrated in Home city" and it is not: two of the
+    // three keys have material at home, so the group is still concentrated.
+    goto('#/design/locations')
+    await user.click(await screen.findByText('Site B'))
+    const group = await screen.findByLabelText('Disaster group')
+    await user.clear(group)
+    await user.type(group, 'Second city')
+
+    goto('#/compare')
+    expect(await screen.findByText(/the findings are identical/i)).toBeInTheDocument()
+    expect(await screen.findByText(/still standing, about what you changed/i)).toBeInTheDocument()
+    expect(await screen.findByText(/concentrated in "Home city"/i)).toBeInTheDocument()
+  })
+})

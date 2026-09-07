@@ -33,6 +33,26 @@ export function CompareView() {
 
   const changes = useMemo(() => (plan && other ? comparePlans(other, plan) : []), [plan, other])
 
+  /**
+   * When a change closes nothing, the useful next sentence is not "nothing
+   * happened". It is which findings about the thing you just changed are still
+   * standing, because that is almost always the answer: the problem was
+   * somewhere else all along.
+   *
+   * Matched against the baseline's copy of each finding, not this plan's. A
+   * finding often stops naming the object you moved precisely because you moved
+   * it, and that is the case worth explaining rather than the one to miss.
+   */
+  const stillStanding = useMemo(() => {
+    if (!delta) return []
+    if (delta.resolved.length > 0 || delta.introduced.length > 0) return []
+    const touched = new Set(changes.map((change) => change.id))
+    if (touched.size === 0) return []
+    return delta.unchanged.filter((finding) =>
+      finding.subjects.some((subject) => touched.has(subject.id))
+    )
+  }, [delta, changes])
+
   if (!plan) return null
 
   return (
@@ -111,6 +131,28 @@ export function CompareView() {
               <FindingList findings={delta.introduced} tone="bad" />
             </Panel>
           </div>
+
+          {stillStanding.length > 0 ? (
+            <Panel className="p-4">
+              <SectionHeading
+                title="Still standing, about what you changed"
+                hint="Almost always the answer to why nothing closed: the problem was somewhere else."
+              />
+              <ul className="space-y-2">
+                {stillStanding.map((finding) => (
+                  <li key={finding.id} className="flex items-start gap-2">
+                    <SeverityDot severity={finding.severity} className="mt-[0.45rem]" />
+                    <span className="min-w-0">
+                      <span className="block text-[0.8125rem] leading-snug text-body">
+                        {finding.title}
+                      </span>
+                      <span className="mono text-[0.6875rem] text-faint">{finding.rule}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Panel>
+          ) : null}
 
           {changes.length > 0 ? (
             <Panel className="p-4">
