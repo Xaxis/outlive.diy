@@ -73,16 +73,6 @@ export function baseWorld(plan: Plan, overrides: WorldOverrides = {}): World {
   }
 }
 
-export function withWorld(world: World, overrides: WorldOverrides): World {
-  return {
-    ...world,
-    ...overrides,
-    reachable: overrides.reachable ? new Set(overrides.reachable) : world.reachable,
-    missing: overrides.missing ? new Set(overrides.missing) : world.missing,
-    cooperating: overrides.cooperating ? new Set(overrides.cooperating) : world.cooperating,
-  }
-}
-
 /** Remove things from a world without rebuilding it. */
 export function without(
   world: World,

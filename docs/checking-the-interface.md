@@ -54,6 +54,11 @@ after the initial load. That check takes ten seconds and is worth more than any
 of the above. A Playwright run can assert it by listening on `request` and
 failing on any URL that is not same-origin.
 
+**The copy that needs no server.** `make offline` then open
+`apps/web/out/index.html` as a file. It should behave identically and report no
+failed requests. If a font or the icon 404s, something is asking for an absolute
+path that only a web server can answer.
+
 ## Accessibility
 
 Run axe over every view in both themes and expect zero violations. Both themes

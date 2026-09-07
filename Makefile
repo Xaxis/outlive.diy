@@ -29,9 +29,9 @@ build: ## Build the static site into apps/web/out
 
 offline: ## Build a copy that opens from disk with no server: apps/web/out/index.html
 	@OUTLIVE_RELATIVE_ASSETS=1 yarn workspace @outlive/web build
+	@node tools/relative-assets.mjs
 	@echo
-	@echo "Open apps/web/out/index.html directly in a browser."
-	@echo "The two typefaces are served by path and will fall back to the system stack."
+	@echo "Open apps/web/out/index.html directly in a browser. Nothing else is needed."
 
 start: ## Serve the built static site
 	@yarn workspace @outlive/web start

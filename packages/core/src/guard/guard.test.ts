@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { accepts, AMBIENT_VOCABULARY_WORDS, firstRefusal, inspect, inspectDeep } from './guard.ts'
-import { BIP39_ENGLISH, BIP39_ENGLISH_SET } from './bip39-english.ts'
+import { BIP39_ENGLISH, BIP39_ENGLISH_SET, BIP39_ENGLISH_SHA256 } from './bip39-english.ts'
 
 describe('the wordlist itself', () => {
   it('is the whole list, exactly once each', () => {
@@ -11,6 +11,20 @@ describe('the wordlist itself', () => {
   it('is sorted, which is what makes it the canonical list', () => {
     const sorted = [...BIP39_ENGLISH].sort()
     expect(BIP39_ENGLISH).toEqual(sorted)
+  })
+
+  it('hashes to the value the specification publishes', async () => {
+    // The generator checks this before writing the file. Checking it again here
+    // means the claim is verified by the suite rather than only by the tool
+    // that produced it, which nobody runs.
+    const { createHash } = await import('node:crypto')
+    const digest = createHash('sha256')
+      .update(`${BIP39_ENGLISH.join('\n')}\n`, 'utf8')
+      .digest('hex')
+    expect(digest).toBe(BIP39_ENGLISH_SHA256)
+    expect(BIP39_ENGLISH_SHA256).toBe(
+      '2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2ed3b24dbda'
+    )
   })
 })
 

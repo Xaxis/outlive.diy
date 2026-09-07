@@ -47,5 +47,10 @@ that file, never as a conclusion this program reached.
 Every field except `id` and `name` is optional. The app shows the file's date
 and how old it is wherever its claims appear.
 
+`vendor-data.example.json` beside this file is a working one to copy. Every
+line of it is a placeholder: replace the contents with your own research and put
+the date you checked it in `asOf`, because that date is what the interface shows
+beside every claim the file makes.
+
 Load it under **Your plan file**. It is stored in the same browser storage as
 the plan and is removed by the same erase button.

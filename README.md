@@ -97,10 +97,13 @@ Node 24 or newer, Yarn 1.
 ## Running it with no server
 
 `make offline` builds `apps/web/out` with relative asset paths, so
-`apps/web/out/index.html` opens directly in a browser from the filesystem. There
-is no back end to miss: the whole application is one document and some
-JavaScript. The two typefaces are requested by path and will fall back to your
-system stack when opened this way, which is the only difference.
+`apps/web/out/index.html` opens directly in a browser from the filesystem, with
+no server of any kind. There is no back end to miss: the whole application is
+one document, some JavaScript, and two font files.
+
+It is the same app, not a degraded one. Opened from a disk it loads with no
+failed requests and no console errors, which is checked the same way everything
+else here is: by opening it and watching.
 
 ## Deploying
 

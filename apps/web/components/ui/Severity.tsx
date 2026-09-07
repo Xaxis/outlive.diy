@@ -15,15 +15,6 @@ export function SeverityDot({ severity, className }: { severity: Severity; class
   return <span data-sev={severity} className={cn('sev-dot', className)} aria-hidden />
 }
 
-export function SeverityBadge({ severity }: { severity: Severity }) {
-  return (
-    <span data-sev={severity} className="chip sev-tint sev-text">
-      <span className="sev-dot" aria-hidden />
-      {SEVERITY_LABEL[severity]}
-    </span>
-  )
-}
-
 /**
  * The counts, as a bar.
  *

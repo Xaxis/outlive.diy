@@ -235,3 +235,24 @@ describe('a file somebody edited by hand', () => {
     expect(report.findings.map((finding) => finding.rule)).toContain('S005')
   })
 })
+
+describe('the documented vendor data format', () => {
+  it('accepts the example this repository ships', async () => {
+    // A worked example in the docs that the parser rejects is worse than none.
+    const { readFileSync } = await import('node:fs')
+    const { parseVendorData } = await import('./vendors/vendors.ts')
+    const raw: unknown = JSON.parse(
+      readFileSync(new URL('../../../docs/vendor-data.example.json', import.meta.url), 'utf8')
+    )
+    const parsed = parseVendorData(raw)
+    expect(parsed.ok ? [] : parsed.problems).toEqual([])
+    if (parsed.ok) expect(parsed.value.vendors.length).toBeGreaterThan(0)
+  })
+
+  it('refuses a file with no date, because an undated claim cannot be judged', async () => {
+    const { parseVendorData } = await import('./vendors/vendors.ts')
+    const parsed = parseVendorData({ version: 1, vendors: [] })
+    expect(parsed.ok).toBe(false)
+    expect(parsed.ok ? '' : parsed.problems.join(' ')).toContain('asOf')
+  })
+})

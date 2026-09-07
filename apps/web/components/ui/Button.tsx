@@ -43,26 +43,3 @@ export function Button({
     </button>
   )
 }
-
-interface LinkButtonProps {
-  href: string
-  variant?: Variant
-  icon?: ReactNode
-  children: ReactNode
-  className?: string
-}
-
-export function LinkButton({
-  href,
-  variant = 'default',
-  icon,
-  children,
-  className,
-}: LinkButtonProps) {
-  return (
-    <a href={href} className={cn('btn', VARIANTS[variant], 'no-underline', className)}>
-      {icon}
-      {children}
-    </a>
-  )
-}

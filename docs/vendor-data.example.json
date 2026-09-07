@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "asOf": "2026-01-01",
+  "source": "Example only. Replace every line of this with your own research, and put the date you checked it in asOf.",
+  "vendors": [
+    {
+      "id": "vendor-one",
+      "name": "Vendor One",
+      "architecture": "Secure element A",
+      "secureElement": true,
+      "airGapCapable": true,
+      "storesWalletConfig": false,
+      "notes": "Matched against the maker you typed on a device, case-insensitively.",
+      "advisories": [
+        {
+          "id": "EXAMPLE-2025-01",
+          "date": "2025-06-14",
+          "summary": "One line, in your own words, about what was wrong.",
+          "affects": "Which models and which firmware, in your own words."
+        }
+      ]
+    },
+    {
+      "id": "vendor-two",
+      "name": "Vendor Two",
+      "secureElement": false
+    }
+  ]
+}

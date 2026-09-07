@@ -305,12 +305,6 @@ export function parsePlanFile(input: unknown): ParseResult<PlanFile> {
   return { ok: true, value: parsed.data }
 }
 
-export function parsePlan(input: unknown): ParseResult<Plan> {
-  const parsed = planSchema.safeParse(input)
-  if (!parsed.success) return { ok: false, problems: describe(parsed.error) }
-  return { ok: true, value: parsed.data }
-}
-
 /**
  * Structural problems that make a plan self-inconsistent rather than merely
  * unwise: references that point at nothing. Kept apart from the analysis
