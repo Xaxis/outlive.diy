@@ -15,22 +15,10 @@ import {
 } from 'lucide-react'
 import type { Plan } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
+import { Wordmark } from '@/components/brand/Logo.tsx'
 import { useStore } from '@/lib/store.ts'
 import { href } from '@/lib/router.ts'
 import { cn } from '@/lib/cn.ts'
-
-function Wordmark() {
-  return (
-    <a
-      href={href('overview')}
-      className="flex items-baseline gap-0 no-underline"
-      aria-label="outlive.diy home"
-    >
-      <span className="mono text-[0.95rem] font-bold tracking-[-0.03em] text-strong">outlive</span>
-      <span className="mono text-[0.95rem] font-bold tracking-[-0.03em] text-accent">.diy</span>
-    </a>
-  )
-}
 
 function PlanSwitcher({ plans, activeId }: { plans: Plan[]; activeId: string }) {
   const setActive = useStore((state) => state.setActive)
@@ -141,7 +129,9 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
           <Menu className="size-4" aria-hidden />
         </Button>
 
-        <Wordmark />
+        <a href={href('overview')} className="no-underline" aria-label="outlive.diy, home">
+          <Wordmark />
+        </a>
 
         {plans.length > 0 ? (
           <>
