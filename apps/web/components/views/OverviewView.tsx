@@ -126,10 +126,7 @@ export function OverviewView() {
             {plan.wallets.length === 0 ? (
               <p className="text-sm text-muted">
                 No wallets described yet.{' '}
-                <a
-                  href={href('design', 'wallets')}
-                  className="text-accent underline-offset-2 hover:underline"
-                >
+                <a href={href('design', 'wallets')} className="link">
                   Add one
                 </a>
                 .

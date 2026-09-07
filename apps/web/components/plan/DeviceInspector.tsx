@@ -160,7 +160,7 @@ export function DeviceInspector({ plan, device }: { plan: Plan; device: Device }
           <p className="mt-2 border-t border-line pt-2 text-[0.6875rem] leading-relaxed text-faint">
             These are claims from a file you loaded, not conclusions this program reached. Nothing
             in the analysis uses them.{' '}
-            <a href={href('file')} className="text-accent underline-offset-2 hover:underline">
+            <a href={href('file')} className="link">
               Manage the file
             </a>
             .

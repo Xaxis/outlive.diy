@@ -27,6 +27,7 @@ export function OpenFileButton({
         ref={input}
         type="file"
         accept="application/json,.json"
+        aria-label="Choose a plan file to open"
         className="sr-only"
         onChange={async (event) => {
           const file = event.target.files?.[0]

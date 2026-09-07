@@ -61,6 +61,7 @@ export function GuardedInput({
   placeholder,
   id,
   rows,
+  ariaLabel,
 }: {
   value: string
   onCommit: (next: string) => void
@@ -68,6 +69,8 @@ export function GuardedInput({
   placeholder?: string
   id?: string
   rows?: number
+  /** For the fields that stand outside a Field, such as a row's own name. */
+  ariaLabel?: string
 }) {
   const [draft, setDraft] = useState(value)
   const [hits, setHits] = useState<GuardHit[]>([])
@@ -100,7 +103,8 @@ export function GuardedInput({
     <div className="space-y-1.5">
       <Tag
         id={fieldId}
-        aria-labelledby={labelledBy}
+        aria-label={ariaLabel}
+        aria-labelledby={ariaLabel ? undefined : labelledBy}
         className={cn(
           multiline ? 'textarea' : 'input',
           refusal && 'border-critical bg-critical/[0.06]'

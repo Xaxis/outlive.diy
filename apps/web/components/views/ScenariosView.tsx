@@ -168,7 +168,7 @@ export function ScenariosView() {
         assume the opposite: somebody standing in one specific place, with no memorised secret and
         no knowledge of anything this plan did not record a location for. Coercion assumes you are
         present and cooperating, because that is what compulsion means.{' '}
-        <a href={href('recovery')} className="text-accent underline-offset-2 hover:underline">
+        <a href={href('recovery')} className="link">
           Each of these has a written recovery route
         </a>
         .

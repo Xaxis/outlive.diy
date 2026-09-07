@@ -71,7 +71,9 @@ export function SeverityBar({
           >
             <span className="sev-dot" aria-hidden />
             <span className="sev-text font-semibold">{count}</span>
-            <span className="text-muted">{SEVERITY_LABEL[severity].toLowerCase()}</span>
+            {/* Body rather than muted: this sits on a tinted ground, where the
+                dimmer step no longer clears 4.5:1. */}
+            <span className="text-body">{SEVERITY_LABEL[severity].toLowerCase()}</span>
           </button>
         )
       })}

@@ -198,10 +198,13 @@ export function MapView() {
                       <span
                         className={cn(
                           'mono inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[0.6875rem]',
+                          // The one thing on this table that should shout gets
+                          // a solid ground rather than a tint, which also puts
+                          // it well clear of the contrast floor in both themes.
                           exposed
-                            ? 'border-critical/50 bg-critical/10 text-critical'
+                            ? 'border-transparent bg-critical font-semibold text-canvas'
                             : quorum.present > 0
-                              ? 'border-line-strong text-muted'
+                              ? 'border-line-strong text-body'
                               : 'border-transparent text-faint'
                         )}
                         title={

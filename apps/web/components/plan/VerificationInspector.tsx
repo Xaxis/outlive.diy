@@ -8,7 +8,7 @@ import {
   type Verification,
   type VerificationKind,
 } from '@outlive/core'
-import { Field, GuardedInput, NumberInput, Select } from '@/components/ui/Field.tsx'
+import { Field, GuardedInput, NumberInput, Select, useFieldLabel } from '@/components/ui/Field.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { Callout } from '@/components/ui/Surface.tsx'
 import { useEntityUpdater } from '@/lib/edit.ts'
@@ -27,6 +27,27 @@ const SUBJECT_TYPE: Record<VerificationKind, EntityType> = {
   'device-firmware': 'device',
   'passphrase-recall': 'key',
   'inventory-check': 'plan',
+}
+
+/** A date field that names itself from the field it sits in, like the others. */
+function DateInput({
+  value,
+  onChange,
+}: {
+  value: string | null
+  onChange: (next: string | null) => void
+}) {
+  const labelledBy = useFieldLabel()
+  return (
+    <input
+      type="date"
+      aria-labelledby={labelledBy}
+      className="input max-w-[11rem]"
+      value={value ?? ''}
+      max={today()}
+      onChange={(event) => onChange(event.target.value || null)}
+    />
+  )
 }
 
 export function VerificationInspector({
@@ -89,12 +110,9 @@ export function VerificationInspector({
         help="Blank means never. That is not a scolding; it is the difference between a fact and a belief, and the analysis treats it that way."
       >
         <div className="flex items-center gap-2">
-          <input
-            type="date"
-            className="input max-w-[11rem]"
-            value={verification.lastVerifiedAt ?? ''}
-            max={today()}
-            onChange={(event) => set({ lastVerifiedAt: event.target.value || null })}
+          <DateInput
+            value={verification.lastVerifiedAt}
+            onChange={(next) => set({ lastVerifiedAt: next })}
           />
           {verification.lastVerifiedAt === null ? (
             <Button size="sm" onClick={() => set({ lastVerifiedAt: today() })}>

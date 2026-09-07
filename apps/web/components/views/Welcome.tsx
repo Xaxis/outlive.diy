@@ -64,7 +64,7 @@ export function Welcome() {
           <dd className="text-muted">
             No fonts from a content network, no analytics, no telemetry. One static page whose
             security policy forbids connecting anywhere at all.{' '}
-            <a href={href('file')} className="text-accent underline-offset-2 hover:underline">
+            <a href={href('file')} className="link">
               What is stored, and how to erase it
             </a>
             .
@@ -111,15 +111,11 @@ export function Welcome() {
           a problem with, which is a much smaller claim than it sounds like.
         </p>
         <p className="mt-3">
-          <a href={href('reasoning')} className="text-accent underline-offset-2 hover:underline">
+          <a href={href('reasoning')} className="link">
             Every rule it applies
           </a>
           {' · '}
-          <a
-            href="https://github.com/Xaxis/outlive.diy"
-            className="text-accent underline-offset-2 hover:underline"
-            rel="noreferrer"
-          >
+          <a href="https://github.com/Xaxis/outlive.diy" className="link" rel="noreferrer">
             Source
           </a>
         </p>

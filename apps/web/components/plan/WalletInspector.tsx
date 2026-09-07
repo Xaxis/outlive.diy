@@ -58,6 +58,7 @@ function PathEditor({
     <li className="card space-y-3 p-3">
       <div className="flex items-center gap-2">
         <GuardedInput
+          ariaLabel="Spend path name"
           value={path.label}
           onCommit={(value) => patch((entry) => void (entry.label = value))}
         />
@@ -252,6 +253,7 @@ export function WalletInspector({ plan, wallet }: { plan: Plan; wallet: Wallet }
                 <li key={backup.id} className="card space-y-3 p-3">
                   <div className="flex items-center gap-2">
                     <GuardedInput
+                      ariaLabel="Configuration copy name"
                       value={backup.label}
                       onCommit={(value) =>
                         edit((draft) => {

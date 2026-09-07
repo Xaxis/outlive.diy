@@ -197,6 +197,7 @@ export function FileView() {
                 ref={vendorInput}
                 type="file"
                 accept="application/json,.json"
+                aria-label="Choose a vendor data file to load"
                 className="sr-only"
                 onChange={async (event) => {
                   const file = event.target.files?.[0]

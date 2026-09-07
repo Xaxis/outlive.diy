@@ -12,7 +12,7 @@ import {
 } from '@outlive/core'
 import { Panel, SectionHeading } from '@/components/ui/Surface.tsx'
 import { Button } from '@/components/ui/Button.tsx'
-import { NumberInput, Segmented, Toggle } from '@/components/ui/Field.tsx'
+import { Field, NumberInput, Segmented, Toggle } from '@/components/ui/Field.tsx'
 import { cn } from '@/lib/cn.ts'
 
 const VERDICT: Record<Verdict, { label: string; icon: typeof CircleCheck; tone: string }> = {
@@ -181,18 +181,17 @@ export function CustomScenario({ plan }: { plan: Plan }) {
             onChange={(value) => setMemory(!value)}
           />
 
-          <div>
-            <p className="label mb-1.5">Days of inactivity</p>
+          <Field
+            label="Days of inactivity"
+            help="Only matters if a wallet has a timelocked path. That is the point of one."
+          >
             <NumberInput
               value={elapsedDays}
               max={3650}
               suffix="days"
               onChange={(days) => setElapsedDays(days ?? 0)}
             />
-            <p className="mt-1.5 text-xs leading-snug text-faint">
-              Only matters if a wallet has a timelocked path. That is the point of one.
-            </p>
-          </div>
+          </Field>
         </div>
 
         <div>

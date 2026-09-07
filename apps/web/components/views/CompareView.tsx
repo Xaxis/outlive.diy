@@ -5,7 +5,7 @@ import { ArrowRight, GitFork, Minus, Plus } from 'lucide-react'
 import { analyze, compareReports, comparePlans, summariseDelta, type Finding } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
 import { Callout, Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
-import { Select } from '@/components/ui/Field.tsx'
+import { Field, Select } from '@/components/ui/Field.tsx'
 import { SeverityDot } from '@/components/ui/Severity.tsx'
 import { useActivePlan, useComparePlan, useStore } from '@/lib/store.ts'
 
@@ -53,8 +53,7 @@ export function CompareView() {
 
       <Panel className="mb-5 p-4">
         <div className="flex flex-wrap items-end gap-3">
-          <div className="min-w-[12rem] flex-1">
-            <p className="label mb-1.5">Baseline</p>
+          <Field label="Baseline" className="min-w-[12rem] flex-1">
             <Select
               value={other?.id ?? null}
               placeholder="Choose a plan to compare against"
@@ -63,7 +62,7 @@ export function CompareView() {
                 .filter((entry) => entry.id !== plan.id)
                 .map((entry) => ({ value: entry.id, label: entry.name }))}
             />
-          </div>
+          </Field>
           <ArrowRight className="mb-2 size-4 text-faint" aria-hidden />
           <div className="min-w-[12rem] flex-1">
             <p className="label mb-1.5">This plan</p>

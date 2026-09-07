@@ -47,6 +47,7 @@ function BackupEditor({
     <li className="card space-y-3 p-3">
       <div className="flex items-center gap-2">
         <GuardedInput
+          ariaLabel="Backup name"
           value={backup.label}
           onCommit={(value) => patch((entry) => void (entry.label = value))}
         />

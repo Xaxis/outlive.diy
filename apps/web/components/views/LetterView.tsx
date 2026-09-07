@@ -28,10 +28,7 @@ export function LetterView() {
         <Callout tone="warn" title="Nobody is described who could act">
           A letter needs somebody to be addressed to. Add a person with the role of successor or
           executor under{' '}
-          <a
-            href={href('design', 'people')}
-            className="text-accent underline-offset-2 hover:underline"
-          >
+          <a href={href('design', 'people')} className="link">
             People
           </a>
           , and this writes itself.

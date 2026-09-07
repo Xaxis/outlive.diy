@@ -88,8 +88,10 @@
 
   --c-body: #d5d9e0;
   --c-strong: #f2f4f8;
+  /* Every step of this ramp clears 4.5:1 against canvas, surface and raised.
+     The dimmest one is metadata, not decoration, and it has to be readable. */
   --c-muted: #8e96a3;
-  --c-faint: #626a77;
+  --c-faint: #7d8694;
 
   --c-accent: #22d3ee;
   --c-accent-soft: #0d3d47;
@@ -119,13 +121,13 @@
   --c-body: #2b313b;
   --c-strong: #10151c;
   --c-muted: #626b78;
-  --c-faint: #8d95a1;
+  --c-faint: #656e7c;
 
   --c-accent: #0e7490;
   --c-accent-soft: #d7f2f8;
   --c-accent-ink: #ffffff;
 
-  --c-critical: #d3304c;
+  --c-critical: #b31f3a;
   --c-high: #c2540c;
   --c-medium: #9a6606;
   --c-low: #566579;
@@ -346,6 +348,19 @@ body {
   .mono {
     font-family: var(--font-mono);
     font-variant-ligatures: none;
+  }
+
+  /* A link inside a sentence cannot be marked by colour alone: that is the one
+     signal a colour-blind reader does not receive. Links that stand on their
+     own line, and every button, are unaffected. */
+  .link {
+    color: var(--c-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+  }
+  .link:hover {
+    text-decoration-thickness: 2px;
   }
 
   .eyebrow {
