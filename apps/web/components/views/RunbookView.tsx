@@ -3,6 +3,7 @@
 import { CheckCircle2, Circle, Printer, ShieldCheck } from 'lucide-react'
 import { PHASE_PURPOSE, PHASE_TITLE, today, type RunbookStep } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
+import { PrintHeader } from '@/components/shell/PrintHeader.tsx'
 import { Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { useActivePlan, useStore } from '@/lib/store.ts'
 import { useRunbook } from '@/lib/analysis.ts'
@@ -43,6 +44,8 @@ export function RunbookView() {
 
   return (
     <div className="mx-auto max-w-3xl">
+      <PrintHeader title="Build runbook" />
+
       <ViewHeader
         eyebrow="Documents"
         title="Build runbook"

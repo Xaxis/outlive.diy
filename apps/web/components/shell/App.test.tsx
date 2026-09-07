@@ -196,3 +196,56 @@ describe('drafts', () => {
     expect(await screen.findByText(/the findings are identical/i)).toBeInTheDocument()
   })
 })
+
+describe('the scope statement', () => {
+  it('is said once and then never again', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    const notice = await screen.findByText(/before you rely on any of this/i)
+    expect(notice).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /understood/i }))
+    expect(screen.queryByText(/before you rely on any of this/i)).not.toBeInTheDocument()
+
+    // And it stays dismissed across a reload.
+    window.location.hash = '#/map'
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+    expect(screen.queryByText(/before you rely on any of this/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('rehearsing a recovery', () => {
+  it('records a dated drill only once every step is ticked', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    window.location.hash = '#/recovery'
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+
+    const before = useStore.getState().plans[0].verifications.length
+    const buttons = await screen.findAllByRole('button', { name: /rehearse this route/i })
+    // Routes with no recoverable path have nothing to walk, and say so by
+    // being disabled rather than by opening an empty checklist.
+    const rehearse = buttons.find((button) => !(button as HTMLButtonElement).disabled)
+    expect(rehearse).toBeDefined()
+    await user.click(rehearse as HTMLElement)
+
+    // Not offered until the whole route has been walked.
+    const partial = screen.getByRole('button', { name: /0 of \d+ done/i })
+    expect(partial).toBeDisabled()
+
+    for (const step of screen.getAllByRole('button', { pressed: false })) {
+      await user.click(step)
+    }
+    await user.click(await screen.findByRole('button', { name: /record this as done today/i }))
+
+    const after = useStore.getState().plans[0].verifications
+    expect(after).toHaveLength(before + 1)
+    expect(after[after.length - 1].lastVerifiedAt).not.toBeNull()
+  })
+})

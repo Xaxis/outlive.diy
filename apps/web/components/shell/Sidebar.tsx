@@ -137,10 +137,13 @@ export function Sidebar({
       ))}
 
       <div className="mt-auto px-2 pt-2">
-        <p className="text-[0.6875rem] leading-relaxed text-faint">
-          This models structure. It does not know your real threat and cannot verify anything you
-          tell it. <Shapes className="inline size-3" aria-hidden />
-        </p>
+        <a
+          href={href('reasoning')}
+          className="flex items-center gap-1.5 text-[0.6875rem] text-faint no-underline transition-colors hover:text-muted"
+        >
+          <Shapes className="size-3" aria-hidden />
+          Read the rules it applies
+        </a>
       </div>
     </nav>
   )

@@ -7,6 +7,7 @@ import { useLetters, useReport } from '@/lib/analysis.ts'
 import { Sidebar } from './Sidebar.tsx'
 import { TopBar } from './TopBar.tsx'
 import { Toast } from './Toast.tsx'
+import { ScopeNotice } from './ScopeNotice.tsx'
 import { Welcome } from '@/components/views/Welcome.tsx'
 import { OverviewView } from '@/components/views/OverviewView.tsx'
 import { DesignView } from '@/components/views/DesignView.tsx'
@@ -20,6 +21,7 @@ import { CompareView } from '@/components/views/CompareView.tsx'
 import { FileView } from '@/components/views/FileView.tsx'
 import { ReasoningView } from '@/components/views/ReasoningView.tsx'
 import { StartView } from '@/components/views/StartView.tsx'
+import { useShortcuts, useUnsavedWarning } from '@/lib/shortcuts.ts'
 import { cn } from '@/lib/cn.ts'
 
 export function App() {
@@ -35,6 +37,9 @@ export function App() {
   useEffect(() => {
     hydrate()
   }, [hydrate])
+
+  useShortcuts()
+  useUnsavedWarning()
 
   // Closing the drawer belongs to navigation, which is an external event, not
   // to a change in derived state.
@@ -88,6 +93,9 @@ export function App() {
         ) : null}
 
         <main id="main" className="min-w-0 flex-1 px-4 py-6 lg:px-8 lg:py-8">
+          <div className="mx-auto max-w-6xl">
+            <ScopeNotice />
+          </div>
           <View />
         </main>
       </div>

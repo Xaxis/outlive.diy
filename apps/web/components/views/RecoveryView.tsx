@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { MapPin, Printer, TriangleAlert } from 'lucide-react'
 import { indexPlan, type RecoveryRoute } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
+import { PrintHeader } from '@/components/shell/PrintHeader.tsx'
+import { Rehearsal } from '@/components/documents/Rehearsal.tsx'
 import { Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Segmented } from '@/components/ui/Field.tsx'
 import { useActivePlan } from '@/lib/store.ts'
@@ -31,10 +33,12 @@ export function RecoveryView() {
 
   return (
     <div className="mx-auto max-w-3xl">
+      <PrintHeader title="Recovery routes" />
+
       <ViewHeader
         eyebrow="Documents"
         title="Recovery routes"
-        question="What to do, in order, for each way this can go wrong. Print it and keep it with the backups, not on the machine you may have lost."
+        question="What to do, in order, for each way this can go wrong. Rehearse one and it stops being an assumption. Print them and keep them with the backups, not on the machine you may have lost."
         actions={
           <>
             <Segmented
@@ -147,6 +151,8 @@ function Route({
           This route recovers: {route.walletIds.map(walletLabel).join(', ')}.
         </p>
       ) : null}
+
+      <Rehearsal route={route} />
     </Panel>
   )
 }

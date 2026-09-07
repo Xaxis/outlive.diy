@@ -87,6 +87,8 @@ interface StoreState {
   past: Snapshot[]
   future: Snapshot[]
   toast: Toast | null
+  /** Whether anything has changed since the last save to a file. */
+  dirty: boolean
 
   hydrate: () => void
   edit: (recipe: (plan: Plan) => void, options?: { silent?: boolean }) => void
@@ -140,6 +142,7 @@ export const useStore = create<StoreState>()(
     past: [],
     future: [],
     toast: null,
+    dirty: false,
 
     hydrate: () => {
       const preferences = readPreferences()
@@ -168,6 +171,7 @@ export const useStore = create<StoreState>()(
         }
         recipe(plan)
         plan.updatedAt = today()
+        state.dirty = true
       })
       persist(get())
     },
@@ -464,6 +468,7 @@ export const useStore = create<StoreState>()(
         state.activeId = result.value.activePlanId ?? result.value.plans[0].id
         state.compareId = null
         state.selection = null
+        state.dirty = false
       })
       persist(get())
       get().notify({
@@ -481,6 +486,9 @@ export const useStore = create<StoreState>()(
         suggestedFilename(active?.name ?? 'plan')
       )
       if (outcome === 'saved') {
+        set((state) => {
+          state.dirty = false
+        })
         get().notify({
           tone: 'ok',
           message: 'Saved',

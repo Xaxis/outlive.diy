@@ -2,6 +2,7 @@
 
 import { EyeOff, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/Button.tsx'
+import { PrintHeader } from '@/components/shell/PrintHeader.tsx'
 import { Callout, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { useActivePlan } from '@/lib/store.ts'
 import { useLetters } from '@/lib/analysis.ts'
@@ -41,6 +42,8 @@ export function LetterView() {
 
   return (
     <div className="mx-auto max-w-3xl">
+      <PrintHeader title="Successor letter" />
+
       <ViewHeader
         eyebrow="Documents"
         title="Successor letter"

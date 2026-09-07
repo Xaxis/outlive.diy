@@ -13,6 +13,7 @@ import {
 import { Printer } from 'lucide-react'
 import { ViewHeader } from '@/components/ui/Surface.tsx'
 import { Button } from '@/components/ui/Button.tsx'
+import { PrintHeader } from '@/components/shell/PrintHeader.tsx'
 import { SeverityBar } from '@/components/ui/Severity.tsx'
 import { FindingCard, SUBJECT_SECTION } from '@/components/findings/FindingCard.tsx'
 import { useActivePlan, useStore } from '@/lib/store.ts'
@@ -71,6 +72,8 @@ export function FindingsView() {
 
   return (
     <div className="mx-auto max-w-4xl">
+      <PrintHeader title="Findings" />
+
       <ViewHeader
         eyebrow="Diagnosis"
         title="Findings"
