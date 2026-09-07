@@ -17,6 +17,8 @@ function reset() {
     past: [],
     future: [],
     toast: null,
+    dirty: false,
+    lastEditAt: 0,
   })
 }
 
@@ -247,5 +249,35 @@ describe('rehearsing a recovery', () => {
     const after = useStore.getState().plans[0].verifications
     expect(after).toHaveLength(before + 1)
     expect(after[after.length - 1].lastVerifiedAt).not.toBeNull()
+  })
+})
+
+describe('undo', () => {
+  it('actually restores what was there before the edit', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('One signer, one backup'))
+
+    window.location.hash = '#/design/locations'
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+
+    const before = useStore.getState().plans[0].locations[0].label
+    // Opening the example is itself an undoable step, so stop above it.
+    const floor = useStore.getState().past.length
+
+    const label = await screen.findByLabelText('Label')
+    await user.clear(label)
+    await user.type(label, 'Site Z')
+    expect(useStore.getState().plans[0].locations[0].label).toBe('Site Z')
+
+    // Edits inside half a second are coalesced into one step, so a burst of
+    // typing is one undo rather than one per character.
+    expect(useStore.getState().past.length - floor).toBeLessThan(3)
+    while (useStore.getState().past.length > floor) useStore.getState().undo()
+    expect(useStore.getState().plans[0].locations[0].label).toBe(before)
+
+    useStore.getState().redo()
+    expect(useStore.getState().plans[0].locations[0].label).not.toBe(before)
   })
 })

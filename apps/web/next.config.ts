@@ -18,6 +18,15 @@ const nextConfig: NextConfig = {
   // `next dev` and `next build` share a directory by default, and a dev server
   // left running rewrites a production build's manifests underneath it.
   distDir: process.env.NODE_ENV === 'development' ? '.next-dev' : '.next',
+  /**
+   * `make offline` builds a copy whose asset paths are relative, so that
+   * `out/index.html` opens straight from a disk with no server at all. That is
+   * worth having: the strongest possible demonstration that this program needs
+   * nothing but a browser. It is not the default, because a relative prefix
+   * resolves wrongly for the 404 document, which is served from paths that do
+   * not exist.
+   */
+  assetPrefix: process.env.OUTLIVE_RELATIVE_ASSETS === '1' ? './' : undefined,
   images: { unoptimized: true },
 }
 

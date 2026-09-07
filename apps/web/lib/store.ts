@@ -16,6 +16,7 @@
 
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
+import { original } from 'immer'
 import {
   createDevice,
   createKey,
@@ -89,6 +90,8 @@ interface StoreState {
   toast: Toast | null
   /** Whether anything has changed since the last save to a file. */
   dirty: boolean
+  /** When the last edit landed, for coalescing a burst of typing into one step. */
+  lastEditAt: number
 
   hydrate: () => void
   edit: (recipe: (plan: Plan) => void, options?: { silent?: boolean }) => void
@@ -121,8 +124,30 @@ interface StoreState {
 
 const HISTORY_LIMIT = 60
 
-function snapshot(state: StoreState): Snapshot {
-  return { plans: state.plans, activeId: state.activeId }
+/**
+ * Edits closer together than this are one undo step.
+ *
+ * Every field commits on each keystroke, so without this, undo walks back one
+ * character at a time and the sixty-step history covers about one sentence.
+ * Bursts are what people actually mean by "the last thing I did".
+ */
+const COALESCE_MS = 500
+
+/**
+ * Push the state as it was *before* this change.
+ *
+ * The subtlety worth a comment: inside an immer producer, `state.plans` is a
+ * draft. Storing that draft and then mutating it would store the result of the
+ * change rather than what preceded it, and undo would silently do nothing.
+ * `original` reaches past the draft to the value the producer started with.
+ */
+function remember(state: StoreState): void {
+  state.past.push({
+    plans: original(state.plans) ?? state.plans,
+    activeId: state.activeId,
+  })
+  if (state.past.length > HISTORY_LIMIT) state.past.shift()
+  state.future = []
 }
 
 function persist(state: StoreState): void {
@@ -143,6 +168,7 @@ export const useStore = create<StoreState>()(
     future: [],
     toast: null,
     dirty: false,
+    lastEditAt: 0,
 
     hydrate: () => {
       const preferences = readPreferences()
@@ -164,11 +190,11 @@ export const useStore = create<StoreState>()(
       set((state) => {
         const plan = state.plans.find((entry) => entry.id === state.activeId)
         if (!plan) return
-        if (!options.silent) {
-          state.past.push(snapshot(state as StoreState))
-          if (state.past.length > HISTORY_LIMIT) state.past.shift()
-          state.future = []
+        const now = Date.now()
+        if (!options.silent && now - state.lastEditAt > COALESCE_MS) {
+          remember(state as StoreState)
         }
+        state.lastEditAt = now
         recipe(plan)
         plan.updatedAt = today()
         state.dirty = true
@@ -178,22 +204,32 @@ export const useStore = create<StoreState>()(
 
     undo: () => {
       set((state) => {
+        state.lastEditAt = 0
         const previous = state.past.pop()
         if (!previous) return
-        state.future.push(snapshot(state as StoreState))
+        state.future.push({
+          plans: original(state.plans) ?? state.plans,
+          activeId: state.activeId,
+        })
         state.plans = previous.plans
         state.activeId = previous.activeId
+        state.dirty = true
       })
       persist(get())
     },
 
     redo: () => {
       set((state) => {
+        state.lastEditAt = 0
         const next = state.future.pop()
         if (!next) return
-        state.past.push(snapshot(state as StoreState))
+        state.past.push({
+          plans: original(state.plans) ?? state.plans,
+          activeId: state.activeId,
+        })
         state.plans = next.plans
         state.activeId = next.activeId
+        state.dirty = true
       })
       persist(get())
     },
@@ -218,7 +254,7 @@ export const useStore = create<StoreState>()(
     startPlan: (name) => {
       const plan = createPlan({ name: name ?? 'My plan' })
       set((state) => {
-        state.past.push(snapshot(state as StoreState))
+        remember(state as StoreState)
         state.plans.push(plan)
         state.activeId = plan.id
         state.selection = null
@@ -233,7 +269,7 @@ export const useStore = create<StoreState>()(
       // plans rather than silently replacing the first.
       const plan = { ...example, id: `${example.id}-${Math.random().toString(36).slice(2, 8)}` }
       set((state) => {
-        state.past.push(snapshot(state as StoreState))
+        remember(state as StoreState)
         state.plans.push(plan)
         state.activeId = plan.id
         state.selection = null
@@ -253,7 +289,7 @@ export const useStore = create<StoreState>()(
         updatedAt: today(),
       }
       set((state) => {
-        state.past.push(snapshot(state as StoreState))
+        remember(state as StoreState)
         state.plans.push(draft)
         state.compareId = source.id
         state.activeId = draft.id
@@ -277,7 +313,7 @@ export const useStore = create<StoreState>()(
 
     removePlan: (id) => {
       set((state) => {
-        state.past.push(snapshot(state as StoreState))
+        remember(state as StoreState)
         state.plans = state.plans.filter((plan) => plan.id !== id)
         if (state.activeId === id) state.activeId = state.plans[0]?.id ?? ''
         if (state.compareId === id) state.compareId = null
@@ -463,7 +499,7 @@ export const useStore = create<StoreState>()(
       }
 
       set((state) => {
-        state.past.push(snapshot(state as StoreState))
+        remember(state as StoreState)
         state.plans = result.value.plans
         state.activeId = result.value.activePlanId ?? result.value.plans[0].id
         state.compareId = null

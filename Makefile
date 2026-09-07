@@ -10,7 +10,7 @@
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
-.PHONY: help install dev build start clean \
+.PHONY: help install dev build start offline clean \
         check check-fast test coverage lint type-check format format-check \
         guard-data guard-check fonts fonts-check no-network deploy preview
 
@@ -26,6 +26,12 @@ dev: ## Run the app locally
 
 build: ## Build the static site into apps/web/out
 	@yarn workspace @outlive/web build
+
+offline: ## Build a copy that opens from disk with no server: apps/web/out/index.html
+	@OUTLIVE_RELATIVE_ASSETS=1 yarn workspace @outlive/web build
+	@echo
+	@echo "Open apps/web/out/index.html directly in a browser."
+	@echo "The two typefaces are served by path and will fall back to the system stack."
 
 start: ## Serve the built static site
 	@yarn workspace @outlive/web start

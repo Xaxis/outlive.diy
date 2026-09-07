@@ -88,10 +88,19 @@ has to be right. Everything in `packages/core` is pure and tested;
 make install
 make dev        # the app at localhost:3000
 make check      # everything CI runs
-make test       # the engine's suite on its own
+make test       # both suites: the engine, and the interface driven end to end
+make offline    # a copy that opens straight from disk, with no server at all
 ```
 
 Node 24 or newer, Yarn 1.
+
+## Running it with no server
+
+`make offline` builds `apps/web/out` with relative asset paths, so
+`apps/web/out/index.html` opens directly in a browser from the filesystem. There
+is no back end to miss: the whole application is one document and some
+JavaScript. The two typefaces are requested by path and will fall back to your
+system stack when opened this way, which is the only difference.
 
 ## Licence
 
