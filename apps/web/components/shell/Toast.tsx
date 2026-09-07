@@ -35,7 +35,7 @@ export function Toast() {
     <div
       role="status"
       aria-live="polite"
-      className="fixed bottom-4 right-4 z-40 w-[min(24rem,calc(100vw-2rem))] no-print"
+      className="fixed bottom-4 right-4 z-50 w-[min(24rem,calc(100vw-2rem))] no-print"
     >
       <div className={cn('panel flex gap-3 p-3', TONES[toast.tone])}>
         <Icon className="mt-0.5 size-4 flex-none" aria-hidden />

@@ -1,7 +1,7 @@
 'use client'
 
 import { Plus } from 'lucide-react'
-import { ViewHeader } from '@/components/ui/Surface.tsx'
+import { MEASURE, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { ProfileEditor } from '@/components/plan/ProfileEditor.tsx'
 import { EntityWorkbench } from '@/components/plan/EntityWorkbench.tsx'
@@ -25,7 +25,7 @@ export function DesignView() {
   if (!plan) return null
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className={MEASURE.wide}>
       <ViewHeader eyebrow="Plan" title="Design" question={definition.blurb} />
 
       {/* The add button belongs beside the tabs, next to the list it adds to,

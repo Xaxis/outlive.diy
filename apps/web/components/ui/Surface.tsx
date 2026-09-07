@@ -3,6 +3,22 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn.ts'
 
+/**
+ * How wide a view is allowed to be.
+ *
+ * Every view used to centre itself at whatever width suited it, so clicking
+ * down the sidebar moved the heading left and right by up to two hundred
+ * pixels a step. The shell now owns the column and the left edge, and a view
+ * chooses one of two measures inside it. Only the right edge ever moves, and
+ * only between something read and something scanned.
+ */
+export const MEASURE = {
+  /** Tables, grids and side-by-side panels. The whole column. */
+  wide: 'w-full',
+  /** Anything read a line at a time rather than scanned. */
+  read: 'w-full max-w-[52rem]',
+} as const
+
 export function Panel({ children, className }: { children: ReactNode; className?: string }) {
   return <section className={cn('panel', className)}>{children}</section>
 }

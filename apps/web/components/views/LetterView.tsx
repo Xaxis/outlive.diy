@@ -3,7 +3,7 @@
 import { EyeOff, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/Button.tsx'
 import { PrintHeader } from '@/components/shell/PrintHeader.tsx'
-import { Callout, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
+import { MEASURE, Callout, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { useActivePlan } from '@/lib/store.ts'
 import { useLetters } from '@/lib/analysis.ts'
 import { href } from '@/lib/router.ts'
@@ -23,7 +23,7 @@ export function LetterView() {
 
   if (letters.length === 0) {
     return (
-      <div className="mx-auto max-w-3xl">
+      <div className={MEASURE.read}>
         <ViewHeader eyebrow="Documents" title="Successor letter" />
         <Callout tone="warn" title="Nobody is described who could act">
           A letter needs somebody to be addressed to. Add a person with the role of successor or
@@ -38,7 +38,7 @@ export function LetterView() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className={MEASURE.read}>
       <PrintHeader />
 
       <ViewHeader

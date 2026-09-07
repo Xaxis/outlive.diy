@@ -3,7 +3,7 @@
 import { ArrowLeft, ArrowRight, Check, ListChecks } from 'lucide-react'
 import type { Plan } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
-import { Callout, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
+import { MEASURE, Callout, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { ProfileEditor } from '@/components/plan/ProfileEditor.tsx'
 import { EntityWorkbench } from '@/components/plan/EntityWorkbench.tsx'
 import { SeverityBar } from '@/components/ui/Severity.tsx'
@@ -119,7 +119,7 @@ export function StartView() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className={MEASURE.wide}>
       <ViewHeader
         eyebrow={`Step ${index + 1} of ${STEPS.length}`}
         title={step.label}

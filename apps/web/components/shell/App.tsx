@@ -24,6 +24,20 @@ import { StartView } from '@/components/views/StartView.tsx'
 import { useShortcuts, useUnsavedWarning } from '@/lib/shortcuts.ts'
 import { cn } from '@/lib/cn.ts'
 
+/**
+ * The stacking order, in one place, because it only goes wrong when it is
+ * decided in several.
+ *
+ *   10  sticky chrome inside a view, such as the map's first column
+ *   20  the mobile drawer's backdrop
+ *   30  the sidebar
+ *   40  the top bar, which has to be above the sidebar or the menus it opens
+ *       are trapped in a lower stacking context and paint underneath it
+ *   50  toasts
+ *   60  dialogs
+ *   70  the skip link, which has to beat everything
+ */
+
 export function App() {
   const hydrate = useStore((state) => state.hydrate)
   const ready = useStore((state) => state.ready)
@@ -82,7 +96,7 @@ export function App() {
       <div className="mx-auto flex w-full max-w-[1600px] items-start">
         <aside
           className={cn(
-            'no-print z-40 w-60 shrink-0 border-r border-line bg-surface',
+            'no-print z-30 w-60 shrink-0 border-r border-line bg-surface',
             'fixed inset-y-0 left-0 top-[3.05rem] -translate-x-full transition-transform lg:sticky lg:top-[3.05rem] lg:h-[calc(100dvh-3.05rem)] lg:translate-x-0',
             drawerOpen && 'translate-x-0'
           )}
@@ -101,7 +115,7 @@ export function App() {
           <button
             type="button"
             aria-label="Close navigation"
-            className="fixed inset-0 z-30 bg-[rgb(0_0_0/0.5)] lg:hidden no-print"
+            className="fixed inset-0 z-20 bg-[rgb(0_0_0/0.5)] lg:hidden no-print"
             onClick={() => setDrawerOpen(false)}
           />
         ) : null}
@@ -112,10 +126,12 @@ export function App() {
           tabIndex={-1}
           className="min-w-0 flex-1 px-4 py-6 outline-none lg:px-8 lg:py-8"
         >
-          {/* Full width of the content area, so it reads as a banner rather
-              than as a column that nearly lines up with the one below it. */}
-          <ScopeNotice />
-          <View />
+          {/* One column for every view, so the left edge and the top of the
+              heading are in the same place whichever one you are on. */}
+          <div className="mx-auto w-full max-w-[74rem]">
+            <ScopeNotice />
+            <View />
+          </div>
         </main>
       </div>
       <Toast />

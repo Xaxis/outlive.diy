@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import { ArrowRight, GitFork, Minus, Plus } from 'lucide-react'
 import { analyze, compareReports, comparePlans, summariseDelta, type Finding } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
-import { Callout, Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
+import { MEASURE, Callout, Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Field, Select } from '@/components/ui/Field.tsx'
 import { SeverityDot } from '@/components/ui/Severity.tsx'
 import { useActivePlan, useComparePlan, useStore } from '@/lib/store.ts'
@@ -56,7 +56,7 @@ export function CompareView() {
   if (!plan) return null
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className={MEASURE.wide}>
       <ViewHeader
         eyebrow="Judgement"
         title="Compare plans"

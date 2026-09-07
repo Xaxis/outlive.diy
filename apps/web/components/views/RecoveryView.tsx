@@ -6,7 +6,7 @@ import { indexPlan, type RecoveryRoute } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
 import { PrintHeader } from '@/components/shell/PrintHeader.tsx'
 import { Rehearsal } from '@/components/documents/Rehearsal.tsx'
-import { Panel, ViewHeader } from '@/components/ui/Surface.tsx'
+import { MEASURE, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Segmented } from '@/components/ui/Field.tsx'
 import { useActivePlan } from '@/lib/store.ts'
 import { useRecovery } from '@/lib/analysis.ts'
@@ -30,7 +30,7 @@ export function RecoveryView() {
 
   if (!planIsStarted(plan)) {
     return (
-      <div className="mx-auto max-w-3xl">
+      <div className={MEASURE.read}>
         <ViewHeader
           eyebrow="Documents"
           title="Recovery routes"
@@ -48,7 +48,7 @@ export function RecoveryView() {
   )
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className={MEASURE.read}>
       <PrintHeader />
 
       <ViewHeader

@@ -15,7 +15,7 @@ import {
   overdueVerifications,
   type WalletAvailability,
 } from '@outlive/core'
-import { Card, Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
+import { MEASURE, Card, Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
 import { SeverityBar, SeverityDot } from '@/components/ui/Severity.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { useActivePlan, useStore } from '@/lib/store.ts'
@@ -70,7 +70,7 @@ export function OverviewView() {
 
   if (!planIsStarted(plan)) {
     return (
-      <div className="mx-auto max-w-3xl">
+      <div className={MEASURE.wide}>
         <ViewHeader
           eyebrow="Plan"
           title={plan.name}
@@ -101,7 +101,7 @@ export function OverviewView() {
   const gates = runbook?.gates.length ?? 0
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className={MEASURE.wide}>
       <ViewHeader
         eyebrow={plan.kind === 'draft' ? 'Draft plan' : 'Current plan'}
         title={plan.name}

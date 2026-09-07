@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import { CircleDot, FileKey2, KeyRound, Lock, Puzzle, ShieldEllipsis } from 'lucide-react'
 import { buildMap, createContext, indexPlan, type Holding } from '@outlive/core'
-import { Panel, ViewHeader } from '@/components/ui/Surface.tsx'
+import { MEASURE, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { useActivePlan } from '@/lib/store.ts'
 import { NothingYet } from '@/components/shell/NothingYet.tsx'
 import { describeTravel, TIER } from '@/lib/describe.ts'
@@ -44,7 +44,7 @@ export function MapView() {
 
   if (plan.locations.length === 0 || plan.keys.length === 0) {
     return (
-      <div className="mx-auto max-w-4xl">
+      <div className={MEASURE.wide}>
         <ViewHeader eyebrow="Diagnosis" title="Map" question="Where quorum concentrates." />
         <NothingYet what="there is nothing to place on it: the map needs at least one place and one key." />
       </div>
@@ -55,7 +55,7 @@ export function MapView() {
     map.cells.find((cell) => cell.keyId === keyId && cell.locationId === locationId)
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className={MEASURE.wide}>
       <ViewHeader
         eyebrow="Diagnosis"
         title="Map"

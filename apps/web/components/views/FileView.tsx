@@ -10,7 +10,7 @@ import {
   type VendorData,
 } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
-import { Callout, Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
+import { MEASURE, Callout, Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Segmented } from '@/components/ui/Field.tsx'
 import { Dialog } from '@/components/ui/Dialog.tsx'
 import { OpenFileButton } from '@/components/file/OpenFileButton.tsx'
@@ -50,7 +50,7 @@ export function FileView() {
   const keys = useSyncExternalStore(subscribeStorage, storedKeysSnapshot, storedKeysServerSnapshot)
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className={MEASURE.read}>
       <ViewHeader
         eyebrow="This app"
         title="Your plan file"

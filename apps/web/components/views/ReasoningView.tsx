@@ -8,7 +8,7 @@ import {
   RULES,
   type FindingCategory,
 } from '@outlive/core'
-import { Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
+import { MEASURE, Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
 import { SeverityDot } from '@/components/ui/Severity.tsx'
 import { cn } from '@/lib/cn.ts'
 
@@ -24,7 +24,7 @@ export function ReasoningView() {
   const rules = Object.values(RULES)
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className={MEASURE.read}>
       <ViewHeader
         eyebrow="Judgement"
         title="How it reasons"

@@ -11,7 +11,7 @@ import {
   type Severity,
 } from '@outlive/core'
 import { Printer } from 'lucide-react'
-import { ViewHeader } from '@/components/ui/Surface.tsx'
+import { MEASURE, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { PrintHeader } from '@/components/shell/PrintHeader.tsx'
 import { SeverityBar } from '@/components/ui/Severity.tsx'
@@ -73,7 +73,7 @@ export function FindingsView() {
   )
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className={MEASURE.read}>
       <PrintHeader />
 
       <ViewHeader

@@ -45,10 +45,10 @@ function PlanSwitcher({ plans, activeId }: { plans: Plan[]; activeId: string }) 
           <button
             type="button"
             aria-label="Close plan list"
-            className="fixed inset-0 z-30 cursor-default"
+            className="fixed inset-0 z-10 cursor-default"
             onClick={() => setOpen(false)}
           />
-          <ul className="panel absolute left-0 top-full z-40 mt-1 max-h-72 w-72 overflow-y-auto p-1">
+          <ul className="panel absolute left-0 top-full z-20 mt-1 max-h-72 w-72 overflow-y-auto p-1">
             {plans.map((plan) => (
               <li key={plan.id}>
                 <button
@@ -117,7 +117,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   const save = useStore((state) => state.save)
 
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-canvas/85 backdrop-blur no-print">
+    <header className="sticky top-0 z-40 border-b border-line bg-canvas/85 backdrop-blur no-print">
       <div className="flex min-w-0 items-center gap-2 px-3 py-2 sm:gap-3">
         <Button
           variant="ghost"

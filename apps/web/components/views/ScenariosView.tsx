@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { CircleCheck, CircleSlash, CircleX, ShieldX } from 'lucide-react'
 import { indexPlan, type ScenarioKind, type ScenarioResult, type Verdict } from '@outlive/core'
-import { Panel, ViewHeader } from '@/components/ui/Surface.tsx'
+import { MEASURE, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Segmented } from '@/components/ui/Field.tsx'
 import { CustomScenario } from '@/components/scenarios/CustomScenario.tsx'
 import { useActivePlan } from '@/lib/store.ts'
@@ -68,7 +68,7 @@ export function ScenariosView() {
 
   if (!planIsStarted(plan)) {
     return (
-      <div className="mx-auto max-w-6xl">
+      <div className={MEASURE.wide}>
         <ViewHeader
           eyebrow="Diagnosis"
           title="Stress test"
@@ -87,7 +87,7 @@ export function ScenariosView() {
   const wallets = plan.wallets
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className={MEASURE.wide}>
       <ViewHeader eyebrow="Diagnosis" title="Stress test" question={definition.question} />
 
       {/* Both switches change the same table, so they belong in the same row. */}

@@ -34,7 +34,7 @@ export function Dialog({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[rgb(0_0_0/0.6)] p-4 pt-[10vh] backdrop-blur-sm no-print">
+    <div className="fixed inset-0 z-60 flex items-start justify-center overflow-y-auto bg-[rgb(0_0_0/0.6)] p-4 pt-[10vh] backdrop-blur-sm no-print">
       <div
         ref={ref}
         role="dialog"
