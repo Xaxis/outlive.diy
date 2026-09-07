@@ -101,7 +101,9 @@ export function EntityWorkbench({
     // aligned, rather than the form stretching to whatever the window is.
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(13rem,18rem)_minmax(0,42rem)]">
       <div className="space-y-2">
-        <ul className="space-y-2">
+        {/* On a phone this list sits above the form. Left uncapped, switching
+            between keys means scrolling back past the whole of one. */}
+        <ul className="max-h-[13rem] space-y-2 overflow-y-auto lg:max-h-none lg:overflow-visible">
           {entities.map((entity) => {
             const severity = worst(entity.id)
             return (

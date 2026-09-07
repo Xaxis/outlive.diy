@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRoute } from '@/lib/router.ts'
 import { useActivePlan, useStore } from '@/lib/store.ts'
 import { useLetters, useReport } from '@/lib/analysis.ts'
@@ -33,6 +33,7 @@ export function App() {
   const letters = useLetters(plan)
   const [route] = useRoute()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const main = useRef<HTMLElement>(null)
 
   useEffect(() => {
     hydrate()
@@ -48,6 +49,19 @@ export function App() {
     window.addEventListener('hashchange', close)
     return () => window.removeEventListener('hashchange', close)
   }, [])
+
+  // A view change is a page change. Without this, a keyboard or screen reader
+  // user activates a link in the sidebar and their position stays in the
+  // sidebar, with no announcement that anything happened. Only on the view,
+  // not the section, so moving between design tabs does not yank focus.
+  const firstRender = useRef(true)
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false
+      return
+    }
+    main.current?.focus?.()
+  }, [route.view])
 
   // Local storage cannot be read during render, so the prerendered document is
   // the landing page. That is also the right thing to serve: it is what a first
@@ -92,7 +106,12 @@ export function App() {
           />
         ) : null}
 
-        <main id="main" className="min-w-0 flex-1 px-4 py-6 lg:px-8 lg:py-8">
+        <main
+          id="main"
+          ref={main}
+          tabIndex={-1}
+          className="min-w-0 flex-1 px-4 py-6 outline-none lg:px-8 lg:py-8"
+        >
           {/* Full width of the content area, so it reads as a banner rather
               than as a column that nearly lines up with the one below it. */}
           <ScopeNotice />
