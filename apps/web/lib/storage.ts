@@ -64,11 +64,34 @@ export function writePreferences(preferences: Preferences): void {
   safeWrite(PREFERENCES_KEY, preferences)
 }
 
-export function readStoredFile(): PlanFile | null {
+export const UNREADABLE_KEY = 'outlive.diy/unreadable/v1'
+
+export type StoredRead =
+  { kind: 'empty' } | { kind: 'ok'; file: PlanFile } | { kind: 'unreadable'; problems: string[] }
+
+/**
+ * Read what this browser is holding.
+ *
+ * The unreadable case is the one that matters. Silently starting fresh would
+ * show somebody the landing page as though they had never used this, and then
+ * overwrite whatever was there on their first edit. So it is set aside under
+ * its own key first, where the storage page lists it and the erase button can
+ * still remove it, and the caller is told.
+ */
+export function readStoredFile(): StoredRead {
   const stored = safeRead(STORAGE_KEY)
-  if (stored === null) return null
+  if (stored === null) return { kind: 'empty' }
   const parsed = parsePlanFile(stored)
-  return parsed.ok ? parsed.value : null
+  if (parsed.ok) return { kind: 'ok', file: parsed.value }
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY)
+    if (raw !== null) window.localStorage.setItem(UNREADABLE_KEY, raw)
+    window.localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    // Nothing to do beyond telling the user, which the caller does.
+  }
+  invalidate()
+  return { kind: 'unreadable', problems: parsed.problems }
 }
 
 export function writeStoredFile(file: PlanFile): void {

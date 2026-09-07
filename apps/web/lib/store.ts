@@ -52,6 +52,7 @@ import {
   readPreferences,
   readStoredFile,
   readVendorData,
+  UNREADABLE_KEY,
   saveToDisk,
   suggestedFilename,
   writePreferences,
@@ -177,18 +178,26 @@ export const useStore = create<StoreState>()(
 
     hydrate: () => {
       const preferences = readPreferences()
-      const stored = preferences.persistence === 'local' ? readStoredFile() : null
+      const stored =
+        preferences.persistence === 'local' ? readStoredFile() : ({ kind: 'empty' } as const)
       const vendors = readVendorData()
       const parsedVendors = vendors === null ? null : parseVendorData(vendors)
       set((state) => {
         state.preferences = preferences
         state.ready = true
-        if (stored && stored.plans.length > 0) {
-          state.plans = stored.plans
-          state.activeId = stored.activePlanId ?? stored.plans[0].id
+        if (stored.kind === 'ok' && stored.file.plans.length > 0) {
+          state.plans = stored.file.plans
+          state.activeId = stored.file.activePlanId ?? stored.file.plans[0].id
         }
         if (parsedVendors?.ok) state.vendorData = parsedVendors.value
       })
+      if (stored.kind === 'unreadable') {
+        get().notify({
+          tone: 'error',
+          message: 'Something was stored here that this build cannot read',
+          detail: `${stored.problems[0]} It has been set aside rather than overwritten, and it is listed on the plan file page under ${UNREADABLE_KEY}.`,
+        })
+      }
     },
 
     edit: (recipe, options = {}) => {

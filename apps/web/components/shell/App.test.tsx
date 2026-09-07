@@ -560,3 +560,31 @@ describe('a policy with a timelock', () => {
     expect(screen.queryByText(/when each way opens/i)).not.toBeInTheDocument()
   })
 })
+
+describe('a stored plan this build cannot read', () => {
+  it('is set aside and reported, not silently thrown away', async () => {
+    reset()
+    // Something a previous build, or a text editor, left behind.
+    window.localStorage.setItem(
+      'outlive.diy/plan-file/v1',
+      JSON.stringify({ schemaVersion: 1, plans: [{ id: 'x' }] })
+    )
+    render(<App />)
+
+    expect(
+      await screen.findByText(/something was stored here that this build cannot read/i)
+    ).toBeInTheDocument()
+
+    // Kept, under its own key, where the storage page lists it.
+    expect(window.localStorage.getItem('outlive.diy/unreadable/v1')).toContain('schemaVersion')
+    // And out of the way, so the first edit does not write over it.
+    expect(window.localStorage.getItem('outlive.diy/plan-file/v1')).toBeNull()
+  })
+
+  it('says nothing when there is simply nothing stored', async () => {
+    reset()
+    render(<App />)
+    await screen.findByRole('heading', { name: /design a bitcoin custody plan/i })
+    expect(screen.queryByText(/cannot read/i)).not.toBeInTheDocument()
+  })
+})
