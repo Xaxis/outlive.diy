@@ -10,6 +10,10 @@ node_modules/
 .yarn/install-state.gz
 
 # Build output
+# next-env.d.ts is rewritten by every build, in a style prettier disagrees with,
+# so committing it means the tree is dirty after any build and the format check
+# fails on the next run. Next regenerates it on install and build.
+apps/web/next-env.d.ts
 .next/
 .next-dev/
 out/
