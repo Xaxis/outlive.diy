@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import {
   createBackup,
   type Backup,
@@ -18,6 +18,7 @@ import {
   Toggle,
 } from '@/components/ui/Field.tsx'
 import { Button } from '@/components/ui/Button.tsx'
+import { ItemList } from '@/components/ui/ItemList.tsx'
 import { Callout, SectionHeading } from '@/components/ui/Surface.tsx'
 import { useEntityUpdater, usePlanEdit } from '@/lib/edit.ts'
 import { BACKUP_MEDIUM, BACKUP_MEDIUM_NOTE } from '@/lib/describe.ts'
@@ -44,27 +45,14 @@ function BackupEditor({
     })
 
   return (
-    <li className="card space-y-3 p-3">
-      <div className="flex items-center gap-2">
+    <>
+      <Field label="Name">
         <GuardedInput
           ariaLabel="Backup name"
           value={backup.label}
           onCommit={(value) => patch((entry) => void (entry.label = value))}
         />
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-label="Remove backup"
-          onClick={() =>
-            edit((draft) => {
-              const key = draft.keys.find((entry) => entry.id === keyId)
-              key?.backups.splice(position, 1)
-            })
-          }
-        >
-          <Trash2 className="size-3.5" aria-hidden />
-        </Button>
-      </div>
+      </Field>
 
       <Field label="Medium" help={BACKUP_MEDIUM_NOTE[backup.medium]}>
         <Select
@@ -136,8 +124,21 @@ function BackupEditor({
         label="Sealed, tamper-evident"
         onChange={(value) => patch((entry) => void (entry.tamperEvident = value))}
       />
-    </li>
+    </>
   )
+}
+
+/** What a backup says when its row is shut. Facts, in the plan's own words. */
+function describeBackup(plan: Plan, backup: Backup): string {
+  const medium = BACKUP_MEDIUM[backup.medium].toLowerCase()
+  const where =
+    backup.medium === 'memorized'
+      ? 'in a head'
+      : backup.locationId
+        ? (plan.locations.find((entry) => entry.id === backup.locationId)?.label ?? 'somewhere')
+        : 'no place recorded'
+  const share = backup.split ? `share, ${backup.split.threshold} needed` : null
+  return [medium, share, where].filter(Boolean).join(' · ')
 }
 
 export function KeyInspector({ plan, entity }: { plan: Plan; entity: Key }) {
@@ -230,17 +231,22 @@ export function KeyInspector({ plan, entity }: { plan: Plan; entity: Key }) {
               : `${entity.label} has neither a device nor a backup. Nothing in this plan can produce that signature.`}
           </Callout>
         ) : (
-          <ul className="space-y-2">
-            {entity.backups.map((backup, position) => (
-              <BackupEditor
-                key={backup.id}
-                plan={plan}
-                keyId={entity.id}
-                backup={backup}
-                position={position}
-              />
-            ))}
-          </ul>
+          <ItemList
+            items={entity.backups.map((backup, position) => ({
+              id: backup.id,
+              title: backup.label,
+              summary: describeBackup(plan, backup),
+              removeLabel: `Remove ${backup.label}`,
+              onRemove: () =>
+                edit((draft) => {
+                  const key = draft.keys.find((candidate) => candidate.id === entity.id)
+                  key?.backups.splice(position, 1)
+                }),
+              body: (
+                <BackupEditor plan={plan} keyId={entity.id} backup={backup} position={position} />
+              ),
+            }))}
+          />
         )}
       </div>
 

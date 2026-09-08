@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import {
   createConfigBackup,
   createSpendPath,
@@ -11,6 +11,7 @@ import {
   type SpendPathKind,
   type Stake,
   type Wallet,
+  type WalletConfigBackup,
   type WalletTier,
 } from '@outlive/core'
 import {
@@ -22,6 +23,7 @@ import {
   Toggle,
 } from '@/components/ui/Field.tsx'
 import { Button } from '@/components/ui/Button.tsx'
+import { ItemList } from '@/components/ui/ItemList.tsx'
 import { Callout, SectionHeading } from '@/components/ui/Surface.tsx'
 import { useEntityUpdater, usePlanEdit } from '@/lib/edit.ts'
 import { BACKUP_MEDIUM, PATH_KIND, STAKE, TIER, TIER_NOTE } from '@/lib/describe.ts'
@@ -37,13 +39,11 @@ function PathEditor({
   walletId,
   path,
   position,
-  canRemove,
 }: {
   plan: Plan
   walletId: string
   path: SpendPath
   position: number
-  canRemove: boolean
 }) {
   const edit = usePlanEdit()
   const patch = (recipe: (path: SpendPath) => void) =>
@@ -56,29 +56,14 @@ function PathEditor({
   const short = path.threshold > path.keyIds.length
 
   return (
-    <li className="card space-y-3 p-3">
-      <div className="flex items-center gap-2">
+    <>
+      <Field label="Name">
         <GuardedInput
           ariaLabel="Spend path name"
           value={path.label}
           onCommit={(value) => patch((entry) => void (entry.label = value))}
         />
-        {canRemove ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            aria-label="Remove path"
-            onClick={() =>
-              edit((draft) => {
-                const wallet = draft.wallets.find((entry) => entry.id === walletId)
-                wallet?.paths.splice(position, 1)
-              })
-            }
-          >
-            <Trash2 className="size-3.5" aria-hidden />
-          </Button>
-        ) : null}
-      </div>
+      </Field>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="What it is for">
@@ -131,8 +116,27 @@ function PathEditor({
           {path.keyIds.length === 1 ? 'key' : 'keys'}. Nobody can satisfy it, including you.
         </Callout>
       ) : null}
-    </li>
+    </>
   )
+}
+
+/** What a way to spend says when its row is shut. */
+function describePath(path: SpendPath): string {
+  const policy = `${path.threshold} of ${path.keyIds.length}`
+  const when = path.timelockDays > 0 ? `opens after ${path.timelockDays} days` : 'available now'
+  // Most paths are named after their kind, and "Inheritance: inheritance" is a
+  // summary line spending a third of itself saying nothing.
+  const kind = PATH_KIND[path.kind].toLowerCase()
+  const named = kind === path.label.trim().toLowerCase()
+  return [policy, named ? null : kind, when].filter(Boolean).join(' · ')
+}
+
+/** And a configuration copy. */
+function describeConfigCopy(plan: Plan, backup: WalletConfigBackup): string {
+  const where = backup.locationId
+    ? (plan.locations.find((entry) => entry.id === backup.locationId)?.label ?? 'somewhere')
+    : 'no place recorded'
+  return `${BACKUP_MEDIUM[backup.medium].toLowerCase()} · ${where}`
 }
 
 export function WalletInspector({ plan, wallet }: { plan: Plan; wallet: Wallet }) {
@@ -213,18 +217,26 @@ export function WalletInspector({ plan, wallet }: { plan: Plan; wallet: Wallet }
             that could move its coins.
           </Callout>
         ) : (
-          <ul className="space-y-2">
-            {wallet.paths.map((path, position) => (
-              <PathEditor
-                key={path.id}
-                plan={plan}
-                walletId={wallet.id}
-                path={path}
-                position={position}
-                canRemove={wallet.paths.length > 1}
-              />
-            ))}
-          </ul>
+          <ItemList
+            items={wallet.paths.map((path, position) => ({
+              id: path.id,
+              title: path.label,
+              summary: describePath(path),
+              removeLabel: `Remove ${path.label}`,
+              // The last way to spend cannot go: a wallet with none is a
+              // description of coins nobody can move, and the editor should
+              // not be the thing that makes one.
+              onRemove:
+                wallet.paths.length > 1
+                  ? () =>
+                      edit((draft) => {
+                        const target = draft.wallets.find((entry) => entry.id === wallet.id)
+                        target?.paths.splice(position, 1)
+                      })
+                  : undefined,
+              body: <PathEditor plan={plan} walletId={wallet.id} path={path} position={position} />,
+            }))}
+          />
         )}
       </div>
 
@@ -255,73 +267,71 @@ export function WalletInspector({ plan, wallet }: { plan: Plan; wallet: Wallet }
               secret, so it can be stored more widely than a seed, and it must be.
             </Callout>
           ) : (
-            <ul className="space-y-2">
-              {wallet.configBackups.map((backup, position) => (
-                <li key={backup.id} className="card space-y-3 p-3">
-                  <div className="flex items-center gap-2">
-                    <GuardedInput
-                      ariaLabel="Configuration copy name"
-                      value={backup.label}
-                      onCommit={(value) =>
-                        edit((draft) => {
-                          const target = draft.wallets.find((entry) => entry.id === wallet.id)
-                          const copy = target?.configBackups[position]
-                          if (copy) copy.label = value
-                        })
-                      }
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      aria-label="Remove copy"
-                      onClick={() =>
-                        edit((draft) => {
-                          const target = draft.wallets.find((entry) => entry.id === wallet.id)
-                          target?.configBackups.splice(position, 1)
-                        })
-                      }
-                    >
-                      <Trash2 className="size-3.5" aria-hidden />
-                    </Button>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Field label="Medium">
-                      <Select
-                        value={backup.medium}
-                        onChange={(medium) =>
+            <ItemList
+              items={wallet.configBackups.map((backup, position) => ({
+                id: backup.id,
+                title: backup.label,
+                summary: describeConfigCopy(plan, backup),
+                removeLabel: `Remove ${backup.label}`,
+                onRemove: () =>
+                  edit((draft) => {
+                    const target = draft.wallets.find((entry) => entry.id === wallet.id)
+                    target?.configBackups.splice(position, 1)
+                  }),
+                body: (
+                  <>
+                    <Field label="Name">
+                      <GuardedInput
+                        ariaLabel="Configuration copy name"
+                        value={backup.label}
+                        onCommit={(value) =>
                           edit((draft) => {
                             const target = draft.wallets.find((entry) => entry.id === wallet.id)
                             const copy = target?.configBackups[position]
-                            if (copy) copy.medium = (medium ?? 'paper') as BackupMedium
+                            if (copy) copy.label = value
                           })
                         }
-                        options={MEDIA.map((medium) => ({
-                          value: medium,
-                          label: BACKUP_MEDIUM[medium],
-                        }))}
                       />
                     </Field>
-                    <Field label="Where it is">
-                      <Select
-                        value={backup.locationId}
-                        placeholder="Not recorded"
-                        onChange={(locationId) =>
-                          edit((draft) => {
-                            const target = draft.wallets.find((entry) => entry.id === wallet.id)
-                            const copy = target?.configBackups[position]
-                            if (copy) copy.locationId = locationId
-                          })
-                        }
-                        options={plan.locations.map((location) => ({
-                          value: location.id,
-                          label: location.label,
-                        }))}
-                      />
-                    </Field>
-                  </div>
-                </li>
-              ))}
-            </ul>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label="Medium">
+                        <Select
+                          value={backup.medium}
+                          onChange={(medium) =>
+                            edit((draft) => {
+                              const target = draft.wallets.find((entry) => entry.id === wallet.id)
+                              const copy = target?.configBackups[position]
+                              if (copy) copy.medium = (medium ?? 'paper') as BackupMedium
+                            })
+                          }
+                          options={MEDIA.map((medium) => ({
+                            value: medium,
+                            label: BACKUP_MEDIUM[medium],
+                          }))}
+                        />
+                      </Field>
+                      <Field label="Where it is">
+                        <Select
+                          value={backup.locationId}
+                          placeholder="Not recorded"
+                          onChange={(locationId) =>
+                            edit((draft) => {
+                              const target = draft.wallets.find((entry) => entry.id === wallet.id)
+                              const copy = target?.configBackups[position]
+                              if (copy) copy.locationId = locationId
+                            })
+                          }
+                          options={plan.locations.map((location) => ({
+                            value: location.id,
+                            label: location.label,
+                          }))}
+                        />
+                      </Field>
+                    </div>
+                  </>
+                ),
+              }))}
+            />
           )}
         </div>
       ) : null}

@@ -723,3 +723,74 @@ describe('a finding and its picture', () => {
     expect(screen.getByLabelText(/show the plan/i)).toHaveValue('location-lost:loc_home')
   })
 })
+
+describe('the repeated parts of an entity', () => {
+  it('are rows that say what they are, shut, until you open one', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/design/keys')
+
+    // The backup reads as a line, not as five fields.
+    // Anchored, because the remove button beside it is "Remove Steel plate".
+    const row = await screen.findByRole('button', { name: /^Steel plate/ })
+    expect(row).toHaveAttribute('aria-expanded', 'false')
+    expect(row).toHaveTextContent(/Site A/)
+
+    await user.click(row)
+    expect(row).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByLabelText('Backup name')).toBeInTheDocument()
+  })
+
+  it('open a row that has just been added, because that is why you added it', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/design/keys')
+    await user.click(screen.getByRole('button', { name: /add backup/i }))
+
+    const added = await screen.findByRole('button', { name: /^Backup 2/ })
+    expect(added).toHaveAttribute('aria-expanded', 'true')
+    // And it says immediately what is still missing from it.
+    expect(added).toHaveTextContent(/no place recorded/)
+    // The one that was already there stays shut.
+    expect(screen.getByRole('button', { name: /^Steel plate/ })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    )
+  })
+
+  it('use the same pattern for the ways to spend a wallet', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, repaired'))
+
+    goto('#/design/wallets')
+
+    const everyday = await screen.findByRole('button', { name: /^Everyday/ })
+    expect(everyday).toHaveAttribute('aria-expanded', 'false')
+    expect(everyday).toHaveTextContent(/2 of 3/)
+    expect(screen.getByRole('button', { name: /^Inheritance/ })).toHaveTextContent(
+      /opens after 180 days/
+    )
+  })
+
+  it('will not offer to remove the only way a wallet can be spent', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/design/wallets')
+    await user.click(await screen.findByText('Daily'))
+
+    // One path, and no way to delete it from here: a wallet with none is a
+    // description of coins nobody can move.
+    expect(screen.queryByRole('button', { name: /Remove Phone/i })).not.toBeInTheDocument()
+  })
+})

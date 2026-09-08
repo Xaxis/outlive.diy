@@ -1,15 +1,25 @@
 'use client'
 
-import { Plus, Trash2 } from 'lucide-react'
-import type { AccessCondition, Location, LocationKind, Plan } from '@outlive/core'
+import { Plus } from 'lucide-react'
+import type { AccessCondition, Location, LocationAccess, LocationKind, Plan } from '@outlive/core'
 import { Field, GuardedInput, NumberInput, Select, Toggle } from '@/components/ui/Field.tsx'
 import { Button } from '@/components/ui/Button.tsx'
+import { ItemList } from '@/components/ui/ItemList.tsx'
 import { SectionHeading } from '@/components/ui/Surface.tsx'
 import { useEntityUpdater, usePlanEdit } from '@/lib/edit.ts'
 import { ACCESS_CONDITION, LOCATION_KIND } from '@/lib/describe.ts'
 
 const KINDS = Object.keys(LOCATION_KIND) as LocationKind[]
 const CONDITIONS = Object.keys(ACCESS_CONDITION) as AccessCondition[]
+
+/** What a door-access row says when it is shut. */
+function describeAccess(access: LocationAccess): string {
+  if (access.condition === 'always') return 'any time, without you'
+  if (access.condition === 'with-user') return 'only with you there'
+  return access.delayDays > 0
+    ? `after your death, ${access.delayDays} days later`
+    : 'after your death'
+}
 
 export function LocationInspector({ plan, location }: { plan: Plan; location: Location }) {
   const update = useEntityUpdater('location')
@@ -136,71 +146,76 @@ export function LocationInspector({ plan, location }: { plan: Plan; location: Lo
         ) : location.access.length === 0 ? (
           <p className="text-sm text-muted">Nobody but you can get into {location.label}.</p>
         ) : (
-          <ul className="space-y-2">
-            {location.access.map((access, position) => (
-              <li key={`${access.personId}-${position}`} className="card space-y-2 p-3">
-                <div className="flex items-center gap-2">
-                  <Select
-                    value={access.personId}
-                    onChange={(personId) =>
-                      edit((draft) => {
-                        const target = draft.locations.find((entry) => entry.id === location.id)
-                        if (target && personId) target.access[position].personId = personId
-                      })
-                    }
-                    options={plan.people.map((person) => ({
-                      value: person.id,
-                      label: person.label,
-                    }))}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-label="Remove access"
-                    onClick={() =>
-                      edit((draft) => {
-                        const target = draft.locations.find((entry) => entry.id === location.id)
-                        if (target) target.access.splice(position, 1)
-                      })
-                    }
-                  >
-                    <Trash2 className="size-3.5" aria-hidden />
-                  </Button>
-                </div>
-                <Select
-                  value={access.condition}
-                  onChange={(condition) =>
-                    edit((draft) => {
-                      const target = draft.locations.find((entry) => entry.id === location.id)
-                      if (target && condition) target.access[position].condition = condition
-                    })
-                  }
-                  options={CONDITIONS.map((condition) => ({
-                    value: condition,
-                    label: ACCESS_CONDITION[condition],
-                  }))}
-                />
-                {access.condition === 'after-death' ? (
-                  <Field
-                    label="Delay before it opens"
-                    help="Probate, mostly. Real time during which nobody can act."
-                  >
-                    <NumberInput
-                      value={access.delayDays}
-                      max={3650}
-                      suffix="days"
-                      onChange={(days) =>
-                        edit((draft) => {
-                          const target = draft.locations.find((entry) => entry.id === location.id)
-                          if (target) target.access[position].delayDays = days ?? 0
-                        })
-                      }
-                    />
-                  </Field>
-                ) : null}
-              </li>
-            ))}
-          </ul>
+          <ItemList
+            items={location.access.map((access, position) => {
+              const person = plan.people.find((entry) => entry.id === access.personId)
+              return {
+                id: `${access.personId}-${position}`,
+                title: person?.label ?? 'Somebody',
+                summary: describeAccess(access),
+                removeLabel: `Remove ${person?.label ?? 'this'} access`,
+                onRemove: () =>
+                  edit((draft) => {
+                    const target = draft.locations.find((entry) => entry.id === location.id)
+                    if (target) target.access.splice(position, 1)
+                  }),
+                body: (
+                  <>
+                    <Field label="Who">
+                      <Select
+                        value={access.personId}
+                        onChange={(personId) =>
+                          edit((draft) => {
+                            const target = draft.locations.find((entry) => entry.id === location.id)
+                            if (target && personId) target.access[position].personId = personId
+                          })
+                        }
+                        options={plan.people.map((entry) => ({
+                          value: entry.id,
+                          label: entry.label,
+                        }))}
+                      />
+                    </Field>
+                    <Field label="When">
+                      <Select
+                        value={access.condition}
+                        onChange={(condition) =>
+                          edit((draft) => {
+                            const target = draft.locations.find((entry) => entry.id === location.id)
+                            if (target && condition) target.access[position].condition = condition
+                          })
+                        }
+                        options={CONDITIONS.map((condition) => ({
+                          value: condition,
+                          label: ACCESS_CONDITION[condition],
+                        }))}
+                      />
+                    </Field>
+                    {access.condition === 'after-death' ? (
+                      <Field
+                        label="Delay before it opens"
+                        help="Probate, mostly. Real time during which nobody can act."
+                      >
+                        <NumberInput
+                          value={access.delayDays}
+                          max={3650}
+                          suffix="days"
+                          onChange={(days) =>
+                            edit((draft) => {
+                              const target = draft.locations.find(
+                                (entry) => entry.id === location.id
+                              )
+                              if (target) target.access[position].delayDays = days ?? 0
+                            })
+                          }
+                        />
+                      </Field>
+                    ) : null}
+                  </>
+                ),
+              }
+            })}
+          />
         )}
       </div>
 
