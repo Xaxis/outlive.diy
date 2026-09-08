@@ -5,7 +5,9 @@ import {
   baseWorld,
   createContext,
   enumerateScenarios,
+  type Perspective,
   type Plan,
+  type Ref,
   type Scenario,
   type ScenarioKind,
   type World,
@@ -56,6 +58,12 @@ export interface Lens {
   caption: string
   groups: Group[]
   set: (id: string) => void
+  /**
+   * The scenario that takes one particular thing away, or puts somebody else
+   * inside it. Looked up from what the engine enumerated rather than built out
+   * of an id, so the picture can only ever offer a world the engine has.
+   */
+  find: (ref: Ref, perspective: Perspective) => Scenario | null
 }
 
 export function useLens(plan: Plan | null, initial?: string | null): Lens {
@@ -95,6 +103,12 @@ export function useLens(plan: Plan | null, initial?: string | null): Lens {
     // A lens whose scenario disappeared, because the plan changed under it,
     // falls back to today rather than showing a world that no longer exists.
     set: (next: string) => set(next === TODAY ? TODAY : next),
+    find: (ref, perspective) =>
+      scenarios.find(
+        (entry) =>
+          entry.perspective === perspective &&
+          entry.subjects.some((subject) => subject.type === ref.type && subject.id === ref.id)
+      ) ?? null,
   }
 }
 

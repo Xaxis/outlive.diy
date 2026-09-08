@@ -794,3 +794,55 @@ describe('the repeated parts of an entity', () => {
     expect(screen.queryByRole('button', { name: /Remove Phone/i })).not.toBeInTheDocument()
   })
 })
+
+describe('the map, as one instrument', () => {
+  it('answers about the box you clicked, without leaving the world you are in', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/map')
+    await user.click(await screen.findByRole('button', { name: /^Site A.*place\./i }))
+
+    // Still on the map, now with an answer about that one box.
+    expect(screen.getByRole('heading', { name: /^map$/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Site A', level: 3 })).toBeInTheDocument()
+    expect(screen.getByText(/what is kept here/i)).toBeInTheDocument()
+    // Including what the findings already said about it.
+    expect(screen.getByText(/Site A alone is enough to spend Daily/i)).toBeInTheDocument()
+  })
+
+  it('takes that box away and redraws everything in the world without it', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/map')
+    await user.click(await screen.findByRole('button', { name: /^Site A.*place\./i }))
+    await user.click(screen.getByRole('button', { name: /take it away/i }))
+
+    // The lens moved to the scenario the engine already had for it.
+    expect(screen.getByLabelText(/show the plan/i)).toHaveValue('location-lost:loc_home')
+    // And the wallets are read in that world rather than in today's.
+    expect(await screen.findAllByText(/unspendable/i)).not.toHaveLength(0)
+    // The panel is still about Site A, now saying what this world did to it.
+    expect(screen.getByText(/not available here/i)).toBeInTheDocument()
+  })
+
+  it('keeps editing as a deliberate act rather than the price of looking', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/map')
+    await user.click(await screen.findByRole('button', { name: /^Key A.*key\./i }))
+    // Clicking the node did not navigate anywhere.
+    expect(screen.getByRole('heading', { name: /^map$/i })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^edit$/i }))
+    expect(await screen.findByRole('heading', { name: /^design$/i })).toBeInTheDocument()
+  })
+})

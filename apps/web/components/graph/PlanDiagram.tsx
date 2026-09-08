@@ -156,12 +156,19 @@ const TONE_DETAIL: Record<Tone, string> = {
 export function PlanDiagram({
   graph,
   onSelect,
+  onSelectNode,
   selectedId,
   className,
   maxHeight,
 }: {
   graph: PlanGraph
+  /** Clicking a box hands back what it stands for. For jumping somewhere. */
   onSelect?: (ref: Ref) => void
+  /**
+   * Clicking a box hands back the box. For staying here: the map answers about
+   * the node itself, including the ones that stand for no single entity.
+   */
+  onSelectNode?: (id: string) => void
   selectedId?: string | null
   className?: string
   /**
@@ -175,7 +182,15 @@ export function PlanDiagram({
   const layout = useMemo(() => layoutGraph(graph), [graph])
   const [outer, scale] = useFitScale(layout.width)
   const [focused, setFocused] = useState<string | null>(null)
-  const lit = useMemo(() => (focused ? connectedTo(graph, focused) : null), [graph, focused])
+  // Hovering traces a chain; a selection holds one. Without the second, moving
+  // the mouse away from a box you just clicked unlights the very thing the
+  // panel underneath is describing.
+  const traced = focused ?? selectedId ?? null
+  const lit = useMemo(() => (traced ? connectedTo(graph, traced) : null), [graph, traced])
+  // A hover is a flick and can dim hard. A selection is held for as long as the
+  // reader is reading the panel underneath, and a page left at a quarter
+  // opacity for that long reads as broken rather than as backgrounded.
+  const dimmed = focused ? 0.2 : 0.45
   const adversary = graph.world.actor === 'adversary'
 
   if (layout.nodes.length === 0) return null
@@ -209,7 +224,7 @@ export function PlanDiagram({
           {layout.edges.map((edge) => {
             const dim = lit !== null && !(lit.has(edge.from) && lit.has(edge.to))
             return (
-              <g key={edge.id} opacity={dim ? 0.12 : 1}>
+              <g key={edge.id} opacity={dim ? dimmed * 0.5 : 1}>
                 <path
                   d={edge.path}
                   fill="none"
@@ -246,7 +261,7 @@ export function PlanDiagram({
             : node.available
               ? 'normal'
               : 'lost'
-          const interactive = Boolean(node.ref && onSelect)
+          const interactive = Boolean(onSelectNode || (node.ref && onSelect))
           const state = adversary
             ? node.available
               ? 'They have this.'
@@ -262,7 +277,10 @@ export function PlanDiagram({
               onMouseEnter={() => setFocused(node.id)}
               onFocus={() => setFocused(node.id)}
               onBlur={() => setFocused(null)}
-              onClick={() => node.ref && onSelect?.(node.ref)}
+              onClick={() => {
+                if (onSelectNode) onSelectNode(node.id)
+                else if (node.ref) onSelect?.(node.ref)
+              }}
               // Every box is narrower than some of the labels it has to carry,
               // so the whole of it is also the tooltip.
               title={`${node.label}${node.detail ? ` (${node.detail})` : ''}. ${state}`}
@@ -271,14 +289,14 @@ export function PlanDiagram({
                 'disabled:cursor-default',
                 interactive && 'hover:border-accent',
                 TONE_BOX[tone],
-                selectedId === node.id && 'ring-1 ring-accent'
+                selectedId === node.id && 'border-accent ring-1 ring-accent'
               )}
               style={{
                 left: node.x,
                 top: node.y,
                 width: NODE_WIDTH,
                 height: NODE_HEIGHT,
-                opacity: dim ? 0.25 : 1,
+                opacity: dim ? dimmed : 1,
               }}
             >
               <span className="flex items-center gap-1.5">
@@ -317,7 +335,8 @@ export function PlanDiagram({
                 left: edge.labelX,
                 top: edge.labelY - 6,
                 maxWidth: COLUMN_GAP + 16,
-                opacity: lit !== null && !(lit.has(edge.from) && lit.has(edge.to)) ? 0.12 : 1,
+                opacity:
+                  lit !== null && !(lit.has(edge.from) && lit.has(edge.to)) ? dimmed * 0.5 : 1,
               }}
             >
               {edge.label}
@@ -382,7 +401,8 @@ export function DiagramLegend({ graph }: { graph: PlanGraph }) {
       {adversary
         ? 'A solid red box is one they hold in this world; a faint dashed box is out of their reach and out of the story.'
         : 'A dashed red box cannot be reached in this world, and the line into it is dashed too.'}{' '}
-      Hovering a box lights the chain it belongs to; clicking one opens it for editing.
+      Hovering a box lights the chain it belongs to; clicking one holds that chain and says what
+      this world does to it.
     </p>
   )
 }
