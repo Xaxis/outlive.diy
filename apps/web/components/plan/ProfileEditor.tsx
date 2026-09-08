@@ -147,103 +147,105 @@ export function ProfileEditor({ plan }: { plan: Plan }) {
   const renamePlan = useStore((state) => state.renamePlan)
 
   return (
-    <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
-      <div className="grid gap-4">
-        <Panel className="space-y-4 p-4">
-          <SectionHeading title="This plan" />
-          <div className="grid gap-4 sm:grid-cols-[1fr_14rem]">
-            <Field label="Name" help="Yours to recognise. It appears on every printed page.">
-              <GuardedInput value={plan.name} onCommit={(name) => renamePlan(plan.id, name)} />
-            </Field>
-            <Field label="Kind" help="A draft is a candidate, compared against the one you run.">
-              <Select
-                value={plan.kind}
-                onChange={(kind) =>
-                  edit((draft) => {
-                    draft.kind = (kind ?? 'current') as Plan['kind']
-                  })
-                }
-                options={[
-                  { value: 'current', label: 'The plan I run' },
-                  { value: 'draft', label: 'A draft' },
-                ]}
-              />
-            </Field>
-          </div>
-        </Panel>
+    <div className="grid gap-4">
+      <Panel className="space-y-4 p-4">
+        <SectionHeading title="This plan" />
+        <div className="grid gap-4 sm:grid-cols-[1fr_14rem]">
+          <Field label="Name" help="Yours to recognise. It appears on every printed page.">
+            <GuardedInput value={plan.name} onCommit={(name) => renamePlan(plan.id, name)} />
+          </Field>
+          <Field label="Kind" help="A draft is a candidate, compared against the one you run.">
+            <Select
+              value={plan.kind}
+              onChange={(kind) =>
+                edit((draft) => {
+                  draft.kind = (kind ?? 'current') as Plan['kind']
+                })
+              }
+              options={[
+                { value: 'current', label: 'The plan I run' },
+                { value: 'draft', label: 'A draft' },
+              ]}
+            />
+          </Field>
+        </div>
+      </Panel>
 
-        <Panel className="p-4">
-          <SectionHeading
-            title="What are you planning against?"
-            hint="Everything is still analysed. This only decides what you read first."
-          />
-          <ChipSet
-            values={plan.profile.concerns}
-            onChange={(concerns) =>
+      <Panel className="p-4">
+        <SectionHeading
+          title="What are you planning against?"
+          hint="Everything is still analysed. This only decides what you read first."
+        />
+        <ChipSet
+          values={plan.profile.concerns}
+          onChange={(concerns) =>
+            edit((draft) => {
+              draft.profile.concerns = concerns
+            })
+          }
+          options={CONCERNS.map((concern) => ({ value: concern, label: CONCERN[concern] }))}
+        />
+      </Panel>
+
+      <Panel className="grid gap-5 p-4 lg:grid-cols-2">
+        <Field label="How long could you go without being able to move coins?">
+          <ChoiceGroup
+            name="recovery-tolerance"
+            value={plan.profile.recoveryToleranceDays}
+            onChange={(days) =>
               edit((draft) => {
-                draft.profile.concerns = concerns
+                draft.profile.recoveryToleranceDays = days
               })
             }
-            options={CONCERNS.map((concern) => ({ value: concern, label: CONCERN[concern] }))}
+            options={withExact(TOLERANCE, plan.profile.recoveryToleranceDays, 'days')}
           />
-        </Panel>
+        </Field>
 
-        <Panel className="space-y-5 p-4">
-          <Field label="How long could you go without being able to move coins?">
-            <ChoiceGroup
-              name="recovery-tolerance"
-              value={plan.profile.recoveryToleranceDays}
-              onChange={(days) =>
-                edit((draft) => {
-                  draft.profile.recoveryToleranceDays = days
-                })
-              }
-              options={withExact(TOLERANCE, plan.profile.recoveryToleranceDays, 'days')}
-            />
-          </Field>
+        <Field label="How long does this have to keep working without you touching it?">
+          <ChoiceGroup
+            name="horizon"
+            value={plan.profile.horizonYears}
+            onChange={(years) =>
+              edit((draft) => {
+                draft.profile.horizonYears = years
+              })
+            }
+            options={withExact(HORIZON, plan.profile.horizonYears, 'years')}
+          />
+        </Field>
 
-          <Field label="How long does this have to keep working without you touching it?">
-            <ChoiceGroup
-              name="horizon"
-              value={plan.profile.horizonYears}
-              onChange={(years) =>
-                edit((draft) => {
-                  draft.profile.horizonYears = years
-                })
-              }
-              options={withExact(HORIZON, plan.profile.horizonYears, 'years')}
-            />
-          </Field>
+        <Field label="How many legal systems does this plan sit in?">
+          <ChoiceGroup
+            name="jurisdictions"
+            value={plan.profile.jurisdictionCount}
+            onChange={(count) =>
+              edit((draft) => {
+                draft.profile.jurisdictionCount = count
+              })
+            }
+            options={withExact(JURISDICTIONS, plan.profile.jurisdictionCount, 'systems')}
+          />
+        </Field>
 
-          <Field label="How many legal systems does this plan sit in?">
-            <ChoiceGroup
-              name="jurisdictions"
-              value={plan.profile.jurisdictionCount}
-              onChange={(count) =>
-                edit((draft) => {
-                  draft.profile.jurisdictionCount = count
-                })
-              }
-              options={withExact(JURISDICTIONS, plan.profile.jurisdictionCount, 'systems')}
-            />
-          </Field>
+        <Field label="Where are you, most of the time?">
+          <ChoiceGroup
+            name="travel"
+            value={plan.profile.travelsFrequently ? 'away' : 'home'}
+            onChange={(where) =>
+              edit((draft) => {
+                draft.profile.travelsFrequently = where === 'away'
+              })
+            }
+            options={TRAVEL}
+          />
+        </Field>
+      </Panel>
 
-          <Field label="Where are you, most of the time?">
-            <ChoiceGroup
-              name="travel"
-              value={plan.profile.travelsFrequently ? 'away' : 'home'}
-              onChange={(where) =>
-                edit((draft) => {
-                  draft.profile.travelsFrequently = where === 'away'
-                })
-              }
-              options={TRAVEL}
-            />
-          </Field>
-        </Panel>
-      </div>
-
-      <Implications plan={plan} className="xl:sticky xl:top-16" />
+      {/* After the questions rather than beside them. Answering comes first and
+          reading back what the answers meant comes second, which is the order
+          the guided route already uses for every other step, and it gives the
+          questions the whole column instead of two thirds of it. */}
+      <Implications plan={plan} />
     </div>
   )
 }

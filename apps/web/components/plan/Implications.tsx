@@ -28,7 +28,7 @@ export function Implications({ plan, className }: { plan: Plan; className?: stri
         Each answer above governs a real part of the analysis. This is what the plan underneath it
         currently does about it.
       </p>
-      <ul className="grid gap-3.5">
+      <ul className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
         {implications.map((implication) => {
           const Icon = implication.meets === null ? Minus : implication.meets ? Check : CircleAlert
           return (

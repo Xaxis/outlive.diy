@@ -10,7 +10,7 @@ import {
   type Plan,
   type Verdict,
 } from '@outlive/core'
-import { Panel, SectionHeading } from '@/components/ui/Surface.tsx'
+import { Panel } from '@/components/ui/Surface.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { Field, NumberInput, Segmented, Toggle } from '@/components/ui/Field.tsx'
 import { cn } from '@/lib/cn.ts'
@@ -80,20 +80,16 @@ export function CustomScenario({ plan }: { plan: Plan }) {
 
   return (
     <Panel className="p-4">
-      <SectionHeading
-        title="Compose your own"
-        hint="Nothing goes wrong one thing at a time."
-        actions={
-          <Button
-            size="sm"
-            variant="ghost"
-            icon={<RotateCcw className="size-3.5" aria-hidden />}
-            onClick={reset}
-          >
-            Reset
-          </Button>
-        }
-      />
+      <div className="mb-3 flex justify-end no-print">
+        <Button
+          size="sm"
+          variant="ghost"
+          icon={<RotateCcw className="size-3.5" aria-hidden />}
+          onClick={reset}
+        >
+          Reset
+        </Button>
+      </div>
 
       <div className="grid gap-5 lg:grid-cols-[1fr_1fr]">
         <div className="space-y-4">

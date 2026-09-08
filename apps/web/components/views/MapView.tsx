@@ -1,9 +1,9 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ChevronRight } from 'lucide-react'
 import { buildGraph, type Ref } from '@outlive/core'
 import { MEASURE, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
+import { Disclosure } from '@/components/ui/Disclosure.tsx'
 import { DiagramLegend, DiagramSummary, PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
 import { LensPicker, useLens } from '@/components/graph/Lens.tsx'
 import { NodeDetail } from '@/components/graph/NodeDetail.tsx'
@@ -13,7 +13,6 @@ import { useActivePlan, useStore } from '@/lib/store.ts'
 import { useReport } from '@/lib/analysis.ts'
 import { NothingYet } from '@/components/shell/NothingYet.tsx'
 import { navigateTo, useRoute } from '@/lib/router.ts'
-import { cn } from '@/lib/cn.ts'
 
 /**
  * The map.
@@ -42,7 +41,6 @@ export function MapView() {
   const lens = useLens(plan, route.section)
   const [walletId, setWalletId] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [showTable, setShowTable] = useState(false)
 
   const graph = useMemo(
     () => (plan && lens.world ? buildGraph(plan, lens.world, { walletId }) : null),
@@ -134,7 +132,7 @@ export function MapView() {
 
             {/* One slot under the picture. With nothing chosen it says what this
                 world did to the plan; with a box chosen it answers about that
-                box. The same question at two resolutions. */}
+                box. The same question at two resolutions, and never both. */}
             <div className="mt-4 border-t border-line pt-3">
               {selected ? (
                 <NodeDetail
@@ -153,44 +151,27 @@ export function MapView() {
                     Click any box for what this world does to it, and for the two ways of taking it
                     away.
                   </p>
+                  <Disclosure
+                    size="aside"
+                    title="What the drawing means"
+                    className="mt-3 border-t border-line pt-3"
+                  >
+                    <DiagramLegend graph={graph} />
+                  </Disclosure>
                 </>
               )}
-            </div>
-
-            <div className="mt-3 border-t border-line pt-3">
-              <DiagramLegend graph={graph} />
             </div>
           </>
         ) : null}
       </Panel>
 
-      <div className="mt-4">
-        <button
-          type="button"
-          onClick={() => setShowTable((value) => !value)}
-          aria-expanded={showTable}
-          className="flex items-center gap-2 text-left no-print"
-        >
-          <ChevronRight
-            className={cn(
-              'size-4 flex-none text-faint transition-transform',
-              showTable && 'rotate-90'
-            )}
-            aria-hidden
-          />
-          <span>
-            <span className="block text-[0.95rem] font-semibold text-strong">
-              The same thing, as numbers
-            </span>
-            <span className="block text-xs text-faint">
-              How much of each wallet is inside one container, exactly.
-            </span>
-          </span>
-        </button>
-        <div hidden={!showTable} className="mt-3">
-          <QuorumTable plan={plan} />
-        </div>
-      </div>
+      <Disclosure
+        className="mt-4"
+        title="The same thing, as numbers"
+        hint="How much of each wallet is inside one container, exactly."
+      >
+        <QuorumTable plan={plan} />
+      </Disclosure>
     </div>
   )
 }

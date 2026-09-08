@@ -288,8 +288,10 @@ describe('composing a failure by hand', () => {
 
     goto('#/scenarios')
 
-    const heading = await screen.findByRole('heading', { name: /compose your own/i })
-    const panel = heading.closest('section') as HTMLElement
+    // The composer is folded away: the table is what the page is for, and
+    // building a world by hand is what you come back for.
+    await user.click(await screen.findByRole('button', { name: /compose your own/i }))
+    const panel = screen.getByText(/asking on behalf of/i).closest('section') as HTMLElement
     const composer = within(panel)
 
     const vault = () => within(composer.getByText('Vault').closest('li') as HTMLElement)
@@ -844,5 +846,43 @@ describe('the map, as one instrument', () => {
 
     await user.click(screen.getByRole('button', { name: /^edit$/i }))
     expect(await screen.findByRole('heading', { name: /^design$/i })).toBeInTheDocument()
+  })
+})
+
+describe('what a page shows at rest', () => {
+  it('lists every way the plan fails before it shows any one of them', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/recovery')
+
+    // Fourteen routes, each one line: the verdict and how long it takes.
+    const row = await screen.findByRole('button', { name: /^Site B is destroyed or emptied/ })
+    expect(row).toHaveAttribute('aria-expanded', 'false')
+    expect(row).toHaveTextContent(/same day, no travel/)
+
+    // The steps are there when you ask for them. Scoped to the row, because
+    // every route keeps its body in the document so that printing gets them all.
+    await user.click(row)
+    expect(row).toHaveAttribute('aria-expanded', 'true')
+    const body = within(row.closest('li') as HTMLElement)
+    expect(body.getByText(/get the wallet configuration first/i)).toBeInTheDocument()
+    expect(body.getByText(/collect from site a/i)).toBeInTheDocument()
+  })
+
+  it('folds the arithmetic under the map away rather than stacking it', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/map')
+
+    const table = await screen.findByRole('button', { name: /the same thing, as numbers/i })
+    expect(table).toHaveAttribute('aria-expanded', 'false')
+    await user.click(table)
+    expect(screen.getByText(/what each place is enough for/i)).toBeInTheDocument()
   })
 })

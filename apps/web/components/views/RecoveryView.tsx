@@ -2,12 +2,13 @@
 
 import { useState } from 'react'
 import { MapPin, Printer, TriangleAlert } from 'lucide-react'
-import { indexPlan, type RecoveryRoute } from '@outlive/core'
+import { describeDuration, indexPlan, type RecoveryRoute } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
 import { PrintHeader } from '@/components/shell/PrintHeader.tsx'
 import { Rehearsal } from '@/components/documents/Rehearsal.tsx'
 import { Timeline } from '@/components/documents/Timeline.tsx'
-import { MEASURE, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
+import { MEASURE, ViewHeader } from '@/components/ui/Surface.tsx'
+import { ItemList } from '@/components/ui/ItemList.tsx'
 import { Segmented } from '@/components/ui/Field.tsx'
 import { useActivePlan } from '@/lib/store.ts'
 import { useRecovery } from '@/lib/analysis.ts'
@@ -81,16 +82,37 @@ export function RecoveryView() {
       {visible.length === 0 ? (
         <p className="text-sm text-muted">Nothing in that filter.</p>
       ) : (
-        <div className="space-y-4">
-          {visible.map((route) => (
-            <Route
-              key={route.scenarioId}
-              route={route}
-              labelFor={(id) => index.locations.get(id)?.label ?? 'a location'}
-              walletLabel={(id) => index.wallets.get(id)?.label ?? 'a wallet'}
-            />
-          ))}
-        </div>
+        /* Shut on screen, open on paper. Fourteen expanded routes is a document
+           you cannot see the shape of; the list of ways this fails, with the
+           verdict and the time beside each, is the thing worth reading first.
+           Printed, it has to be whole, because that is the copy that ends up
+           next to the backups. */
+        <ItemList
+          autoOpenNew={false}
+          printOpen
+          items={visible.map((route) => ({
+            id: route.scenarioId,
+            title: route.title,
+            summary: summarise(route),
+            badge: (
+              <span
+                className={cn(
+                  'chip',
+                  route.possible ? 'border-ok/50 text-ok' : 'border-critical/50 text-critical'
+                )}
+              >
+                {route.possible ? 'recoverable' : 'no route'}
+              </span>
+            ),
+            body: (
+              <Route
+                route={route}
+                labelFor={(id) => index.locations.get(id)?.label ?? 'a location'}
+                walletLabel={(id) => index.wallets.get(id)?.label ?? 'a wallet'}
+              />
+            ),
+          }))}
+        />
       )}
     </div>
   )
@@ -106,21 +128,8 @@ function Route({
   walletLabel: (id: string) => string
 }) {
   return (
-    <Panel className="p-4 print-block">
-      <header className="border-b border-line pb-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-[0.95rem] font-semibold text-strong">{route.title}</h2>
-          <span
-            className={cn(
-              'chip',
-              route.possible ? 'border-ok/50 text-ok' : 'border-critical/50 text-critical'
-            )}
-          >
-            {route.possible ? 'recoverable' : 'no route'}
-          </span>
-        </div>
-        <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-muted">{route.situation}</p>
-      </header>
+    <div>
+      <p className="text-[0.8125rem] leading-relaxed text-muted">{route.situation}</p>
 
       <div className="mt-3 flex gap-2.5 rounded-[var(--radius-control)] border border-line bg-sunken p-3">
         <TriangleAlert className="mt-0.5 size-3.5 flex-none text-medium" aria-hidden />
@@ -177,6 +186,17 @@ function Route({
       ) : null}
 
       <Rehearsal route={route} />
-    </Panel>
+    </div>
   )
+}
+
+/** What a route says when its row is shut: whether it works, and how long. */
+function summarise(route: RecoveryRoute): string {
+  if (!route.possible)
+    return `nothing recovers it${route.blockers[0] ? `: ${route.blockers[0]}` : ''}`
+  const time = route.timing?.possible
+    ? describeDuration(route.timing.days, route.timing.travelMinutes)
+    : null
+  const steps = `${route.steps.length} ${route.steps.length === 1 ? 'step' : 'steps'}`
+  return [time, steps].filter(Boolean).join(' · ')
 }

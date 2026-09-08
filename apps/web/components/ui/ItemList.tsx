@@ -44,16 +44,38 @@ export interface Item {
   onRemove?: () => void
   /** Named for a screen reader, because every row's button says the same thing. */
   removeLabel?: string
+  /** A verdict, a count, anything the row is worth carrying on its right. */
+  badge?: ReactNode
 }
 
-export function ItemList({ items, className }: { items: Item[]; className?: string }) {
+export function ItemList({
+  items,
+  className,
+  autoOpenNew = true,
+  printOpen = false,
+}: {
+  items: Item[]
+  className?: string
+  /**
+   * Whether a row the list has not seen before opens itself. True where rows
+   * appear because somebody added one; false where the set changes for other
+   * reasons, such as a filter, and opening everything would be a surprise.
+   */
+  autoOpenNew?: boolean
+  /**
+   * Whether every row is open on paper. A printed document with its content
+   * folded away is a list of headlines, and the part worth carrying to a desk
+   * is the part inside.
+   */
+  printOpen?: boolean
+}) {
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set())
   // Ids this list has already rendered. Anything not in here is new, and a
   // thing you just added is a thing you want open.
   const [seen, setSeen] = useState<ReadonlySet<string>>(() => new Set(items.map((i) => i.id)))
 
   const ids = items.map((item) => item.id)
-  const fresh = ids.filter((id) => !seen.has(id))
+  const fresh = autoOpenNew ? ids.filter((id) => !seen.has(id)) : []
   if (fresh.length > 0) {
     setSeen(new Set(ids))
     setOpen(new Set([...open, ...fresh]))
@@ -71,7 +93,14 @@ export function ItemList({ items, className }: { items: Item[]; className?: stri
       {items.map((item) => {
         const expanded = open.has(item.id)
         return (
-          <li key={item.id} className="card overflow-hidden">
+          <li
+            key={item.id}
+            // A row that prints open has to stay whole on the page. Without
+            // this the header lands at the foot of one page and the body, which
+            // avoids breaking on its own, jumps to the next and leaves the rest
+            // of the first inside an empty box.
+            className={cn('card overflow-hidden', printOpen && 'print-block')}
+          >
             <div className="flex items-center gap-1 pr-1.5">
               <button
                 type="button"
@@ -81,7 +110,7 @@ export function ItemList({ items, className }: { items: Item[]; className?: stri
               >
                 <ChevronRight
                   className={cn(
-                    'size-3.5 flex-none text-faint transition-transform',
+                    'size-3.5 flex-none text-faint transition-transform no-print',
                     expanded && 'rotate-90'
                   )}
                   aria-hidden
@@ -95,6 +124,7 @@ export function ItemList({ items, className }: { items: Item[]; className?: stri
                   </span>
                 </span>
               </button>
+              {item.badge ? <span className="flex-none">{item.badge}</span> : null}
               {item.onRemove ? (
                 <Button
                   variant="ghost"
@@ -108,8 +138,15 @@ export function ItemList({ items, className }: { items: Item[]; className?: stri
             </div>
 
             {/* Kept mounted and hidden rather than unmounted, so that closing a
-                row never throws away something half typed into it. */}
-            <div hidden={!expanded} className="space-y-3 border-t border-line px-2.5 pb-3 pt-3">
+                row never throws away something half typed into it. Hidden by
+                class rather than by the attribute where the list prints, so
+                that `print:block` has something to override. */}
+            <div
+              className={cn(
+                'space-y-3 border-t border-line px-2.5 pb-3 pt-3',
+                !expanded && (printOpen ? 'hidden print:block' : 'hidden')
+              )}
+            >
               {item.body}
             </div>
           </li>

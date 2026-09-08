@@ -12,6 +12,7 @@ import {
 import { MEASURE, Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Segmented } from '@/components/ui/Field.tsx'
 import { CustomScenario } from '@/components/scenarios/CustomScenario.tsx'
+import { Disclosure } from '@/components/ui/Disclosure.tsx'
 import { DiagramLegend, DiagramSummary, PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
 import { useActivePlan } from '@/lib/store.ts'
 import { useScenarioResults } from '@/lib/analysis.ts'
@@ -190,17 +191,25 @@ export function ScenariosView() {
         </Panel>
       ) : null}
 
-      <div className="mt-6">
+      {/* The table above is the page. Composing a world by hand is the thing
+          you come back for once the table has told you where to look, and it
+          was taking more room than the answer it exists to refine. */}
+      <Disclosure
+        className="mt-6"
+        title="Compose your own"
+        hint="Nothing goes wrong one thing at a time. Switch several off at once."
+      >
         <CustomScenario plan={plan} />
-      </div>
+      </Disclosure>
 
-      <p className="mt-4 max-w-3xl text-xs leading-relaxed text-faint">
-        Loss scenarios assume you are alive and know where your own things are. Compromise scenarios
-        assume the opposite: somebody standing in one specific place, with no memorised secret and
-        no knowledge of anything this plan did not record a location for. Coercion assumes you are
-        present and cooperating, because that is what compulsion means.{' '}
+      <p className="mt-6 max-w-3xl text-xs leading-relaxed text-faint">
+        Each of these worlds makes different assumptions about what you know and where you are.{' '}
+        <a href={href('reasoning')} className="link">
+          How it reasons
+        </a>{' '}
+        sets them out, and{' '}
         <a href={href('recovery')} className="link">
-          Each of these has a written recovery route
+          every one of them has a written recovery route
         </a>
         .
       </p>
