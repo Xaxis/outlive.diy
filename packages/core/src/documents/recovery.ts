@@ -27,6 +27,7 @@ import {
   type Scenario,
 } from '../analysis/scenarios.ts'
 import { disasterGroups } from '../model/selectors.ts'
+import { recoveryTiming, type RecoveryTiming } from '../analysis/timing.ts'
 
 export interface RecoveryStep {
   order: number
@@ -49,6 +50,14 @@ export interface RecoveryRoute {
   steps: RecoveryStep[]
   /** Why it cannot be done, when it cannot. */
   blockers: string[]
+  /**
+   * How long the route takes, for the wallet that takes longest. Null when
+   * there is nothing to recover. This belongs in the printed document rather
+   * than only on screen: somebody reading this on paper, on the day, needs to
+   * know whether they are looking at an afternoon or a fortnight before they
+   * start.
+   */
+  timing: RecoveryTiming | null
 }
 
 function travelOrder(plan: Plan, locationIds: Id[]): Id[] {
@@ -188,6 +197,20 @@ function buildRoute(
     lostWalletIds: lost,
     steps,
     blockers: [...blockers],
+    // The slowest survivor, because a route is finished when the last thing on
+    // it is finished, not when the first one is.
+    timing: survivors
+      .map((walletId) =>
+        recoveryTiming(
+          plan,
+          plan.wallets.find((wallet) => wallet.id === walletId)!,
+          scenario.world
+        )
+      )
+      .reduce<RecoveryTiming | null>(
+        (slowest, timing) => (slowest === null || timing.days > slowest.days ? timing : slowest),
+        null
+      ),
   }
 }
 

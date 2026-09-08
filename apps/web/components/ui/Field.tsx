@@ -303,6 +303,75 @@ export function Segmented<T extends string>({
   )
 }
 
+/**
+ * One question, answered by picking a sentence rather than typing a number.
+ *
+ * The consequence is written on the option itself. That is the whole reason
+ * this exists: "30" in a box marked "days" asks the reader to work out for
+ * themselves what thirty days would mean, and most people do not, so they pick
+ * a round number and the analysis is then measured against a number nobody
+ * meant. An option that says what it commits you to is answered on purpose.
+ */
+export function ChoiceGroup<T extends string | number>({
+  value,
+  onChange,
+  options,
+  name,
+}: {
+  value: T
+  onChange: (next: T) => void
+  options: { value: T; label: string; consequence: string }[]
+  /** Groups the radios, so arrow keys move between them and nowhere else. */
+  name: string
+}) {
+  return (
+    <div role="radiogroup" aria-labelledby={useFieldLabel()} className="grid gap-1.5">
+      {options.map((option) => {
+        const checked = option.value === value
+        return (
+          <label
+            key={String(option.value)}
+            className={cn(
+              'flex cursor-pointer items-start gap-2.5 rounded-[var(--radius-control)] border p-2.5 transition-colors',
+              checked
+                ? 'border-accent bg-accent/[0.07]'
+                : 'border-line hover:border-line-strong hover:bg-[rgb(var(--tint)/0.02)]'
+            )}
+          >
+            <input
+              type="radio"
+              name={name}
+              checked={checked}
+              onChange={() => onChange(option.value)}
+              className="sr-only"
+            />
+            <span
+              aria-hidden
+              className={cn(
+                'mt-[0.2rem] size-3.5 flex-none rounded-full border',
+                checked ? 'border-[5px] border-accent bg-canvas' : 'border-line-strong'
+              )}
+            />
+            <span className="min-w-0">
+              <span
+                className={cn(
+                  'block text-[0.8125rem] font-medium',
+                  checked ? 'text-strong' : 'text-body'
+                )}
+              >
+                {option.label}
+              </span>
+              <span className="mt-0.5 block text-xs leading-snug text-muted">
+                {option.consequence}
+              </span>
+            </span>
+          </label>
+        )
+      })}
+    </div>
+  )
+}
+
 /** Multi-select over a small fixed set, as toggleable chips. */
 export function ChipSet<T extends string>({
   values,

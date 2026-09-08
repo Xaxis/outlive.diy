@@ -120,6 +120,7 @@ export type RuleId =
   | 'L006'
   | 'L007'
   | 'L008'
+  | 'L009'
   // compromise
   | 'C001'
   | 'C002'
@@ -398,6 +399,13 @@ export const RULES: Record<RuleId, Rule> = Object.fromEntries(
         'critical',
         'The wallet configuration is a single point of failure',
         'Every seed survives and the wallet still does not.'
+      ),
+      rule(
+        'L009',
+        'loss',
+        'high',
+        'Recovery takes longer than the stated tolerance',
+        'A route that works and takes three weeks is a route somebody abandons.'
       ),
 
       rule(

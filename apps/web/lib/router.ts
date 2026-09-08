@@ -102,3 +102,16 @@ export function useRoute(): [Route, (route: Route, options?: { replace?: boolean
 export function href(view: ViewId, section?: string): string {
   return formatHash({ view, section: section ?? null })
 }
+
+/**
+ * Navigate from outside a component that holds the hook. The diagram is one
+ * callback deep inside an SVG-adjacent tree, and threading a navigate function
+ * down to it buys nothing: the fragment is global state either way.
+ */
+export function navigateTo(view: ViewId, section?: string): void {
+  const next = href(view, section)
+  if (window.location.hash === next) return
+  window.history.pushState(null, '', next)
+  window.dispatchEvent(new HashChangeEvent('hashchange'))
+  window.scrollTo?.({ top: 0 })
+}

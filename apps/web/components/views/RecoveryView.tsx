@@ -6,6 +6,7 @@ import { indexPlan, type RecoveryRoute } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
 import { PrintHeader } from '@/components/shell/PrintHeader.tsx'
 import { Rehearsal } from '@/components/documents/Rehearsal.tsx'
+import { Timeline } from '@/components/documents/Timeline.tsx'
 import { MEASURE, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Segmented } from '@/components/ui/Field.tsx'
 import { useActivePlan } from '@/lib/store.ts'
@@ -125,6 +126,13 @@ function Route({
         <TriangleAlert className="mt-0.5 size-3.5 flex-none text-medium" aria-hidden />
         <p className="text-[0.8125rem] leading-relaxed text-body">{route.firstMove}</p>
       </div>
+
+      {route.timing ? (
+        <div className="mt-3 rounded-[var(--radius-control)] border border-line p-3">
+          <p className="eyebrow mb-1.5">How long this takes</p>
+          <Timeline timing={route.timing} />
+        </div>
+      ) : null}
 
       {route.lostWalletIds.length > 0 ? (
         <p className="mt-3 text-[0.8125rem] leading-relaxed text-critical">

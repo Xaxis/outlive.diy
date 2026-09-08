@@ -314,7 +314,7 @@ describe('an empty plan', () => {
   // misleading, so every one of them has to say so rather than go quiet.
   const derived: [string, string][] = [
     ['#/findings', 'the silence below means nothing'],
-    ['#/map', 'nothing to place on it'],
+    ['#/map', 'nothing to draw'],
     ['#/scenarios', 'nothing to take away from it'],
     ['#/runbook', 'no steps to order'],
     ['#/recovery', 'nothing that could go wrong'],
@@ -586,5 +586,120 @@ describe('a stored plan this build cannot read', () => {
     render(<App />)
     await screen.findByRole('heading', { name: /design a bitcoin custody plan/i })
     expect(screen.queryByText(/cannot read/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('the diagram', () => {
+  it('draws the chain from a wallet down to the place it rests on', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/map')
+
+    // The whole dependency chain, as boxes rather than as a table.
+    expect(await screen.findByRole('button', { name: /^Vault\b.*wallet/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Key A.*key\./i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Site A.*place\./i })).toBeInTheDocument()
+  })
+
+  it('takes a place away and reports what stops working', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/map')
+    // As it stands, everything is in reach.
+    expect(await screen.findByText(/within reach in this world/i)).toBeInTheDocument()
+
+    await user.selectOptions(
+      screen.getByLabelText(/show the plan/i),
+      screen.getByRole('option', { name: 'Site C is destroyed or emptied' })
+    )
+
+    // And now one branch of it is not, named rather than only coloured.
+    expect(await screen.findByText(/out of reach here/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Site C.*Not available/i })).toBeInTheDocument()
+  })
+
+  it('reads a wallet an intruder can spend as the failure, not as good news', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('One signer, one backup'))
+
+    goto('#/map')
+    await user.selectOptions(
+      screen.getByLabelText(/show the plan/i),
+      screen.getByRole('option', { name: /is opened by someone else/i })
+    )
+
+    // The list inverts with the actor: what they hold, not what they missed.
+    expect(await screen.findByText(/what they can reach/i)).toBeInTheDocument()
+    expect(screen.getByText(/they can spend it/i)).toBeInTheDocument()
+  })
+})
+
+describe('the purpose questions', () => {
+  it('offer consequences rather than a number box', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/design/profile')
+
+    // The answer says what it commits you to.
+    expect(
+      await screen.findByText(/every route has to be walkable this afternoon/i)
+    ).toBeInTheDocument()
+  })
+
+  it('measure the answers against the plan underneath them', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/design/profile')
+
+    expect(await screen.findByText(/what you said, against what you built/i)).toBeInTheDocument()
+    // Measured from the plan, not asserted: this is the real slowest route.
+    expect(screen.getByText(/the slowest recovery that still works/i)).toBeInTheDocument()
+  })
+
+  it('changes the measurement when the answer changes', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, repaired'))
+
+    goto('#/design/profile')
+    // A month is enough for this plan's slowest surviving route.
+    expect(await screen.findByText(/the slowest recovery that still works/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('radio', { name: /the same day/i }))
+
+    // Same measurement, different verdict, and the finding appears with it.
+    goto('#/findings')
+    expect(await screen.findByText(/Recovering Vault takes/i)).toBeInTheDocument()
+  })
+})
+
+describe('the guided route', () => {
+  it('reads back what a step told the analysis', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/start/locations')
+
+    expect(await screen.findByText(/what this told the analysis/i)).toBeInTheDocument()
+    // Two of the three sites share a disaster group, which is the whole point
+    // of asking for one.
+    expect(screen.getByText(/Site A and Site B fail together/i)).toBeInTheDocument()
   })
 })

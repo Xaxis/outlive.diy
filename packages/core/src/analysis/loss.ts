@@ -22,6 +22,7 @@ import {
   type Scenario,
 } from './scenarios.ts'
 import { disasterGroups, walletKeyIds } from '../model/selectors.ts'
+import { describeDuration, describeSteps, recoveryTiming } from './timing.ts'
 import type { Id, Wallet } from '../model/types.ts'
 
 function names(items: readonly string[]): string {
@@ -241,6 +242,44 @@ export function analyseLoss(ctx: AnalysisContext): Finding[] {
         ],
         world: scenario.label,
         severity: escalate('high', worst(hit)),
+      })
+    )
+  }
+
+  // --- how long it takes ----------------------------------------------------
+  // A route that still works is not the same as a route you could live with.
+  // This is the only rule that reads the stated tolerance against measured
+  // time, which is what makes that number on the profile worth answering.
+  for (const wallet of live) {
+    const survivable = plan.locations
+      .map((location) => locationLostScenario(ctx, location.id))
+      .filter((scenario) => evaluateWallet(plan, wallet, scenario.world).spendable)
+      .map((scenario) => ({ scenario, timing: recoveryTiming(plan, wallet, scenario.world) }))
+    if (survivable.length === 0) continue
+
+    const worstCase = survivable.reduce((slowest, entry) =>
+      entry.timing.days > slowest.timing.days ? entry : slowest
+    )
+    const tolerance = plan.profile.recoveryToleranceDays
+    if (worstCase.timing.days <= tolerance) continue
+
+    findings.push(
+      makeFinding(plan, {
+        rule: 'L009',
+        key: wallet.id,
+        title: `Recovering ${wallet.label} takes ${describeDuration(worstCase.timing.days, worstCase.timing.travelMinutes)}`,
+        detail: `${worstCase.scenario.label}, and ${wallet.label} still spends. Getting there means ${describeSteps(worstCase.timing)}: ${worstCase.timing.days} days against a stated tolerance of ${tolerance}. A route that works and takes that long is a route people abandon halfway, or never rehearse.${
+          worstCase.timing.unknowns.length > 0
+            ? ` It is also a floor rather than an estimate: ${worstCase.timing.unknowns.join(' ')}`
+            : ''
+        }`,
+        remediation:
+          tolerance === 0
+            ? `Either put one usable route to ${wallet.label} within same-day reach, or record a tolerance you would actually accept. Zero days means every key has to be reachable this afternoon.`
+            : `Move one of the places ${wallet.label} depends on closer, or add a route that does not need the far one. Failing that, raise the recorded tolerance to what you would really accept, so the rest of the plan is measured against a true number.`,
+        subjects: [{ type: 'wallet', id: wallet.id }],
+        world: worstCase.scenario.label,
+        severity: escalate('high', walletWeight(wallet)),
       })
     )
   }

@@ -1,60 +1,24 @@
 'use client'
 
 import { useMemo } from 'react'
+import { ArrowUpRight, Compass, TriangleAlert } from 'lucide-react'
 import {
-  ArrowUpRight,
-  CircleCheck,
-  CircleSlash,
-  CircleX,
-  Compass,
-  TriangleAlert,
-} from 'lucide-react'
-import {
+  baseWorld,
+  buildGraph,
   createContext,
   indexPlan,
   overdueVerifications,
-  type WalletAvailability,
 } from '@outlive/core'
 import { MEASURE, Card, Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
+import { PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
+import { WalletStanding } from '@/components/graph/WalletStanding.tsx'
 import { SeverityBar, SeverityDot } from '@/components/ui/Severity.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { useActivePlan, useStore } from '@/lib/store.ts'
 import { useReport, useRunbook } from '@/lib/analysis.ts'
 import { href, useRoute } from '@/lib/router.ts'
-import {
-  describePolicy,
-  planIsStarted,
-  plural,
-  STAKE,
-  TIER,
-  VERIFICATION_KIND,
-} from '@/lib/describe.ts'
+import { planIsStarted, plural, VERIFICATION_KIND } from '@/lib/describe.ts'
 import { cn } from '@/lib/cn.ts'
-
-function WalletState({ availability }: { availability: WalletAvailability }) {
-  if (!availability.spendable) {
-    return (
-      <span className="flex items-center gap-1.5 text-xs text-critical">
-        <CircleX className="size-3.5" aria-hidden />
-        cannot be spent
-      </span>
-    )
-  }
-  if (availability.margin === 0) {
-    return (
-      <span className="flex items-center gap-1.5 text-xs text-high">
-        <CircleSlash className="size-3.5" aria-hidden />
-        no spare keys
-      </span>
-    )
-  }
-  return (
-    <span className="flex items-center gap-1.5 text-xs text-ok">
-      <CircleCheck className="size-3.5" aria-hidden />
-      {availability.margin} spare {availability.margin === 1 ? 'key' : 'keys'}
-    </span>
-  )
-}
 
 export function OverviewView() {
   const plan = useActivePlan()
@@ -65,8 +29,13 @@ export function OverviewView() {
 
   const overdue = useMemo(() => (plan ? overdueVerifications(createContext(plan)) : []), [plan])
   const index = useMemo(() => (plan ? indexPlan(plan) : null), [plan])
+  const world = useMemo(() => (plan ? baseWorld(plan) : null), [plan])
+  const graph = useMemo(
+    () => (plan && world && plan.wallets.length > 0 ? buildGraph(plan, world) : null),
+    [plan, world]
+  )
 
-  if (!plan || !report || !index) return null
+  if (!plan || !report || !index || !world) return null
 
   if (!planIsStarted(plan)) {
     return (
@@ -116,12 +85,12 @@ export function OverviewView() {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,20rem)]">
         <div className="space-y-4">
           <Panel className="p-4">
             <SectionHeading
               title="Where each wallet stands today"
-              hint="With nothing wrong, and everything in reach."
+              hint="With nothing wrong, everything in reach, and how long getting there would take."
             />
             {plan.wallets.length === 0 ? (
               <p className="text-sm text-muted">
@@ -132,32 +101,35 @@ export function OverviewView() {
                 .
               </p>
             ) : (
-              <ul className="divide-y divide-line">
-                {report.today.map(({ walletId, availability }) => {
-                  const wallet = index.wallets.get(walletId)
-                  if (!wallet) return null
-                  return (
-                    <li
-                      key={walletId}
-                      className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5"
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium text-strong">
-                          {wallet.label}
-                          {wallet.decoy ? <span className="chip ml-2">decoy</span> : null}
-                        </span>
-                        <span className="mono block text-xs text-faint">
-                          {TIER[wallet.tier].toLowerCase()} · {describePolicy(wallet)} ·{' '}
-                          {STAKE[wallet.stake].toLowerCase()}
-                        </span>
-                      </span>
-                      <WalletState availability={availability} />
-                    </li>
-                  )
-                })}
-              </ul>
+              <WalletStanding
+                plan={plan}
+                world={world}
+                onSelect={() => navigate({ view: 'map', section: null })}
+              />
             )}
           </Panel>
+
+          {/* The shape of the thing, before any of the prose about it. A plan
+              is a chain of dependencies, and a list of wallets does not show a
+              chain. */}
+          {graph ? (
+            <Panel className="p-4">
+              <SectionHeading
+                title="What it rests on"
+                actions={
+                  <a href={href('map')} className="chip no-underline hover:border-line-strong">
+                    open the map
+                    <ArrowUpRight className="size-3" aria-hidden />
+                  </a>
+                }
+              />
+              <PlanDiagram
+                graph={graph}
+                maxHeight={620}
+                onSelect={() => navigate({ view: 'map', section: null })}
+              />
+            </Panel>
+          ) : null}
 
           <Panel className="p-4">
             <SectionHeading

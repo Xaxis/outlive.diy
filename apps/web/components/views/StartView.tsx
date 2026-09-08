@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button.tsx'
 import { MEASURE, Callout, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { ProfileEditor } from '@/components/plan/ProfileEditor.tsx'
 import { EntityWorkbench } from '@/components/plan/EntityWorkbench.tsx'
+import { StepEffect } from '@/components/start/StepEffect.tsx'
 import { SeverityBar } from '@/components/ui/Severity.tsx'
 import { useActivePlan, useStore } from '@/lib/store.ts'
 import { useReport } from '@/lib/analysis.ts'
@@ -92,11 +93,15 @@ const STEPS: Step[] = [
 /**
  * The guided route.
  *
- * It is the same editors in the same order as the design screens, with one
- * addition: a reason for each step, written before the fields rather than after
- * them. Somebody describing their custody setup for the first time needs to
- * know why they are being asked, or they answer the easy version of the
- * question.
+ * The same editors as the design screens, in the same order, wrapped in the two
+ * things that make it guidance rather than a form with a progress bar: a reason
+ * for each step written before the fields, and what the answers just did to the
+ * analysis written after them.
+ *
+ * The second half is the one that matters. A route that only collects answers
+ * teaches nothing, and the person walking it has no way to tell a good answer
+ * from a careless one until the very end. Reading the consequence back at each
+ * step is what turns eight screens of fields into a conversation.
  */
 export function StartView() {
   const plan = useActivePlan()
@@ -167,14 +172,17 @@ export function StartView() {
         ) : step.id === 'result' ? (
           <Result />
         ) : definition?.kind ? (
-          <EntityWorkbench
-            plan={plan}
-            report={report}
-            kind={definition.kind}
-            singular={definition.singular}
-            plural={definition.label}
-            blurb={definition.blurb}
-          />
+          <>
+            <EntityWorkbench
+              plan={plan}
+              report={report}
+              kind={definition.kind}
+              singular={definition.singular}
+              plural={definition.label}
+              blurb={definition.blurb}
+            />
+            <StepEffect plan={plan} report={report} kind={definition.kind} />
+          </>
         ) : null}
       </div>
 

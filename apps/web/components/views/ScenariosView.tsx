@@ -1,11 +1,18 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { CircleCheck, CircleSlash, CircleX, ShieldX } from 'lucide-react'
-import { indexPlan, type ScenarioKind, type ScenarioResult, type Verdict } from '@outlive/core'
-import { MEASURE, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
+import { ChevronRight, CircleCheck, CircleSlash, CircleX, ShieldX } from 'lucide-react'
+import {
+  buildGraph,
+  indexPlan,
+  type ScenarioKind,
+  type ScenarioResult,
+  type Verdict,
+} from '@outlive/core'
+import { MEASURE, Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Segmented } from '@/components/ui/Field.tsx'
 import { CustomScenario } from '@/components/scenarios/CustomScenario.tsx'
+import { DiagramLegend, DiagramSummary, PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
 import { useActivePlan } from '@/lib/store.ts'
 import { useScenarioResults } from '@/lib/analysis.ts'
 import { planIsStarted } from '@/lib/describe.ts'
@@ -56,6 +63,10 @@ const GROUPS: {
  * than a list, because a table makes a pattern visible that a ranked list
  * hides: one column of red down a single wallet, or one row of red across every
  * wallet at once.
+ *
+ * The grid says which scenarios end badly. Opening one draws it, which is the
+ * part that says why: the verdict in a cell is a conclusion, and the picture
+ * beside it is the chain of dependencies that produced the conclusion.
  */
 export function ScenariosView() {
   const plan = useActivePlan()
@@ -63,6 +74,7 @@ export function ScenariosView() {
   const index = useMemo(() => (plan ? indexPlan(plan) : null), [plan])
   const [group, setGroup] = useState<'loss' | 'compromise'>('loss')
   const [onlyAlarming, setOnlyAlarming] = useState<'all' | 'bad'>('bad')
+  const [openId, setOpenId] = useState<string | null>(null)
 
   if (!plan || !index) return null
 
@@ -85,6 +97,8 @@ export function ScenariosView() {
     .filter((result) => onlyAlarming === 'all' || result.alarming)
 
   const wallets = plan.wallets
+  const open = rows.find((result) => result.scenario.id === openId) ?? null
+  const graph = open ? buildGraph(plan, open.scenario.world) : null
 
   return (
     <div className={MEASURE.wide}>
@@ -152,12 +166,29 @@ export function ScenariosView() {
                   key={result.scenario.id}
                   result={result}
                   walletIds={wallets.map((w) => w.id)}
+                  open={result.scenario.id === openId}
+                  onOpen={() =>
+                    setOpenId(result.scenario.id === openId ? null : result.scenario.id)
+                  }
                 />
               ))}
             </tbody>
           </table>
         </Panel>
       )}
+
+      {open && graph ? (
+        <Panel className="mt-4 p-4">
+          <SectionHeading title={open.scenario.label} hint={open.scenario.question} />
+          <PlanDiagram graph={graph} />
+          <div className="mt-4 border-t border-line pt-3">
+            <DiagramSummary graph={graph} />
+          </div>
+          <div className="mt-3 border-t border-line pt-3">
+            <DiagramLegend graph={graph} />
+          </div>
+        </Panel>
+      ) : null}
 
       <div className="mt-6">
         <CustomScenario plan={plan} />
@@ -177,12 +208,40 @@ export function ScenariosView() {
   )
 }
 
-function ScenarioRow({ result, walletIds }: { result: ScenarioResult; walletIds: string[] }) {
+function ScenarioRow({
+  result,
+  walletIds,
+  open,
+  onOpen,
+}: {
+  result: ScenarioResult
+  walletIds: string[]
+  open: boolean
+  onOpen: () => void
+}) {
   return (
-    <tr className="border-b border-line align-top">
-      <th scope="row" className="sticky left-0 z-10 bg-surface p-3 text-left font-normal">
-        <span className="block text-[0.8125rem] text-body">{result.scenario.label}</span>
-        <span className="mono block text-[0.6875rem] text-faint">{result.scenario.question}</span>
+    <tr className={cn('border-b border-line align-top', open && 'bg-[rgb(var(--tint)/0.04)]')}>
+      <th scope="row" className="sticky left-0 z-10 bg-surface p-0 text-left font-normal">
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-expanded={open}
+          className="flex w-full items-start gap-2 p-3 text-left transition-colors hover:bg-[rgb(var(--tint)/0.04)]"
+        >
+          <ChevronRight
+            className={cn(
+              'mt-0.5 size-3.5 flex-none text-faint transition-transform',
+              open && 'rotate-90'
+            )}
+            aria-hidden
+          />
+          <span className="min-w-0">
+            <span className="block text-[0.8125rem] text-body">{result.scenario.label}</span>
+            <span className="mono block text-[0.6875rem] text-faint">
+              {result.scenario.question}
+            </span>
+          </span>
+        </button>
       </th>
       {walletIds.map((walletId) => {
         const outcome = result.wallets.find((entry) => entry.walletId === walletId)

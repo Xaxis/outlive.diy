@@ -49,6 +49,9 @@ Given a plan, it enumerates and reports:
 - **Succession.** Whether the people who outlive you can reach the coins, and
   the other failure nobody talks about: whether they can reach them today.
 - **Staleness.** What is believed rather than tested.
+- **Time.** How long a recovery that still works actually takes, from the travel
+  times, the probate delays and the timelocks already in the plan, measured
+  against how long you said you could wait.
 
 Findings are ranked by severity with one concrete remediation each. There is no
 score, no grade and no progress bar, because a custody plan that gets a B is not
@@ -56,10 +59,17 @@ a thing.
 
 ## What it produces
 
-A map of keys against locations showing where quorum concentrates. A build
-runbook with the verification gates called out. A recovery route for each way it
-fails. A successor letter containing no secrets. All of it prints properly,
-because these documents get stored on paper next to the backups.
+A diagram of the whole plan: wallets, the keys each threshold needs, every
+object those keys exist as, the places those objects sit in, and the people who
+can open the doors. Pick any scenario the engine knows and the picture is redrawn
+in that world, so you can take one thing away and watch what stops working. The
+same quorum arithmetic is underneath it as a table, for when you need the exact
+fraction rather than the shape.
+
+Then a build runbook with the verification gates called out, a recovery route
+for each way it fails with how long each one takes, and a successor letter
+containing no secrets. All of it prints properly, because these documents get
+stored on paper next to the backups.
 
 ## Honest about what it is
 

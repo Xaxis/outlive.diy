@@ -87,7 +87,7 @@ export function without(
   return { ...world, reachable, missing, cooperating }
 }
 
-function placeReachable(world: World, locationId: Id | null): boolean {
+export function placeReachable(world: World, locationId: Id | null): boolean {
   if (locationId === null) return world.unknownPlacementReachable
   return world.reachable.has(locationId)
 }
@@ -107,13 +107,21 @@ function someoneKnows(world: World, knownBy: readonly Id[]): boolean {
  * the same memory. That is deliberately unflattering: it is exactly why an
  * encrypted archive is a poor inheritance backup.
  */
-function backupAvailable(world: World, backup: Backup): boolean {
+export function backupAvailable(world: World, backup: Backup): boolean {
   if (world.missing.has(backup.id)) return false
   if (backup.medium === 'memorized') return world.memory
   if (!placeReachable(world, backup.locationId)) return false
   if (backup.medium === 'encrypted-digital') return world.memory
   return true
 }
+
+/*
+ * The predicates above and below are exported so that the diagram can colour a
+ * node with the same answer the findings list used. A second evaluator drawn
+ * beside this one is the failure this file exists to prevent: a picture that
+ * says a backup is in reach while the finding beside it says the opposite is
+ * worse than no picture.
+ */
 
 export type KeyRoute = 'device' | 'backup'
 
@@ -126,7 +134,11 @@ export interface KeyAvailability {
 }
 
 /** Whether the device belonging to a key can be picked up and unlocked. */
-function deviceRoute(plan: Plan, key: Key, world: World): { ok: boolean; blocker: string | null } {
+export function deviceRoute(
+  plan: Plan,
+  key: Key,
+  world: World
+): { ok: boolean; blocker: string | null } {
   if (!key.deviceId) return { ok: false, blocker: null }
   const device = plan.devices.find((d) => d.id === key.deviceId)
   if (!device) return { ok: false, blocker: null }
@@ -145,7 +157,7 @@ function deviceRoute(plan: Plan, key: Key, world: World): { ok: boolean; blocker
 }
 
 /** Whether the key's secret can be rebuilt from what is written down. */
-function backupRoute(key: Key, world: World): { ok: boolean; blocker: string | null } {
+export function backupRoute(key: Key, world: World): { ok: boolean; blocker: string | null } {
   if (key.backups.length === 0) return { ok: false, blocker: null }
   if (!world.canObtainSigner) return { ok: false, blocker: 'no device to restore into' }
   if (wholeBackups(key).some((backup) => backupAvailable(world, backup))) {
@@ -163,7 +175,7 @@ function backupRoute(key: Key, world: World): { ok: boolean; blocker: string | n
  * unlock, and a restored seed without it lands on an empty wallet, which is the
  * failure that looks most like theft and is not.
  */
-function passphraseAvailable(key: Key, world: World): boolean {
+export function passphraseAvailable(key: Key, world: World): boolean {
   const passphrase = key.passphrase
   if (!passphrase.enabled) return true
   if (world.memory) return true
