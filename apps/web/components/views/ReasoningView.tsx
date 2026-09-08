@@ -55,6 +55,49 @@ export function ReasoningView() {
       </Panel>
 
       <Panel className="mb-5 p-4">
+        <SectionHeading title="How long it says a recovery takes" />
+        <div className="space-y-3 text-[0.875rem] leading-relaxed text-muted">
+          <p>
+            Every quantity in that figure is one you recorded. Travel comes from the minutes you
+            gave each place, waiting comes from the timelock on a path and the delay on an access,
+            and a person reachable in weeks rather than hours comes from what you said about them.
+            Nothing is invented.
+          </p>
+          <p>
+            Four arithmetic decisions, stated rather than buried. A trip to a place costs twice its
+            one-way time, because you have to come back with what you went for. Distinct places are
+            counted once however many things are collected there. Waiting and travelling do not add
+            up: probate, a timelock and somebody&apos;s availability all run at the same time as
+            each other, so the wait is the longest of them and the travelling starts once it is
+            over. A day absorbs eight hours of travel.
+          </p>
+          <p>
+            Anything you did not record counts as nothing and is named underneath the figure. That
+            makes every number here a floor rather than an estimate, and it says so. A recovery
+            estimate that quietly fills in its own blanks is worse than no estimate.
+          </p>
+        </div>
+      </Panel>
+
+      <Panel className="mb-5 p-4">
+        <SectionHeading title="What the colours on the diagram mean" />
+        <div className="space-y-3 text-[0.875rem] leading-relaxed text-muted">
+          <p>
+            The diagram is the same evaluation as the findings, drawn. Every box is judged by the
+            same rules that produced the list, so the two cannot disagree about whether something is
+            in reach.
+          </p>
+          <p>
+            The colouring inverts with who is asking, for the same reason the missing facts do.
+            Asked whether you can recover, a box you cannot reach is the failure. Asked what
+            somebody standing in one room can take, a box they{' '}
+            <em className="not-italic text-body">can</em> reach is the failure, and painting their
+            empty hands red would be telling you that good news is bad.
+          </p>
+        </div>
+      </Panel>
+
+      <Panel className="mb-5 p-4">
         <SectionHeading title="What it does not know" />
         <ul className="list-disc space-y-1.5 pl-5 text-[0.875rem] leading-relaxed text-muted">
           <li>Your actual adversary, or whether anybody is interested in you at all.</li>

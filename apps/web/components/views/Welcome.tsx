@@ -1,8 +1,10 @@
 'use client'
 
+import { useMemo } from 'react'
 import { ArrowRight, FileUp } from 'lucide-react'
-import { EXAMPLES } from '@outlive/core'
+import { baseWorld, buildGraph, EXAMPLES, exampleById } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
+import { PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
 import { useStore } from '@/lib/store.ts'
 import { href } from '@/lib/router.ts'
 import { OpenFileButton } from '@/components/file/OpenFileButton.tsx'
@@ -18,6 +20,14 @@ import { OpenFileButton } from '@/components/file/OpenFileButton.tsx'
 export function Welcome() {
   const startPlan = useStore((state) => state.startPlan)
   const openExample = useStore((state) => state.openExample)
+
+  // One worked example, drawn. A page about a tool whose main output is a
+  // picture should show the picture, and this is the only place on the site
+  // where there is no plan of the reader's own to draw instead.
+  const preview = useMemo(() => {
+    const plan = exampleById('two-of-three')
+    return plan ? buildGraph(plan, baseWorld(plan), { includePeople: false }) : null
+  }, [])
 
   return (
     <main id="main" className="mx-auto w-full max-w-3xl px-5 py-14 lg:py-20">
@@ -77,6 +87,17 @@ export function Welcome() {
         <p className="mt-1 text-sm text-muted">
           Each is a plan somebody plausibly has. Open two and compare them.
         </p>
+
+        {preview ? (
+          <figure className="mt-5">
+            <PlanDiagram graph={preview} />
+            <figcaption className="mt-2 text-xs leading-relaxed text-faint">
+              The second example, drawn: two of three keys spend it, each key exists as a device and
+              a steel plate, and every one of those sits in a place. Take any of them away and the
+              picture answers.
+            </figcaption>
+          </figure>
+        ) : null}
         <ul className="mt-4 divide-y divide-line">
           {EXAMPLES.map((example) => (
             <li key={example.id}>
