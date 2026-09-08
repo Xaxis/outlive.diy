@@ -56,7 +56,7 @@ function oneSigner(): Plan {
     name: 'One signer, one backup',
     profile: {
       concerns: ['loss', 'theft', 'fire-flood', 'death'],
-      recoveryToleranceDays: 14,
+      recoveryToleranceDays: 7,
       horizonYears: 30,
       jurisdictionCount: 1,
       travelsFrequently: false,
@@ -126,7 +126,7 @@ function twoOfThree(): Plan {
     profile: {
       concerns: ['loss', 'theft', 'fire-flood', 'death', 'coercion'],
       recoveryToleranceDays: 30,
-      horizonYears: 40,
+      horizonYears: 30,
       jurisdictionCount: 1,
       travelsFrequently: false,
     },

@@ -21,7 +21,6 @@ import {
   COLUMN_GAP,
   NODE_HEIGHT,
   NODE_WIDTH,
-  HEADER_HEIGHT,
   PADDING,
 } from '@/lib/graph-layout.ts'
 import { cn } from '@/lib/cn.ts'
@@ -406,5 +405,3 @@ export function DiagramLegend({ graph }: { graph: PlanGraph }) {
     </p>
   )
 }
-
-export { HEADER_HEIGHT }

@@ -36,7 +36,7 @@ import {
 } from './availability.ts'
 
 /** Travel a person is assumed to manage in one day, door to door. */
-export const TRAVEL_MINUTES_PER_DAY = 480
+const TRAVEL_MINUTES_PER_DAY = 480
 
 /** What `Person.availability` costs in days before they can act at all. */
 const AVAILABILITY_DAYS: Record<string, number> = {
@@ -353,11 +353,6 @@ export function recoveryTiming(plan: Plan, wallet: Wallet, world: World): Recove
     steps,
     unknowns,
   }
-}
-
-/** Every wallet's timing in one world, in plan order. */
-export function recoveryTimings(plan: Plan, world: World): RecoveryTiming[] {
-  return plan.wallets.map((wallet) => recoveryTiming(plan, wallet, world))
 }
 
 /**

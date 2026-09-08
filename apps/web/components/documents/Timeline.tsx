@@ -56,26 +56,29 @@ export function Timeline({ timing, className }: { timing: RecoveryTiming; classN
         </div>
       ) : null}
 
-      {/* No steps means no travel and no waiting, and an empty list under a
-          heading reads on paper as something that failed to render. */}
-      <ul className={cn('grid gap-1.5', timing.steps.length > 0 && 'mt-2.5')}>
-        {timing.steps.map((step, position) => (
-          <li key={`${step.part}-${position}`} className="flex items-start gap-2">
-            {step.part === 'wait' ? (
-              <Hourglass className="mt-[0.15rem] size-3 flex-none text-medium" aria-hidden />
-            ) : (
-              <Footprints className="mt-[0.15rem] size-3 flex-none text-accent" aria-hidden />
-            )}
-            <span className="min-w-0 text-[0.75rem] leading-snug">
-              <span className="text-body">
-                {step.part === 'wait' ? `Wait ${step.days} days: ` : ''}
-                {step.what}
+      {/* No steps means no travel and no waiting. An empty list still occupies
+          a couple of lines on paper, which reads as something that failed to
+          render rather than as a route with nothing in the way. */}
+      {timing.steps.length === 0 ? null : (
+        <ul className="mt-2.5 grid gap-1.5">
+          {timing.steps.map((step, position) => (
+            <li key={`${step.part}-${position}`} className="flex items-start gap-2">
+              {step.part === 'wait' ? (
+                <Hourglass className="mt-[0.15rem] size-3 flex-none text-medium" aria-hidden />
+              ) : (
+                <Footprints className="mt-[0.15rem] size-3 flex-none text-accent" aria-hidden />
+              )}
+              <span className="min-w-0 text-[0.75rem] leading-snug">
+                <span className="text-body">
+                  {step.part === 'wait' ? `Wait ${step.days} days: ` : ''}
+                  {step.what}
+                </span>
+                <span className="block text-faint">{step.why}</span>
               </span>
-              <span className="block text-faint">{step.why}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {timing.unknowns.length > 0 ? (
         <p className="mt-2 text-[0.6875rem] leading-relaxed text-faint">

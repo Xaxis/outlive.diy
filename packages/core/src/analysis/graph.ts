@@ -13,7 +13,7 @@
  * beside the first is how a planner starts contradicting itself.
  */
 
-import type { Id, Plan, Ref, Wallet } from '../model/types.ts'
+import type { Id, Plan, Ref } from '../model/types.ts'
 import { isMultisig, splitGroups } from '../model/selectors.ts'
 import {
   backupAvailable,
@@ -453,9 +453,4 @@ export function buildGraph(plan: Plan, world: World, options: GraphOptions = {})
 
   const layers = [...new Set(nodes.map((entry) => entry.layer))].sort((a, b) => a - b)
   return { nodes, edges, layers, world }
-}
-
-/** Wallets whose spending this graph would show, in the order they are drawn. */
-export function graphWallets(plan: Plan, walletId?: Id | null): Wallet[] {
-  return walletId ? plan.wallets.filter((wallet) => wallet.id === walletId) : plan.wallets
 }
