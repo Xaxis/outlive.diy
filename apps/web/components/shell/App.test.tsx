@@ -703,3 +703,23 @@ describe('the guided route', () => {
     expect(screen.getByText(/Site A and Site B fail together/i)).toBeInTheDocument()
   })
 })
+
+describe('a finding and its picture', () => {
+  it('opens the map in the world the finding came out of', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/findings')
+    // Every card renders its body so that printing gets the whole list, so the
+    // link has to be taken from the one card rather than from the page.
+    const title = await screen.findByText(/Losing Site A makes Vault and Daily unspendable/i)
+    const card = title.closest('article')!
+    await user.click(within(card).getByRole('button', { name: /draw this on the map/i }))
+
+    // Not the default view of the map: the one where Site A is gone.
+    expect(await screen.findByRole('heading', { name: /^map$/i })).toBeInTheDocument()
+    expect(screen.getByLabelText(/show the plan/i)).toHaveValue('location-lost:loc_home')
+  })
+})

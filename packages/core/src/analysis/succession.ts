@@ -150,6 +150,7 @@ export function analyseSuccession(ctx: AnalysisContext): Finding[] {
           'Give a successor after-death access to one more location, or add a timelocked inheritance path that opens on its own.',
         subjects: unreachable.map((wallet) => ({ type: 'wallet' as const, id: wallet.id })),
         world: death.label,
+        scenarioId: death.id,
         severity: escalate('critical', Math.max(0, ...unreachable.map(walletWeight))),
       })
     )
@@ -172,6 +173,7 @@ export function analyseSuccession(ctx: AnalysisContext): Finding[] {
             ...live.map((wallet) => ({ type: 'wallet' as const, id: wallet.id })),
           ],
           world: now.label,
+          scenarioId: now.id,
           severity: escalate('critical', Math.max(0, ...live.map(walletWeight))),
         })
       )

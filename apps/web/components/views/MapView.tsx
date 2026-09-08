@@ -9,7 +9,7 @@ import { WalletStanding } from '@/components/graph/WalletStanding.tsx'
 import { QuorumTable } from '@/components/map/QuorumTable.tsx'
 import { useActivePlan, useStore } from '@/lib/store.ts'
 import { NothingYet } from '@/components/shell/NothingYet.tsx'
-import { navigateTo } from '@/lib/router.ts'
+import { navigateTo, useRoute } from '@/lib/router.ts'
 
 /**
  * The map.
@@ -25,7 +25,10 @@ import { navigateTo } from '@/lib/router.ts'
 export function MapView() {
   const plan = useActivePlan()
   const select = useStore((state) => state.select)
-  const lens = useLens(plan)
+  // The fragment can name a scenario, which is how a finding sends a reader
+  // here to see the world it came out of.
+  const [route] = useRoute()
+  const lens = useLens(plan, route.section)
   const [walletId, setWalletId] = useState<string | null>(null)
 
   const graph = useMemo(

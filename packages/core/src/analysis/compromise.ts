@@ -73,6 +73,7 @@ export function analyseCompromise(ctx: AnalysisContext): CompromiseResult {
           ...hit.map((wallet) => ({ type: 'wallet' as const, id: wallet.id })),
         ],
         world: scenario.label,
+        scenarioId: scenario.id,
         severity: escalate('critical', worst(hit)),
       })
     )
@@ -99,6 +100,7 @@ export function analyseCompromise(ctx: AnalysisContext): CompromiseResult {
           ...hit.map((wallet) => ({ type: 'wallet' as const, id: wallet.id })),
         ],
         world: scenario.label,
+        scenarioId: scenario.id,
         severity: escalate('critical', worst(hit)),
       })
     )

@@ -77,6 +77,8 @@ export interface Finding {
   subjects: Ref[]
   /** The simulated world this came out of, when it came out of one. */
   world?: string
+  /** The scenario id behind that world, so it can be drawn. */
+  scenarioId?: string
   /** Whether the user named this concern. Orders within a severity, never hides. */
   relevance: 'primary' | 'secondary'
 }
@@ -672,6 +674,13 @@ export interface FindingInput {
   subjects: Ref[]
   severity?: Severity
   world?: string
+  /**
+   * The scenario this came out of, when it came out of one. Carried so the
+   * interface can offer to draw the world the finding is about: the sentence
+   * says what breaks, and the picture says where it breaks, and getting from
+   * one to the other should not be a search.
+   */
+  scenarioId?: string
 }
 
 export function makeFinding(plan: Plan, input: FindingInput): Finding {
@@ -689,6 +698,7 @@ export function makeFinding(plan: Plan, input: FindingInput): Finding {
     subjects: input.subjects,
     relevance: named ? 'primary' : 'secondary',
     ...(input.world ? { world: input.world } : {}),
+    ...(input.scenarioId ? { scenarioId: input.scenarioId } : {}),
   }
 }
 

@@ -58,8 +58,17 @@ export interface Lens {
   set: (id: string) => void
 }
 
-export function useLens(plan: Plan | null): Lens {
-  const [id, set] = useState<string>(TODAY)
+export function useLens(plan: Plan | null, initial?: string | null): Lens {
+  const [id, set] = useState<string>(initial ?? TODAY)
+
+  // Arriving from a finding names the world it came out of. Following that link
+  // again with a different finding has to change the picture, which a state
+  // initialiser alone would not do.
+  const [seen, setSeen] = useState<string | null>(initial ?? null)
+  if ((initial ?? null) !== seen) {
+    setSeen(initial ?? null)
+    set(initial ?? TODAY)
+  }
 
   const scenarios = useMemo(() => (plan ? enumerateScenarios(createContext(plan)) : []), [plan])
 

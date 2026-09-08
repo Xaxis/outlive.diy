@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ChevronRight, Wrench } from 'lucide-react'
+import { ChevronRight, Network, Wrench } from 'lucide-react'
 import { CATEGORY_LABEL, RULES, type Finding, type Ref } from '@outlive/core'
 import { SeverityDot, SEVERITY_LABEL } from '@/components/ui/Severity.tsx'
+import { navigateTo } from '@/lib/router.ts'
 import { cn } from '@/lib/cn.ts'
 
 /** Where an entity is edited, so a finding can send you to the thing it is about. */
@@ -97,6 +98,20 @@ export function FindingCard({
           <Wrench className="mt-0.5 size-3.5 flex-none text-accent" aria-hidden />
           <p className="text-body">{finding.remediation}</p>
         </div>
+
+        {/* A finding names what breaks. The map draws where it breaks, in the
+            same world this came out of, and getting between the two should not
+            be a search through a dropdown of twenty scenarios. */}
+        {finding.scenarioId ? (
+          <button
+            type="button"
+            onClick={() => navigateTo('map', finding.scenarioId)}
+            className="no-print mt-3 inline-flex items-center gap-1.5 text-[0.75rem] text-accent underline underline-offset-2"
+          >
+            <Network className="size-3.5" aria-hidden />
+            Draw this on the map
+          </button>
+        ) : null}
 
         {finding.subjects.length > 0 ? (
           <div className="no-print mt-3 flex flex-wrap items-center gap-1.5">

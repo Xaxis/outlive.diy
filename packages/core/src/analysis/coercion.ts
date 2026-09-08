@@ -46,6 +46,7 @@ export function analyseCoercion(ctx: AnalysisContext): Finding[] {
           'Put a threshold-breaking key beyond one session: a location that takes longer to reach than an attacker will wait, a co-signer who must be contacted separately, or a timelocked path that is the only route to the balance.',
         subjects: hit.map((wallet) => ({ type: 'wallet' as const, id: wallet.id })),
         world: scenario.label,
+        scenarioId: scenario.id,
         severity: escalate('critical', Math.max(0, ...hit.map(walletWeight))),
       })
     )
@@ -62,6 +63,7 @@ export function analyseCoercion(ctx: AnalysisContext): Finding[] {
           'Build one tier that is structurally out of reach of a single session, and keep the balance you could not replace in it.',
         subjects: real.map((wallet) => ({ type: 'wallet' as const, id: wallet.id })),
         world: scenario.label,
+        scenarioId: scenario.id,
       })
     )
   }

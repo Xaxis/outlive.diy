@@ -62,6 +62,7 @@ export function analyseLoss(ctx: AnalysisContext): Finding[] {
           ...hit.map((wallet) => ({ type: 'wallet' as const, id: wallet.id })),
         ],
         world: scenario.label,
+        scenarioId: scenario.id,
         severity: escalate('critical', worst(hit)),
       })
     )
@@ -92,6 +93,7 @@ export function analyseLoss(ctx: AnalysisContext): Finding[] {
           ...extra.map((wallet) => ({ type: 'wallet' as const, id: wallet.id })),
         ],
         world: scenario.label,
+        scenarioId: scenario.id,
         severity: escalate('critical', worst(extra)),
       })
     )
@@ -167,6 +169,7 @@ export function analyseLoss(ctx: AnalysisContext): Finding[] {
           ...hit.map((wallet) => ({ type: 'wallet' as const, id: wallet.id })),
         ],
         world: scenario.label,
+        scenarioId: scenario.id,
         severity: escalate('high', worst(hit)),
       })
     )
@@ -197,6 +200,7 @@ export function analyseLoss(ctx: AnalysisContext): Finding[] {
             ...hit.map((wallet) => ({ type: 'wallet' as const, id: wallet.id })),
           ],
           world: scenario.label,
+          scenarioId: scenario.id,
           severity: escalate('high', worst(hit)),
         })
       )
@@ -241,6 +245,7 @@ export function analyseLoss(ctx: AnalysisContext): Finding[] {
           ...hit.map((wallet) => ({ type: 'wallet' as const, id: wallet.id })),
         ],
         world: scenario.label,
+        scenarioId: scenario.id,
         severity: escalate('high', worst(hit)),
       })
     )
@@ -279,6 +284,7 @@ export function analyseLoss(ctx: AnalysisContext): Finding[] {
             : `Move one of the places ${wallet.label} depends on closer, or add a route that does not need the far one. Failing that, raise the recorded tolerance to what you would really accept, so the rest of the plan is measured against a true number.`,
         subjects: [{ type: 'wallet', id: wallet.id }],
         world: worstCase.scenario.label,
+        scenarioId: worstCase.scenario.id,
         severity: escalate('high', walletWeight(wallet)),
       })
     )
