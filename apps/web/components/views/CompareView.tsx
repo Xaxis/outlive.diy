@@ -2,11 +2,20 @@
 
 import { useMemo } from 'react'
 import { ArrowRight, GitFork, Minus, Plus } from 'lucide-react'
-import { analyze, compareReports, comparePlans, summariseDelta, type Finding } from '@outlive/core'
+import {
+  analyze,
+  baseWorld,
+  buildGraph,
+  compareReports,
+  comparePlans,
+  summariseDelta,
+  type Finding,
+} from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
 import { MEASURE, Callout, Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Field, Select } from '@/components/ui/Field.tsx'
 import { SeverityDot } from '@/components/ui/Severity.tsx'
+import { PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
 import { useActivePlan, useComparePlan, useStore } from '@/lib/store.ts'
 
 /**
@@ -32,6 +41,17 @@ export function CompareView() {
   }, [plan, other])
 
   const changes = useMemo(() => (plan && other ? comparePlans(other, plan) : []), [plan, other])
+
+  // The two shapes, beside each other. A list of opened and closed findings
+  // says what the change cost and what it bought; it does not show what was
+  // actually moved, and that is the thing the reader is holding in their head.
+  const shapes = useMemo(() => {
+    if (!plan || !other) return null
+    return {
+      before: buildGraph(other, baseWorld(other), { includePeople: false }),
+      after: buildGraph(plan, baseWorld(plan), { includePeople: false }),
+    }
+  }, [plan, other])
 
   /**
    * When a change closes nothing, the useful next sentence is not "nothing
@@ -120,6 +140,25 @@ export function CompareView() {
               })}
             </div>
           </Panel>
+
+          {/* Stacked rather than side by side, and that is the better
+              comparison as well as the only legible one. Half a column is not
+              enough width to draw a plan at a readable size, and stacking puts
+              each column of one diagram directly above the same column of the
+              other, so a key that moved is a difference in the same place on
+              the page rather than one to hunt for. */}
+          {shapes ? (
+            <div className="grid gap-4">
+              <Panel className="p-4">
+                <SectionHeading title={other.name} hint="The baseline, as it stands." />
+                <PlanDiagram graph={shapes.before} />
+              </Panel>
+              <Panel className="p-4">
+                <SectionHeading title={plan.name} hint="This plan, as it stands." />
+                <PlanDiagram graph={shapes.after} />
+              </Panel>
+            </div>
+          ) : null}
 
           <div className="grid gap-4 md:grid-cols-2">
             <Panel className="p-4">

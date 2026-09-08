@@ -81,8 +81,12 @@ const LIST_LIMIT = 12
  * How far the diagram will shrink to fit its column before it gives up and
  * scrolls instead. Below this the labels stop being readable, and an unreadable
  * diagram that fits is worse than a readable one you have to push sideways.
+ *
+ * Three quarters puts the smallest text at about nine pixels, which is the
+ * floor. On a phone this means the diagram scrolls, which is what a diagram on
+ * a phone should do.
  */
-const MIN_SCALE = 0.6
+const MIN_SCALE = 0.75
 
 /**
  * Scale the drawing down to whatever room it has been given, never up.

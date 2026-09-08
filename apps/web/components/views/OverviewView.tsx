@@ -109,28 +109,6 @@ export function OverviewView() {
             )}
           </Panel>
 
-          {/* The shape of the thing, before any of the prose about it. A plan
-              is a chain of dependencies, and a list of wallets does not show a
-              chain. */}
-          {graph ? (
-            <Panel className="p-4">
-              <SectionHeading
-                title="What it rests on"
-                actions={
-                  <a href={href('map')} className="chip no-underline hover:border-line-strong">
-                    open the map
-                    <ArrowUpRight className="size-3" aria-hidden />
-                  </a>
-                }
-              />
-              <PlanDiagram
-                graph={graph}
-                maxHeight={620}
-                onSelect={() => navigate({ view: 'map', section: null })}
-              />
-            </Panel>
-          ) : null}
-
           <Panel className="p-4">
             <SectionHeading
               title="What to deal with first"
@@ -235,6 +213,29 @@ export function OverviewView() {
           </Panel>
         </div>
       </div>
+
+      {/* The shape of the thing. Full width, and outside the two-column grid,
+          because half a column is not enough to draw a plan at a size anybody
+          can read and the fallback is a picture with its last columns cut off. */}
+      {graph ? (
+        <Panel className="mt-4 p-4">
+          <SectionHeading
+            title="What it rests on"
+            hint="A chain of dependencies ending in physical places. The map takes one thing away and redraws it."
+            actions={
+              <a href={href('map')} className="chip no-underline hover:border-line-strong">
+                open the map
+                <ArrowUpRight className="size-3" aria-hidden />
+              </a>
+            }
+          />
+          <PlanDiagram
+            graph={graph}
+            maxHeight={620}
+            onSelect={() => navigate({ view: 'map', section: null })}
+          />
+        </Panel>
+      ) : null}
     </div>
   )
 }
