@@ -111,7 +111,11 @@ export function MapView() {
       />
 
       <div
-        className="grid gap-4 lg:grid-cols-[19rem_minmax(0,1fr)]"
+        // Two columns only where the drawing still has room to be read in the
+        // second one. At the width the sidebar appears, a list beside it leaves
+        // four hundred pixels for a drawing eleven hundred wide, so below that
+        // the list sits above it instead.
+        className="grid gap-4 xl:grid-cols-[17rem_minmax(0,1fr)]"
         style={
           {
             // Never taller than the drawing needs, and never so short that the
@@ -122,7 +126,7 @@ export function MapView() {
           } as React.CSSProperties
         }
       >
-        <Panel className="flex h-[22rem] flex-col overflow-hidden lg:h-[var(--canvas-h)] no-print">
+        <Panel className="flex h-[20rem] flex-col overflow-hidden xl:h-[var(--canvas-h)] no-print">
           <WorldRail
             groups={lens.groups}
             results={byScenario}
@@ -174,6 +178,7 @@ export function MapView() {
             <PlanDiagram
               graph={graph}
               height="var(--canvas-h)"
+              minHeight="var(--canvas-h)"
               onHeight={setDrawingHeight}
               selectedId={selectedId}
               onSelectNode={(id) => setSelectedId(id === selectedId ? null : id)}

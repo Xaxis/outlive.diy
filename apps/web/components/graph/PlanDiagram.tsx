@@ -172,6 +172,7 @@ export function PlanDiagram({
   selectedId,
   className,
   height = '26rem',
+  minHeight,
   onHeight,
 }: {
   graph: PlanGraph
@@ -191,6 +192,13 @@ export function PlanDiagram({
    * the surface is never taller than the drawing needs.
    */
   height?: string
+  /**
+   * A floor, for a caller that has already decided how tall the surface is.
+   * The map sizes the drawing and the list beside it together, and a surface
+   * that then shrank out from under the list would leave the two columns
+   * ending in different places.
+   */
+  minHeight?: string
   /**
    * The height the drawing actually needs at the width it has been given, so
    * that whatever sits beside the surface can be the same height as it.
@@ -437,8 +445,11 @@ export function PlanDiagram({
       // The height given is a ceiling, not a demand. A plan with six boxes in a
       // window with room for sixty leaves a field of empty grey under a small
       // drawing, which reads as something failing to load. So the surface is
-      // never taller than the drawing needs at the width it has got.
-      style={{ height: natural === null ? height : `min(${height}, ${natural}px)` }}
+      // never taller than the drawing needs at the width it has got, and never
+      // shorter than a caller sizing the page around it has asked for.
+      style={{
+        height: natural === null ? height : `clamp(${minHeight ?? '0px'}, ${natural}px, ${height})`,
+      }}
     >
       <div
         ref={viewport}
