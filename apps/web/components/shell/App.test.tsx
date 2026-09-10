@@ -903,6 +903,21 @@ describe('what a page shows at rest', () => {
     expect(body.getByText(/collect from site a/i)).toBeInTheDocument()
   })
 
+  it('says a phase-wide instruction once rather than once per key', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/runbook')
+
+    // Three keys generated the same way: one paragraph, three ticks. Repeating
+    // it three times is how a reader learns to skip the paragraphs.
+    expect(await screen.findByText(/Generate Key A on Signer A/)).toBeInTheDocument()
+    expect(screen.getByText(/Generate Key C on Signer C/)).toBeInTheDocument()
+    expect(screen.getAllByText(/generate it on the device itself, offline/i)).toHaveLength(1)
+  })
+
   it('folds the arithmetic under the map away rather than stacking it', async () => {
     reset()
     const user = userEvent.setup()

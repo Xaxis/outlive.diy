@@ -12,6 +12,23 @@ import { NothingYet } from '@/components/shell/NothingYet.tsx'
 import { cn } from '@/lib/cn.ts'
 
 /**
+ * Consecutive steps that say exactly the same thing, grouped so that the thing
+ * is said once. The engine writes each step to stand on its own, which is right
+ * for a document you tick over three weeks and wrong for three of them in a
+ * row: a paragraph repeated is a paragraph skipped, and the next one that is
+ * not a repeat gets skipped with it.
+ */
+function runsOf(steps: RunbookStep[]): RunbookStep[][] {
+  const runs: RunbookStep[][] = []
+  for (const step of steps) {
+    const last = runs[runs.length - 1]
+    if (last && last[0].detail === step.detail) last.push(step)
+    else runs.push([step])
+  }
+  return runs
+}
+
+/**
  * The build runbook, with the state of it.
  *
  * Progress is stored in the plan rather than in the browser, because building
@@ -123,49 +140,66 @@ export function RunbookView() {
               <p className="mt-0.5 text-sm text-muted">{PHASE_PURPOSE[group.phase]}</p>
             </header>
             <ol className="space-y-2">
-              {group.steps.map((step) => (
-                <li key={step.id}>
-                  <div
-                    className={cn(
-                      'card flex gap-3 p-3.5 print-block',
-                      step.gate && 'border-accent/40',
-                      done(step) && 'opacity-60'
-                    )}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => toggle(step)}
-                      aria-pressed={done(step)}
-                      aria-label={done(step) ? 'Mark not done' : 'Mark done'}
-                      className="no-print mt-[0.15rem] flex-none self-start"
-                    >
-                      {done(step) ? (
-                        <CheckCircle2 className="size-4 text-ok" aria-hidden />
-                      ) : (
-                        <Circle
-                          className="size-4 text-faint transition-colors hover:text-accent"
-                          aria-hidden
-                        />
-                      )}
-                    </button>
-                    <span className="print-only mt-0.5 flex-none self-start">☐</span>
-                    <div className="min-w-0">
-                      <p className="flex flex-wrap items-baseline gap-2 text-[0.875rem] font-medium text-strong">
-                        {step.title}
-                        {step.gate ? (
-                          <span className="chip border-accent/50 text-accent">gate</span>
-                        ) : null}
-                        {done(step) ? (
-                          <span className="mono text-[0.6875rem] font-normal text-faint">
-                            {plan.progress[step.id]}
-                          </span>
-                        ) : null}
-                      </p>
-                      <p className="mt-1 max-w-[62ch] text-[0.8125rem] leading-relaxed text-muted">
-                        {step.detail}
-                      </p>
-                    </div>
-                  </div>
+              {runsOf(group.steps).map((run) => (
+                <li key={run[0].id}>
+                  {/* One instruction, then the things to do it to. Three keys
+                      generated the same way produced three copies of the same
+                      paragraph, and ten keys produce ten, which is how a reader
+                      learns that the paragraphs are worth skipping. */}
+                  {run.length > 1 ? (
+                    <p className="mb-2 max-w-[62ch] text-[0.8125rem] leading-relaxed text-muted print-block">
+                      {run[0].detail}
+                    </p>
+                  ) : null}
+                  <ol className="space-y-2">
+                    {run.map((step) => (
+                      <li key={step.id}>
+                        <div
+                          className={cn(
+                            'card flex gap-3 p-3.5 print-block',
+                            step.gate && 'border-accent/40',
+                            done(step) && 'opacity-60'
+                          )}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggle(step)}
+                            aria-pressed={done(step)}
+                            aria-label={done(step) ? 'Mark not done' : 'Mark done'}
+                            className="no-print mt-[0.15rem] flex-none self-start"
+                          >
+                            {done(step) ? (
+                              <CheckCircle2 className="size-4 text-ok" aria-hidden />
+                            ) : (
+                              <Circle
+                                className="size-4 text-faint transition-colors hover:text-accent"
+                                aria-hidden
+                              />
+                            )}
+                          </button>
+                          <span className="print-only mt-0.5 flex-none self-start">☐</span>
+                          <div className="min-w-0">
+                            <p className="flex flex-wrap items-baseline gap-2 text-[0.875rem] font-medium text-strong">
+                              {step.title}
+                              {step.gate ? (
+                                <span className="chip border-accent/50 text-accent">gate</span>
+                              ) : null}
+                              {done(step) ? (
+                                <span className="mono text-[0.6875rem] font-normal text-faint">
+                                  {plan.progress[step.id]}
+                                </span>
+                              ) : null}
+                            </p>
+                            {run.length > 1 ? null : (
+                              <p className="mt-1 max-w-[62ch] text-[0.8125rem] leading-relaxed text-muted">
+                                {step.detail}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
                 </li>
               ))}
             </ol>
