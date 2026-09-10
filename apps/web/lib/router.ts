@@ -19,7 +19,6 @@ export type ViewId =
   | 'design'
   | 'findings'
   | 'map'
-  | 'scenarios'
   | 'runbook'
   | 'recovery'
   | 'letter'
@@ -39,7 +38,6 @@ const VIEWS: ViewId[] = [
   'design',
   'findings',
   'map',
-  'scenarios',
   'runbook',
   'recovery',
   'letter',
@@ -52,9 +50,15 @@ export const DEFAULT_ROUTE: Route = { view: 'overview', section: null }
 
 export function parseHash(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean)
-  const view = parts[0] as ViewId | undefined
+  const first = parts[0]
+  const section = parts[1] ? decodeURIComponent(parts[1]) : null
+  // The stress test was a page that listed every world without drawing any of
+  // them. The map draws them and now carries the list, so a link to the old
+  // page lands on the map, still naming the world it meant.
+  if (first === 'scenarios') return { view: 'map', section }
+  const view = first as ViewId | undefined
   if (!view || !VIEWS.includes(view)) return DEFAULT_ROUTE
-  return { view, section: parts[1] ? decodeURIComponent(parts[1]) : null }
+  return { view, section }
 }
 
 export function formatHash(route: Route): string {

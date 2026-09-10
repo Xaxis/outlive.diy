@@ -104,6 +104,21 @@ take, a reachable box is the failure, and painting their empty hands red tells
 the reader that good news is bad. Same rule as `World.unknownPlacementReachable`,
 applied to paint.
 
+**The map is the diagnosis, not a picture of it.** The list of worlds is the
+control for the drawing, so it sits beside the drawing;
+`components/graph/WorldRail.tsx` and the composer both feed one `World` into one
+`PlanDiagram`, and the panel underneath answers about whatever box is selected
+in that world. There used to be a stress test page listing every world without
+drawing any of them, and a map that drew one world at a time and made you find
+it in a dropdown. Two pages asking one question, and the one with the answer in
+it was the one you had to go looking for.
+
+**A box cannot be dragged out of its column.** The surface pans and zooms, and
+the boxes do not move, because the column a box sits in is information: wallets,
+what they need, keys, the material a key exists as, places, people. A diagram
+that can be rearranged into a false statement is worse than one that cannot be
+rearranged.
+
 **Every answer on the purpose page has to change something visible.**
 `analysis/implications.ts` pairs each one with the thing in the plan it governs
 and measures: the horizon against the media the keys are written on, the

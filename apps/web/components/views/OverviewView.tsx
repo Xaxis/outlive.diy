@@ -231,7 +231,7 @@ export function OverviewView() {
           />
           <PlanDiagram
             graph={graph}
-            maxHeight={620}
+            height="30rem"
             onSelect={() => navigate({ view: 'map', section: null })}
           />
         </Panel>

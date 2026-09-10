@@ -13,7 +13,6 @@ import { OverviewView } from '@/components/views/OverviewView.tsx'
 import { DesignView } from '@/components/views/DesignView.tsx'
 import { FindingsView } from '@/components/views/FindingsView.tsx'
 import { MapView } from '@/components/views/MapView.tsx'
-import { ScenariosView } from '@/components/views/ScenariosView.tsx'
 import { RunbookView } from '@/components/views/RunbookView.tsx'
 import { RecoveryView } from '@/components/views/RecoveryView.tsx'
 import { LetterView } from '@/components/views/LetterView.tsx'
@@ -153,8 +152,6 @@ function View() {
       return <FindingsView />
     case 'map':
       return <MapView />
-    case 'scenarios':
-      return <ScenariosView />
     case 'runbook':
       return <RunbookView />
     case 'recovery':

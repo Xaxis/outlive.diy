@@ -503,6 +503,25 @@ body {
     page-break-after: avoid;
   }
 
+  /* The drawing is a window onto a surface you move around in. On paper there
+     is no moving around, so the window becomes the whole surface: no clipping,
+     no offset, and shrunk with `zoom` rather than `transform` so the space it
+     takes on the page shrinks with it. */
+  .plan-canvas {
+    height: auto !important;
+    overflow: visible !important;
+    border: 0;
+    background: #ffffff;
+  }
+  .plan-canvas-viewport {
+    position: static !important;
+  }
+  .plan-canvas-stage {
+    position: relative !important;
+    transform: none !important;
+    zoom: 0.62;
+  }
+
   a[href^='#']::after {
     content: '';
   }

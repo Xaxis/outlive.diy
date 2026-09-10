@@ -1,12 +1,15 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   CircleDot,
+  Crosshair,
   FileKey2,
   KeyRound,
   Lock,
   MapPin,
+  Minus,
+  Plus,
   Puzzle,
   ShieldEllipsis,
   Split,
@@ -22,6 +25,7 @@ import {
   NODE_HEIGHT,
   NODE_WIDTH,
   PADDING,
+  type PlacedNode,
 } from '@/lib/graph-layout.ts'
 import { cn } from '@/lib/cn.ts'
 
@@ -54,7 +58,20 @@ const KIND_NOUN: Record<GraphNodeKind, string> = {
 }
 
 /**
- * The plan, drawn.
+ * The plan, drawn, on a surface you can move around in.
+ *
+ * This was a fixed picture that shrank until it fitted whatever column it was
+ * given. That is fine for a thumbnail and useless for the thing it is meant to
+ * be: a plan with forty keys became a wall of nine-pixel text, and the only way
+ * to read a corner of it was to read all of it at once. So the drawing now sits
+ * in a viewport. Drag to move, wheel or pinch to zoom, and the controls in the
+ * corner say where you are and put you back.
+ *
+ * What you cannot do is drag a box somewhere else, and that is deliberate. The
+ * column a box sits in *is* information: wallets, then what they need, then
+ * keys, then the material a key exists as, then places, then people. A box
+ * dragged out of its column would say something false about the plan, and a
+ * diagram that can be made to lie is worse than one that cannot be rearranged.
  *
  * Boxes are real DOM, positioned absolutely; only the edges are SVG. Doing it
  * the other way round would mean reimplementing focus, hover, truncation and
@@ -76,50 +93,46 @@ const KIND_NOUN: Record<GraphNodeKind, string> = {
 /** How many rows the written summary prints before it starts counting. */
 const LIST_LIMIT = 12
 
+const MIN_SCALE = 0.3
+const MAX_SCALE = 2
 /**
- * How far the diagram will shrink to fit its column before it gives up and
- * scrolls instead. Below this the labels stop being readable, and an unreadable
- * diagram that fits is worse than a readable one you have to push sideways.
+ * How small a fit is allowed to make the drawing.
  *
- * Three quarters puts the smallest text at about nine pixels, which is the
- * floor. On a phone this means the diagram scrolls, which is what a diagram on
- * a phone should do.
+ * Fitting the whole width is the right answer on a screen wide enough to read
+ * the result. On a phone it is not: a plan a thousand pixels wide fitted into
+ * three hundred is a picture of a custody plan at three tenths, which is a grey
+ * smear with a zoom control on it. Below this the fit stops shrinking and the
+ * surface is panned instead, which is what a surface is for.
  */
-const MIN_SCALE = 0.75
+const MIN_FIT_SCALE = 0.6
+/** Room left around the drawing when it is fitted to the viewport. */
+const FIT_PADDING = 20
+/** How far one arrow key moves the surface, and one press of a zoom button. */
+const PAN_STEP = 48
+const ZOOM_STEP = 1.25
+
+interface View {
+  x: number
+  y: number
+  scale: number
+}
+
+/** There is no paint to be ahead of while the document is being generated. */
+const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value))
+}
 
 /**
- * Scale the drawing down to whatever room it has been given, never up.
- *
- * The same diagram appears in a full-width view and in a column beside a rail,
- * and the second one would otherwise be a picture with its last two columns cut
- * off, which reads as broken rather than as scrollable.
+ * Zoom about a point, so that whatever is under the pointer stays under it.
+ * Zooming about the origin instead sends the thing you were looking at off the
+ * edge, which is why every map in the world does it this way.
  */
-function useFitScale(width: number): [React.RefObject<HTMLDivElement | null>, number] {
-  const ref = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(1)
-
-  useEffect(() => {
-    const element = ref.current
-    if (!element) return
-    const measure = () => {
-      const available = element.clientWidth
-      if (available <= 0) return
-      setScale(Math.min(1, Math.max(MIN_SCALE, available / width)))
-    }
-    measure()
-    // Not every environment this renders in has a ResizeObserver, and the test
-    // environment is one of them. Falling back to the window keeps the initial
-    // measurement, which is the one that matters.
-    if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', measure)
-      return () => window.removeEventListener('resize', measure)
-    }
-    const observer = new ResizeObserver(measure)
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [width])
-
-  return [ref, scale]
+function zoomAbout(view: View, scale: number, px: number, py: number): View {
+  const next = clamp(scale, MIN_SCALE, MAX_SCALE)
+  const ratio = next / view.scale
+  return { scale: next, x: px - (px - view.x) * ratio, y: py - (py - view.y) * ratio }
 }
 
 type Tone = 'normal' | 'lost' | 'taken' | 'idle'
@@ -158,7 +171,8 @@ export function PlanDiagram({
   onSelectNode,
   selectedId,
   className,
-  maxHeight,
+  height = '26rem',
+  onHeight,
 }: {
   graph: PlanGraph
   /** Clicking a box hands back what it stands for. For jumping somewhere. */
@@ -171,16 +185,236 @@ export function PlanDiagram({
   selectedId?: string | null
   className?: string
   /**
-   * A ceiling for the drawing where it shares a page with other things. A big
-   * plan makes a very tall column, and a summary screen should not become four
-   * thousand pixels of diagram. It scrolls rather than being cropped: hiding
-   * part of a dependency graph is how a reader concludes the wrong thing.
+   * How tall the viewport is, as a CSS length. The drawing inside it is
+   * whatever size it is; this is the window onto it. On the map that window is
+   * most of the screen, and on a summary panel it is a band. It is a ceiling:
+   * the surface is never taller than the drawing needs.
    */
-  maxHeight?: number
+  height?: string
+  /**
+   * The height the drawing actually needs at the width it has been given, so
+   * that whatever sits beside the surface can be the same height as it.
+   */
+  onHeight?: (px: number) => void
 }) {
   const layout = useMemo(() => layoutGraph(graph), [graph])
-  const [outer, scale] = useFitScale(layout.width)
+  const viewport = useRef<HTMLDivElement>(null)
+  const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 })
+  const [available, setAvailable] = useState(0)
+  const [panning, setPanning] = useState(false)
   const [focused, setFocused] = useState<string | null>(null)
+
+  // Whether the reader has moved the surface themselves. If they have, a change
+  // in the surface's height alone leaves it exactly where they put it: a
+  // diagram that jumps back to the middle because a panel below it opened is a
+  // diagram fighting its reader. A change in width is different, because the
+  // scale the whole drawing fits at is derived from the width, so the old
+  // position means nothing against the new one.
+  const moved = useRef(false)
+  const pointers = useRef(new Map<number, { x: number; y: number }>())
+  const pinch = useRef<number | null>(null)
+
+  // How tall the drawing needs the surface to be. Only the width matters here:
+  // it decides the scale at which the whole drawing fits across, and therefore
+  // how tall it is at that scale. Taking the height into account as well would
+  // make the height depend on itself.
+  const natural =
+    available > 0
+      ? Math.ceil(
+          layout.height * clamp((available - FIT_PADDING * 2) / layout.width, MIN_FIT_SCALE, 1) +
+            FIT_PADDING * 2
+        )
+      : null
+
+  // Depends on the measured width because the surface's own height is derived
+  // from it: when the width changes the height changes on the next commit, and
+  // the fit has to be recomputed against the new one rather than the one it was
+  // last centred in.
+  const fit = useCallback(() => {
+    const element = viewport.current
+    if (!element) return
+    const width = available || element.clientWidth
+    const height = element.clientHeight
+    if (width <= 0 || height <= 0) return
+    // Never magnified past life size on a fit. A four-box plan blown up to fill
+    // a wall looks like an error rather than like a small plan.
+    const scale = clamp(
+      Math.min(
+        (width - FIT_PADDING * 2) / layout.width,
+        (height - FIT_PADDING * 2) / layout.height,
+        1
+      ),
+      MIN_FIT_SCALE,
+      1
+    )
+    moved.current = false
+    setView({
+      scale,
+      x: (width - layout.width * scale) / 2,
+      y: (height - layout.height * scale) / 2,
+    })
+  }, [layout.width, layout.height, available])
+
+  // Before paint, so the drawing is never seen at the wrong scale for a frame.
+  // A layout effect during the static render would only warn that it does
+  // nothing there, which is true and not worth saying every build.
+  useIsomorphicLayoutEffect(fit, [fit])
+
+  useEffect(() => {
+    const element = viewport.current
+    if (!element) return
+    const refit = () => {
+      setAvailable(element.clientWidth)
+      if (!moved.current) fit()
+    }
+    refit()
+    // Not every environment this renders in has a ResizeObserver, and the test
+    // environment is one of them.
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', refit)
+      return () => window.removeEventListener('resize', refit)
+    }
+    const observer = new ResizeObserver(refit)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [fit])
+
+  useEffect(() => {
+    if (natural !== null) onHeight?.(natural)
+  }, [natural, onHeight])
+
+  // A wheel over the drawing zooms rather than scrolling the page past it,
+  // which needs preventDefault, which needs a listener React cannot give us:
+  // it registers wheel as passive.
+  useEffect(() => {
+    const element = viewport.current
+    if (!element) return
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault()
+      moved.current = true
+      const rect = element.getBoundingClientRect()
+      const px = event.clientX - rect.left
+      const py = event.clientY - rect.top
+      setView((current) =>
+        zoomAbout(current, current.scale * Math.exp(-event.deltaY * 0.0015), px, py)
+      )
+    }
+    element.addEventListener('wheel', onWheel, { passive: false })
+    return () => element.removeEventListener('wheel', onWheel)
+  }, [])
+
+  const zoomBy = (factor: number) => {
+    const element = viewport.current
+    if (!element) return
+    moved.current = true
+    setView((current) =>
+      zoomAbout(current, current.scale * factor, element.clientWidth / 2, element.clientHeight / 2)
+    )
+  }
+
+  const nudge = (dx: number, dy: number) => {
+    moved.current = true
+    setView((current) => ({ ...current, x: current.x + dx, y: current.y + dy }))
+  }
+
+  /**
+   * Bring a box into the window. Tabbing through forty nodes is only navigation
+   * if the one with focus is on screen; without this the focus ring spends most
+   * of its time outside the viewport and the reader is looking at nothing.
+   */
+  const reveal = (node: PlacedNode) => {
+    const element = viewport.current
+    if (!element) return
+    setView((current) => {
+      const left = node.x * current.scale + current.x
+      const top = node.y * current.scale + current.y
+      const right = left + NODE_WIDTH * current.scale
+      const bottom = top + NODE_HEIGHT * current.scale
+      const margin = 24
+      let dx = 0
+      let dy = 0
+      if (left < margin) dx = margin - left
+      else if (right > element.clientWidth - margin) dx = element.clientWidth - margin - right
+      if (top < margin) dy = margin - top
+      else if (bottom > element.clientHeight - margin) dy = element.clientHeight - margin - bottom
+      if (dx === 0 && dy === 0) return current
+      moved.current = true
+      return { ...current, x: current.x + dx, y: current.y + dy }
+    })
+  }
+
+  const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    // A press that lands on a box is a click on that box, not a drag of the
+    // surface underneath it.
+    if ((event.target as HTMLElement).closest('[data-node]')) return
+    event.currentTarget.setPointerCapture(event.pointerId)
+    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    if (pointers.current.size === 2) pinch.current = null
+    setPanning(true)
+  }
+
+  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const held = pointers.current
+    const previous = held.get(event.pointerId)
+    if (!previous) return
+    held.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    moved.current = true
+    if (held.size === 1) {
+      nudge(event.clientX - previous.x, event.clientY - previous.y)
+      return
+    }
+    // Two fingers: the distance between them is the scale, and the point
+    // between them is what stays still.
+    const [a, b] = [...held.values()]
+    const distance = Math.hypot(a.x - b.x, a.y - b.y)
+    const rect = event.currentTarget.getBoundingClientRect()
+    const cx = (a.x + b.x) / 2 - rect.left
+    const cy = (a.y + b.y) / 2 - rect.top
+    if (pinch.current) {
+      const factor = distance / pinch.current
+      setView((current) => zoomAbout(current, current.scale * factor, cx, cy))
+    }
+    pinch.current = distance
+  }
+
+  const onPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    pointers.current.delete(event.pointerId)
+    if (pointers.current.size < 2) pinch.current = null
+    if (pointers.current.size === 0) setPanning(false)
+  }
+
+  const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = event.shiftKey ? PAN_STEP * 3 : PAN_STEP
+    switch (event.key) {
+      case 'ArrowLeft':
+        nudge(step, 0)
+        break
+      case 'ArrowRight':
+        nudge(-step, 0)
+        break
+      case 'ArrowUp':
+        nudge(0, step)
+        break
+      case 'ArrowDown':
+        nudge(0, -step)
+        break
+      case '+':
+      case '=':
+        zoomBy(ZOOM_STEP)
+        break
+      case '-':
+      case '_':
+        zoomBy(1 / ZOOM_STEP)
+        break
+      case '0':
+        fit()
+        break
+      default:
+        return
+    }
+    event.preventDefault()
+  }
+
   // Hovering traces a chain; a selection holds one. Without the second, moving
   // the mouse away from a box you just clicked unlights the very thing the
   // panel underneath is describing.
@@ -196,153 +430,225 @@ export function PlanDiagram({
 
   return (
     <div
-      ref={outer}
-      className={cn('overflow-x-auto', maxHeight && 'overflow-y-auto', className)}
-      style={maxHeight ? { maxHeight } : undefined}
+      className={cn(
+        'plan-canvas relative overflow-hidden rounded-[var(--radius-card)] border border-line bg-sunken',
+        className
+      )}
+      // The height given is a ceiling, not a demand. A plan with six boxes in a
+      // window with room for sixty leaves a field of empty grey under a small
+      // drawing, which reads as something failing to load. So the surface is
+      // never taller than the drawing needs at the width it has got.
+      style={{ height: natural === null ? height : `min(${height}, ${natural}px)` }}
     >
       <div
-        className="relative select-none"
-        style={{
-          width: layout.width,
-          height: layout.height,
-          transform: scale < 1 ? `scale(${scale})` : undefined,
-          transformOrigin: 'top left',
-          // The box the drawing occupies has to shrink with it, or the panel
-          // keeps the unscaled height and gains a band of empty space.
-          marginBottom: scale < 1 ? layout.height * (scale - 1) : undefined,
-          marginRight: scale < 1 ? layout.width * (scale - 1) : undefined,
+        ref={viewport}
+        tabIndex={0}
+        role="group"
+        aria-label="The plan, drawn. Drag to move, arrow keys to pan, plus and minus to zoom."
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onDoubleClick={(event) => {
+          // The background, not a box: double-clicking a box is two clicks on
+          // it, and refitting the surface underneath is not what was asked for.
+          if (!(event.target as HTMLElement).closest('[data-node]')) fit()
         }}
+        onKeyDown={onKeyDown}
         onMouseLeave={() => setFocused(null)}
+        className={cn(
+          'plan-canvas-viewport absolute inset-0 touch-none outline-none',
+          'focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-inset',
+          panning ? 'cursor-grabbing' : 'cursor-grab'
+        )}
       >
-        <svg
-          width={layout.width}
-          height={layout.height}
-          className="pointer-events-none absolute inset-0"
-          aria-hidden
+        <div
+          className="plan-canvas-stage absolute left-0 top-0 select-none"
+          style={{
+            width: layout.width,
+            height: layout.height,
+            transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})`,
+            transformOrigin: '0 0',
+          }}
         >
-          {layout.edges.map((edge) => {
-            const dim = lit !== null && !(lit.has(edge.from) && lit.has(edge.to))
+          <svg
+            width={layout.width}
+            height={layout.height}
+            className="pointer-events-none absolute inset-0"
+            aria-hidden
+          >
+            {layout.edges.map((edge) => {
+              const dim = lit !== null && !(lit.has(edge.from) && lit.has(edge.to))
+              return (
+                <g key={edge.id} opacity={dim ? dimmed * 0.5 : 1}>
+                  <path
+                    d={edge.path}
+                    fill="none"
+                    // Live-and-yours is neutral; anything else is the failure.
+                    // The two halves of that swap with the actor, exactly as
+                    // the boxes do.
+                    stroke={edge.live !== adversary ? 'var(--c-line-strong)' : 'var(--c-critical)'}
+                    strokeWidth={edge.live ? 1.25 : 1}
+                    strokeDasharray={edge.live ? undefined : '3 3'}
+                    opacity={edge.live ? 0.85 : 0.45}
+                  />
+                </g>
+              )
+            })}
+          </svg>
+
+          {layout.columns.map((column) => (
+            <p
+              key={column.layer}
+              className="eyebrow absolute truncate"
+              style={{ left: column.x, top: PADDING, width: NODE_WIDTH }}
+            >
+              {LAYER_LABELS[column.layer]}
+            </p>
+          ))}
+
+          {layout.nodes.map((node) => {
+            const Icon = ICON[node.kind]
+            const dim = lit !== null && !lit.has(node.id)
+            const tone: Tone = adversary
+              ? node.available
+                ? 'taken'
+                : 'idle'
+              : node.available
+                ? 'normal'
+                : 'lost'
+            const interactive = Boolean(onSelectNode || (node.ref && onSelect))
+            const state = adversary
+              ? node.available
+                ? 'They have this.'
+                : `Out of their reach: ${node.blocker ?? 'not where they are'}.`
+              : node.available
+                ? 'Within reach.'
+                : `Not available: ${node.blocker ?? 'out of reach'}.`
             return (
-              <g key={edge.id} opacity={dim ? dimmed * 0.5 : 1}>
-                <path
-                  d={edge.path}
-                  fill="none"
-                  // Live-and-yours is neutral; anything else is the failure.
-                  // The two halves of that swap with the actor, exactly as the
-                  // boxes do.
-                  stroke={edge.live !== adversary ? 'var(--c-line-strong)' : 'var(--c-critical)'}
-                  strokeWidth={edge.live ? 1.25 : 1}
-                  strokeDasharray={edge.live ? undefined : '3 3'}
-                  opacity={edge.live ? 0.85 : 0.45}
-                />
-              </g>
+              <button
+                key={node.id}
+                type="button"
+                data-node
+                disabled={!interactive}
+                onMouseEnter={() => setFocused(node.id)}
+                onFocus={(event) => {
+                  setFocused(node.id)
+                  // Only chase focus that arrived by keyboard. Panning the
+                  // surface under a mouse that has just clicked something is a
+                  // fight with the reader's hand.
+                  try {
+                    if (event.currentTarget.matches(':focus-visible')) reveal(node)
+                  } catch {
+                    // A browser or test environment without :focus-visible.
+                  }
+                }}
+                onBlur={() => setFocused(null)}
+                onClick={() => {
+                  if (onSelectNode) onSelectNode(node.id)
+                  else if (node.ref) onSelect?.(node.ref)
+                }}
+                // Every box is narrower than some of the labels it has to
+                // carry, so the whole of it is also the tooltip.
+                title={`${node.label}${node.detail ? ` (${node.detail})` : ''}. ${state}`}
+                className={cn(
+                  'absolute flex flex-col justify-center gap-0.5 rounded-[var(--radius-control)] border px-2.5 text-left transition-opacity',
+                  'disabled:cursor-default',
+                  interactive && 'cursor-pointer hover:border-accent',
+                  TONE_BOX[tone],
+                  selectedId === node.id && 'border-accent ring-1 ring-accent'
+                )}
+                style={{
+                  left: node.x,
+                  top: node.y,
+                  width: NODE_WIDTH,
+                  height: NODE_HEIGHT,
+                  opacity: dim ? dimmed : 1,
+                }}
+              >
+                <span className="flex items-center gap-1.5">
+                  <Icon className={cn('size-3.5 flex-none', TONE_ICON[tone])} aria-hidden />
+                  <span
+                    className={cn(
+                      'truncate text-[0.78rem] font-medium leading-tight',
+                      TONE_LABEL[tone]
+                    )}
+                  >
+                    {node.label}
+                  </span>
+                </span>
+                <span className={cn('truncate text-[0.65rem] leading-tight', TONE_DETAIL[tone])}>
+                  {/* On a box this size the reason is worth more room than the
+                      description, so where there is a reason it takes the line. */}
+                  {tone === 'lost'
+                    ? (node.blocker ?? 'out of reach')
+                    : (node.detail ?? KIND_NOUN[node.kind])}
+                </span>
+                <span className="sr-only">
+                  {KIND_NOUN[node.kind]}. {state}
+                </span>
+              </button>
             )
           })}
-        </svg>
 
-        {layout.columns.map((column) => (
-          <p
-            key={column.layer}
-            className="eyebrow absolute truncate"
-            style={{ left: column.x, top: PADDING, width: NODE_WIDTH }}
-          >
-            {LAYER_LABELS[column.layer]}
-          </p>
-        ))}
+          {layout.edges
+            .filter((edge) => edge.label)
+            .map((edge) => (
+              <span
+                key={`${edge.id}-label`}
+                title={edge.label ?? undefined}
+                className="pointer-events-none absolute -translate-x-1/2 truncate rounded bg-sunken px-1 text-[0.6rem] leading-tight text-faint"
+                style={{
+                  left: edge.labelX,
+                  top: edge.labelY - 6,
+                  maxWidth: COLUMN_GAP + 16,
+                  opacity:
+                    lit !== null && !(lit.has(edge.from) && lit.has(edge.to)) ? dimmed * 0.5 : 1,
+                }}
+              >
+                {edge.label}
+              </span>
+            ))}
+        </div>
+      </div>
 
-        {layout.nodes.map((node) => {
-          const Icon = ICON[node.kind]
-          const dim = lit !== null && !lit.has(node.id)
-          const tone: Tone = adversary
-            ? node.available
-              ? 'taken'
-              : 'idle'
-            : node.available
-              ? 'normal'
-              : 'lost'
-          const interactive = Boolean(onSelectNode || (node.ref && onSelect))
-          const state = adversary
-            ? node.available
-              ? 'They have this.'
-              : `Out of their reach: ${node.blocker ?? 'not where they are'}.`
-            : node.available
-              ? 'Within reach.'
-              : `Not available: ${node.blocker ?? 'out of reach'}.`
-          return (
-            <button
-              key={node.id}
-              type="button"
-              disabled={!interactive}
-              onMouseEnter={() => setFocused(node.id)}
-              onFocus={() => setFocused(node.id)}
-              onBlur={() => setFocused(null)}
-              onClick={() => {
-                if (onSelectNode) onSelectNode(node.id)
-                else if (node.ref) onSelect?.(node.ref)
-              }}
-              // Every box is narrower than some of the labels it has to carry,
-              // so the whole of it is also the tooltip.
-              title={`${node.label}${node.detail ? ` (${node.detail})` : ''}. ${state}`}
-              className={cn(
-                'absolute flex flex-col justify-center gap-0.5 rounded-[var(--radius-control)] border px-2.5 text-left transition-opacity',
-                'disabled:cursor-default',
-                interactive && 'hover:border-accent',
-                TONE_BOX[tone],
-                selectedId === node.id && 'border-accent ring-1 ring-accent'
-              )}
-              style={{
-                left: node.x,
-                top: node.y,
-                width: NODE_WIDTH,
-                height: NODE_HEIGHT,
-                opacity: dim ? dimmed : 1,
-              }}
-            >
-              <span className="flex items-center gap-1.5">
-                <Icon className={cn('size-3.5 flex-none', TONE_ICON[tone])} aria-hidden />
-                <span
-                  className={cn(
-                    'truncate text-[0.78rem] font-medium leading-tight',
-                    TONE_LABEL[tone]
-                  )}
-                >
-                  {node.label}
-                </span>
-              </span>
-              <span className={cn('truncate text-[0.65rem] leading-tight', TONE_DETAIL[tone])}>
-                {/* On a box this size the reason is worth more room than the
-                    description, so where there is a reason it takes the line. */}
-                {tone === 'lost'
-                  ? (node.blocker ?? 'out of reach')
-                  : (node.detail ?? KIND_NOUN[node.kind])}
-              </span>
-              <span className="sr-only">
-                {KIND_NOUN[node.kind]}. {state}
-              </span>
-            </button>
-          )
-        })}
-
-        {layout.edges
-          .filter((edge) => edge.label)
-          .map((edge) => (
-            <span
-              key={`${edge.id}-label`}
-              title={edge.label ?? undefined}
-              className="pointer-events-none absolute -translate-x-1/2 truncate rounded bg-canvas px-1 text-[0.6rem] leading-tight text-faint"
-              style={{
-                left: edge.labelX,
-                top: edge.labelY - 6,
-                maxWidth: COLUMN_GAP + 16,
-                opacity:
-                  lit !== null && !(lit.has(edge.from) && lit.has(edge.to)) ? dimmed * 0.5 : 1,
-              }}
-            >
-              {edge.label}
-            </span>
-          ))}
+      <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-[var(--radius-control)] border border-line bg-surface/90 p-1 backdrop-blur no-print">
+        <CanvasButton label="Zoom out" onClick={() => zoomBy(1 / ZOOM_STEP)}>
+          <Minus className="size-3.5" aria-hidden />
+        </CanvasButton>
+        <span className="mono w-11 text-center text-[0.6875rem] tabular-nums text-faint">
+          {Math.round(view.scale * 100)}%
+        </span>
+        <CanvasButton label="Zoom in" onClick={() => zoomBy(ZOOM_STEP)}>
+          <Plus className="size-3.5" aria-hidden />
+        </CanvasButton>
+        <CanvasButton label="Fit the whole plan" onClick={fit}>
+          <Crosshair className="size-3.5" aria-hidden />
+        </CanvasButton>
       </div>
     </div>
+  )
+}
+
+function CanvasButton({
+  label,
+  onClick,
+  children,
+}: {
+  label: string
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      onClick={onClick}
+      className="flex size-6 items-center justify-center rounded-[var(--radius-control)] text-muted transition-colors hover:bg-[rgb(var(--tint)/0.07)] hover:text-strong"
+    >
+      {children}
+    </button>
   )
 }
 
@@ -401,7 +707,8 @@ export function DiagramLegend({ graph }: { graph: PlanGraph }) {
         ? 'A solid red box is one they hold in this world; a faint dashed box is out of their reach and out of the story.'
         : 'A dashed red box cannot be reached in this world, and the line into it is dashed too.'}{' '}
       Hovering a box lights the chain it belongs to; clicking one holds that chain and says what
-      this world does to it.
+      this world does to it. Drag the surface to move it, scroll or pinch to zoom, and double-click
+      the background to fit the whole plan again.
     </p>
   )
 }

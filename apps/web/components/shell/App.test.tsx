@@ -140,7 +140,8 @@ describe('every view renders', () => {
     ['#/design/profile', /^design$/i],
     ['#/findings', /^findings$/i],
     ['#/map', /^map$/i],
-    ['#/scenarios', /stress test/i],
+    // The stress test was folded into the map, and its links still land there.
+    ['#/scenarios', /^map$/i],
     ['#/runbook', /build runbook/i],
     ['#/recovery', /recovery routes/i],
     ['#/letter', /successor letter/i],
@@ -280,34 +281,31 @@ describe('undo', () => {
 })
 
 describe('composing a failure by hand', () => {
-  it('agrees with the scenario table when the same thing is switched off', async () => {
+  it('draws the world it composed rather than answering beside it', async () => {
     reset()
     const user = userEvent.setup()
     render(<App />)
     await user.click(await screen.findByText('Two of three, three sites'))
 
-    goto('#/scenarios')
+    goto('#/map')
 
-    // The composer is folded away: the table is what the page is for, and
-    // building a world by hand is what you come back for.
-    await user.click(await screen.findByRole('button', { name: /compose your own/i }))
-    const panel = screen.getByText(/asking on behalf of/i).closest('section') as HTMLElement
-    const composer = within(panel)
+    // The composer is folded away: the list of worlds is what the page opens
+    // with, and building one by hand is what you come back for.
+    await user.click(await screen.findByRole('button', { name: /compose a world of your own/i }))
 
-    const vault = () => within(composer.getByText('Vault').closest('li') as HTMLElement)
-
-    // Nothing switched off: the vault works, with a key to spare.
-    expect(vault().getByText(/1 spare key beyond the threshold/i)).toBeInTheDocument()
+    // Nothing switched off, so the drawing is still the world chosen above it.
+    expect(await screen.findByText(/within reach in this world/i)).toBeInTheDocument()
 
     // Losing Site B alone is survivable: Key B's device is at Site A, so its
-    // backup being unreachable does not take the key with it.
-    await user.click(composer.getByRole('button', { name: 'Site B', pressed: false }))
-    expect(vault().getByText(/survives/i)).toBeInTheDocument()
+    // backup being unreachable does not take the key with it. The picture is
+    // the answer, and it is the picture that changes.
+    await user.click(screen.getByRole('button', { name: 'Site B', pressed: false }))
+    expect(await screen.findByText(/a world you composed/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Site B.*Not available/i })).toBeInTheDocument()
 
     // Site A as well, and there is neither a threshold nor a descriptor left.
-    await user.click(composer.getByRole('button', { name: 'Site A', pressed: false }))
-    expect(vault().getByText(/unspendable/i)).toBeInTheDocument()
-    expect(vault().getByText(/configuration cannot be recovered/i)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Site A', pressed: false }))
+    expect(await screen.findAllByText(/unspendable/i)).not.toHaveLength(0)
   })
 })
 
@@ -317,7 +315,6 @@ describe('an empty plan', () => {
   const derived: [string, string][] = [
     ['#/findings', 'the silence below means nothing'],
     ['#/map', 'nothing to draw'],
-    ['#/scenarios', 'nothing to take away from it'],
     ['#/runbook', 'no steps to order'],
     ['#/recovery', 'nothing that could go wrong'],
   ]
@@ -616,14 +613,45 @@ describe('the diagram', () => {
     // As it stands, everything is in reach.
     expect(await screen.findByText(/within reach in this world/i)).toBeInTheDocument()
 
-    await user.selectOptions(
-      screen.getByLabelText(/show the plan/i),
-      screen.getByRole('option', { name: 'Site C is destroyed or emptied' })
-    )
+    // Losing Site C breaks nothing, so it is behind the second filter rather
+    // than in the list of what breaks.
+    await user.click(screen.getByRole('button', { name: /^All \d+$/ }))
+    await user.click(screen.getByRole('button', { name: /Site C is destroyed or emptied/ }))
 
     // And now one branch of it is not, named rather than only coloured.
     expect(await screen.findByText(/out of reach here/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Site C.*Not available/i })).toBeInTheDocument()
+  })
+
+  it('carries every world the engine can build, with what each one breaks', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/map')
+
+    // The stress test used to be a page of its own. It is the control for the
+    // drawing, so it is beside the drawing, and each row says what it costs.
+    const gone = await screen.findByRole('button', { name: /Site A is destroyed or emptied/ })
+    expect(within(gone).getByText(/2 unspendable/)).toBeInTheDocument()
+    // A verdict per wallet, named as well as coloured.
+    expect(within(gone).getByText(/Vault: unspendable/)).toBeInTheDocument()
+  })
+
+  it('gives the drawing controls to move around in it', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/map')
+
+    expect(await screen.findByRole('button', { name: /zoom in/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /zoom out/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /fit the whole plan/i })).toBeInTheDocument()
+    // And the surface itself is reachable from the keyboard.
+    expect(screen.getByRole('group', { name: /drag to move/i })).toBeInTheDocument()
   })
 
   it('reads a wallet an intruder can spend as the failure, not as good news', async () => {
@@ -633,14 +661,13 @@ describe('the diagram', () => {
     await user.click(await screen.findByText('One signer, one backup'))
 
     goto('#/map')
-    await user.selectOptions(
-      screen.getByLabelText(/show the plan/i),
-      screen.getByRole('option', { name: /is opened by someone else/i })
-    )
+    await user.click(await screen.findByRole('button', { name: /is opened by someone else/i }))
 
     // The list inverts with the actor: what they hold, not what they missed.
     expect(await screen.findByText(/what they can reach/i)).toBeInTheDocument()
-    expect(screen.getByText(/they can spend it/i)).toBeInTheDocument()
+    // Said in the standing above the drawing and again beside the world in the
+    // list, which is why this counts them rather than naming one.
+    expect(screen.getAllByText(/they can spend it/i).length).toBeGreaterThan(0)
   })
 })
 
@@ -722,7 +749,9 @@ describe('a finding and its picture', () => {
 
     // Not the default view of the map: the one where Site A is gone.
     expect(await screen.findByRole('heading', { name: /^map$/i })).toBeInTheDocument()
-    expect(screen.getByLabelText(/show the plan/i)).toHaveValue('location-lost:loc_home')
+    expect(
+      screen.getByText(/Site A is destroyed or emptied\. Can you still spend/i)
+    ).toBeInTheDocument()
   })
 })
 
@@ -826,7 +855,9 @@ describe('the map, as one instrument', () => {
     await user.click(screen.getByRole('button', { name: /take it away/i }))
 
     // The lens moved to the scenario the engine already had for it.
-    expect(screen.getByLabelText(/show the plan/i)).toHaveValue('location-lost:loc_home')
+    expect(
+      await screen.findByText(/Site A is destroyed or emptied\. Can you still spend/i)
+    ).toBeInTheDocument()
     // And the wallets are read in that world rather than in today's.
     expect(await screen.findAllByText(/unspendable/i)).not.toHaveLength(0)
     // The panel is still about Site A, now saying what this world did to it.

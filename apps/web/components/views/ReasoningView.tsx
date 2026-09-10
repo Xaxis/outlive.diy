@@ -26,7 +26,7 @@ export function ReasoningView() {
   return (
     <div className={MEASURE.read}>
       <ViewHeader
-        eyebrow="Judgement"
+        eyebrow="More"
         title="How it reasons"
         question={`Every one of the ${rules.length} rules, and the assumptions underneath them. Disagreeing with a rule is a legitimate outcome of reading it.`}
       />

@@ -52,7 +52,7 @@ export function FileView() {
   return (
     <div className={MEASURE.read}>
       <ViewHeader
-        eyebrow="This app"
+        eyebrow="More"
         title="Your plan file"
         question="Where this lives, what leaves this browser, and how to erase it."
       />

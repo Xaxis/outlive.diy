@@ -28,6 +28,10 @@ const nextConfig: NextConfig = {
    */
   assetPrefix: process.env.OUTLIVE_RELATIVE_ASSETS === '1' ? './' : undefined,
   images: { unoptimized: true },
+  // `next dev` otherwise writes its own AGENTS.md and CLAUDE.md into this
+  // workspace on every start. The instructions that matter are at the
+  // repository root and are written by hand.
+  agentRules: false,
 }
 
 export default nextConfig

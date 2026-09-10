@@ -50,6 +50,16 @@ function contrast(a: string, b: string): number {
   return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05)
 }
 
+/** What `bg-accent/10` actually paints: the accent, at that alpha, over a ground. */
+function mix(over: string, under: string, alpha: number): string {
+  const channelOf = (hex: string, index: number) =>
+    Number.parseInt(hex.slice(1 + index * 2, 3 + index * 2), 16)
+  const parts = [0, 1, 2].map((index) =>
+    Math.round(alpha * channelOf(over, index) + (1 - alpha) * channelOf(under, index))
+  )
+  return `#${parts.map((part) => part.toString(16).padStart(2, '0')).join('')}`
+}
+
 const THEMES: [string, string][] = [
   ['dark', ":root,\n[data-theme='dark']"],
   ['light', "[data-theme='light']"],
@@ -86,6 +96,27 @@ describe('the palette', () => {
         for (const ground of ['--c-canvas', '--c-surface']) {
           const ratio = contrast(tokens['--c-accent'], tokens[ground])
           expect(ratio, `accent on ${ground} is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5)
+        }
+      })
+
+      it('reads on a selected row, down to the step a selected row may use', () => {
+        // The current view in the sidebar and the current world on the map are
+        // marked with a tenth of the accent over the surface. That is a ground
+        // like any other, and a browser audit only reaches it on the one screen
+        // that uses it.
+        //
+        // The faint step is deliberately not in this list: it clears 4.5:1 on
+        // every flat ground and misses it on this one, which is why nothing
+        // faint is ever placed on a current row. The rule is here so that a
+        // change to the accent cannot quietly take the rest of the ramp with
+        // it.
+        const ground = mix(tokens['--c-accent'], tokens['--c-surface'], 0.1)
+        for (const text of ['--c-body', '--c-strong', '--c-muted']) {
+          const ratio = contrast(tokens[text], ground)
+          expect(
+            ratio,
+            `${tokens[text]} on a selected row (${ground}) is ${ratio.toFixed(2)}:1`
+          ).toBeGreaterThanOrEqual(4.5)
         }
       })
 

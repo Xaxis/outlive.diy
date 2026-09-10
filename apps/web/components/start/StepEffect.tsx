@@ -160,7 +160,7 @@ export function StepEffect({
 
       {graph ? (
         <div className="mt-4">
-          <PlanDiagram graph={graph} maxHeight={560} />
+          <PlanDiagram graph={graph} height="32rem" />
         </div>
       ) : null}
 

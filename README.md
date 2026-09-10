@@ -59,12 +59,17 @@ a thing.
 
 ## What it produces
 
-A diagram of the whole plan: wallets, the keys each threshold needs, every
-object those keys exist as, the places those objects sit in, and the people who
-can open the doors. Pick any scenario the engine knows and the picture is redrawn
-in that world, so you can take one thing away and watch what stops working. The
-same quorum arithmetic is underneath it as a table, for when you need the exact
-fraction rather than the shape.
+A diagram of the whole plan on a surface you can move around in: wallets, the
+keys each threshold needs, every object those keys exist as, the places those
+objects sit in, and the people who can open the doors. Drag to move, scroll or
+pinch to zoom, hover a box to light the chain it belongs to, click one to read
+what the engine knows about it.
+
+Beside it is every world the engine can build, with what each one costs. Pick
+one and the picture is redrawn in it, so you take one thing away and watch what
+stops working; compose one by hand when several things go at once, which is how
+things actually go. The same quorum arithmetic is underneath as a table, for
+when you need the exact fraction rather than the shape.
 
 Then a build runbook with the verification gates called out, a recovery route
 for each way it fails with how long each one takes, and a successor letter

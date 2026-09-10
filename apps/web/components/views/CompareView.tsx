@@ -78,7 +78,7 @@ export function CompareView() {
   return (
     <div className={MEASURE.wide}>
       <ViewHeader
-        eyebrow="Judgement"
+        eyebrow="More"
         title="Compare plans"
         question="Which findings a change closes, and which it opens. That trade is the decision; the individual findings are not."
         actions={

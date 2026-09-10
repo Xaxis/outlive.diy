@@ -10,7 +10,6 @@ import {
   ListChecks,
   Mail,
   Scale,
-  ScanSearch,
   Shapes,
   SlidersHorizontal,
   TableProperties,
@@ -57,7 +56,6 @@ export function navigation(report: AnalysisReport | null, letterCount: number): 
           badgeTone: critical > 0 ? 'critical' : 'muted',
         },
         { view: 'map', label: 'Map', icon: TableProperties },
-        { view: 'scenarios', label: 'Stress test', icon: ScanSearch },
       ],
     },
     {
@@ -69,15 +67,12 @@ export function navigation(report: AnalysisReport | null, letterCount: number): 
       ],
     },
     {
-      title: 'Judgement',
+      title: 'More',
       items: [
         { view: 'compare', label: 'Compare plans', icon: GitCompareArrows },
         { view: 'reasoning', label: 'How it reasons', icon: Scale },
+        { view: 'file', label: 'Your plan file', icon: FileJson },
       ],
-    },
-    {
-      title: 'This app',
-      items: [{ view: 'file', label: 'Your plan file', icon: FileJson }],
     },
   ]
 }
