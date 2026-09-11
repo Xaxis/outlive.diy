@@ -43,7 +43,7 @@ export function analyseCoercion(ctx: AnalysisContext): Finding[] {
         title: `${names(hit.map((w) => w.label))} can be emptied in a single ${hours}-hour session`,
         detail: `With you present and cooperating, everything needed to reach a threshold on ${names(hit.map((w) => w.label))} is within ${hours} hours of travel. Cooperating ends the event and so does refusing, which is the position this analysis exists to make visible before it happens.`,
         remediation:
-          'Put a threshold-breaking key beyond one session: a location that takes longer to reach than an attacker will wait, a co-signer who must be contacted separately, or a timelocked path that is the only route to the balance.',
+          'Put a threshold-breaking key beyond one session: a location that takes longer to reach than an attacker will wait, a co-signer who must be contacted separately, or a separate tier whose only route is timelocked, holding the balance you could not replace. A tier rather than this wallet, because a wallet whose every route waits is a wallet you cannot move in an emergency either.',
         subjects: hit.map((wallet) => ({ type: 'wallet' as const, id: wallet.id })),
         world: scenario.label,
         scenarioId: scenario.id,
@@ -123,9 +123,9 @@ export function analyseCoercion(ctx: AnalysisContext): Finding[] {
         key: 'no-decoy',
         title: 'There is nothing plausible to hand over',
         detail:
-          'Coercion is a stated concern and the plan has no decoy wallet. Having nothing to give is its own hazard: the demand does not end because the answer is no.',
+          'Coercion is a stated concern and the plan has no decoy wallet. Having nothing to give is its own hazard: the demand does not end because the answer is no. A decoy is not free, either, and this is the one finding here whose remedy can make things worse: one that is not believed is worse than none, because being caught holding something back is the point at which a robbery stops being about money.',
         remediation:
-          'Add a wallet you would be willing to lose, keep a real balance in it, and give it a history of ordinary use so that surrendering it is credible.',
+          'Add a wallet you would be willing to lose, keep a real balance in it, and give it a history of ordinary use so that surrendering it is credible. If you would not find the amount credible coming from somebody else, do not build it.',
         subjects: [{ type: 'plan', id: plan.id }],
       })
     )

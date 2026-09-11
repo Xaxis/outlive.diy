@@ -122,7 +122,10 @@ export function analyseLoss(ctx: AnalysisContext): Finding[] {
           rule: 'L007',
           key: walletId,
           title: `${wallet.label} has no spare keys`,
-          detail: `Every one of the ${all.length} keys behind ${wallet.label} is required. It works today and can absorb nothing: the next loss of any kind is permanent.`,
+          detail:
+            all.length === 1
+              ? `${wallet.label} has one key and needs it. It works today and can absorb nothing: the next loss of any kind is permanent.`
+              : `Every one of the ${all.length} keys behind ${wallet.label} is required. It works today and can absorb nothing: the next loss of any kind is permanent.`,
           remediation: `Add a key to ${wallet.label} above its threshold, or reduce the threshold if the current one was not a deliberate choice.`,
           subjects: [
             { type: 'wallet', id: walletId },

@@ -87,12 +87,24 @@ export function analyseStructure(ctx: AnalysisContext): Finding[] {
       for (const [deviceId, keys] of byDevice) {
         if (keys.length < 2 || path.threshold < 2) continue
         const device = index.devices.get(deviceId)
+        // One device holding the whole threshold and one holding part of it are
+        // different findings wearing the same rule. The first is a quorum that
+        // does not exist; the second is a quorum of fewer independent decisions
+        // than it says. Saying "really 1-of-1" about both would be true of one
+        // of them and confidently wrong about the other.
+        const spendsAlone = keys.length >= path.threshold
+        const effective = path.threshold - keys.length + 1
         add(
           makeFinding(plan, {
             rule: 'S012',
+            // Escalated like every other finding about this wallet, so a vault
+            // holding most of the stack is raised a step and a decoy is not.
+            severity: escalate(spendsAlone ? 'critical' : 'high', Math.max(0, weight)),
             key: `${wallet.id}:${path.id}:${deviceId}`,
             title: `${device?.label ?? 'One device'} signs for ${keys.length} keys in ${wallet.label}`,
-            detail: `${path.label} reads as ${path.threshold}-of-${path.keyIds.length}, but ${list(keys.map((k) => k.label))} all live on ${device?.label ?? 'the same device'}. Losing or seizing that one device takes ${keys.length} of the ${path.threshold} signatures at once.`,
+            detail: spendsAlone
+              ? `${path.label} reads as ${path.threshold}-of-${path.keyIds.length}, but ${list(keys.map((k) => k.label))} all live on ${device?.label ?? 'the same device'}, which is ${keys.length} of the ${path.threshold} signatures on one object. Whoever holds that device spends the wallet, so the threshold is a costume.`
+              : `${path.label} reads as ${path.threshold}-of-${path.keyIds.length}, but ${list(keys.map((k) => k.label))} all live on ${device?.label ?? 'the same device'}. Losing or seizing that one device takes ${keys.length} of the ${path.threshold} signatures at once, so the real requirement is ${effective} independent ${effective === 1 ? 'decision' : 'decisions'} and not ${path.threshold}.`,
             remediation: `Move ${list(keys.slice(1).map((k) => k.label))} onto separate devices, or reduce the path to reflect the independence it actually has.`,
             subjects: [
               { type: 'wallet', id: wallet.id },

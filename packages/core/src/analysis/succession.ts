@@ -259,7 +259,7 @@ export function analyseSuccession(ctx: AnalysisContext): Finding[] {
           title: `What ${person.label} must be told is enough to spend today`,
           detail: `To act after your death, ${person.label} has to be told where the key material is. Knowing all of it is, by itself, enough to reach a threshold now. The plan therefore cannot both prepare them and stay closed, as it stands.`,
           remediation:
-            'Split the knowledge in time rather than in content: seal the location list so that opening it is observable, lodge it with a professional released on a death certificate, or add a passphrase held only by a third party.',
+            'Split the knowledge in time rather than in content: seal the location list so that opening it is observable, or lodge it with a professional released on a death certificate. A passphrase held by a third party does it too, and only works if there is more than one of them or a written copy somewhere your successor can reach: one person holding the one copy has turned a secrecy problem into a person-shaped single point of failure.',
           subjects: [{ type: 'person', id: person.id }],
         })
       )

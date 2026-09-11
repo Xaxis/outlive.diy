@@ -122,7 +122,7 @@ export function analyseCorrelation(ctx: AnalysisContext, input: CorrelationInput
             key: `${wallet.id}:${path.id}:${group}`,
             title: `${wallet.label}'s quorum is concentrated in "${group}"`,
             detail: `${keyIds.size} of the ${path.keyIds.length} keys on ${path.label} have material inside "${group}" (${names(members.map((m) => m.label))}), and the threshold is ${path.threshold}. One event in that group is simultaneously enough to destroy the wallet and, if it is a burglary rather than a fire, enough to spend it.`,
-            remediation: `Relocate material for at least ${keyIds.size - path.threshold + 1} keys outside "${group}".`,
+            remediation: `Relocate material for at least ${keyIds.size - path.threshold + 1} ${keyIds.size - path.threshold + 1 === 1 ? 'key' : 'keys'} outside "${group}".`,
             subjects: [
               { type: 'wallet', id: wallet.id },
               ...members.map((member) => ({ type: 'location' as const, id: member.id })),

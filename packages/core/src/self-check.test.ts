@@ -5,10 +5,10 @@ import { RULES } from './analysis/findings.ts'
 import { buildRunbook } from './documents/runbook.ts'
 import { recoveryRoutes } from './documents/recovery.ts'
 import { lettersFor } from './documents/successor-letter.ts'
-import { EXAMPLES } from './model/examples.ts'
+import { EXAMPLES, exampleById } from './model/examples.ts'
 import { inspect } from './guard/guard.ts'
 import { parsePlanFile, referentialProblems } from './model/schema.ts'
-import { SCHEMA_VERSION } from './model/types.ts'
+import { SCHEMA_VERSION, type Plan } from './model/types.ts'
 
 /**
  * The program has to hold itself to the rule it holds the user to. Every
@@ -22,6 +22,145 @@ function strings(value: unknown, out: string[] = []): string[] {
   else if (value && typeof value === 'object')
     for (const entry of Object.values(value)) strings(entry, out)
   return out
+}
+
+/**
+ * Plan shapes the worked examples do not contain.
+ *
+ * The three examples exercise twenty six of the sixty five rules, so for most
+ * of them nothing had ever read the sentence they produce. Two of those
+ * sentences turned out to be refused by this program's own guard, which is the
+ * one thing the checks below exist to make impossible. Each mutation here is
+ * the smallest change that makes a different family of rules speak.
+ */
+function shapes(): [string, Plan][] {
+  const mutations: [string, (plan: Plan) => void][] = [
+    [
+      'memorised passphrases',
+      (plan) => {
+        for (const key of plan.keys) {
+          key.passphrase = {
+            enabled: true,
+            storage: 'memorized',
+            locationIds: [],
+            splitThreshold: null,
+            knownBy: [],
+          }
+        }
+      },
+    ],
+    [
+      'a passphrase beside the seed',
+      (plan) => {
+        for (const key of plan.keys) {
+          key.passphrase = {
+            enabled: true,
+            storage: 'written',
+            locationIds: ['loc_home'],
+            splitThreshold: null,
+            knownBy: [],
+          }
+        }
+      },
+    ],
+    [
+      'a key with neither a device nor a backup',
+      (plan) => {
+        plan.keys[0].deviceId = null
+        plan.keys[0].backups = []
+      },
+    ],
+    ['everything in one place', (plan) => void (plan.locations = [plan.locations[0]])],
+    [
+      'nobody described',
+      (plan) => {
+        plan.people = []
+        for (const location of plan.locations) {
+          location.access = []
+          location.custodianId = null
+        }
+      },
+    ],
+    [
+      'every concern named',
+      (plan) =>
+        void (plan.profile.concerns = [
+          'loss',
+          'theft',
+          'fire-flood',
+          'death',
+          'incapacity',
+          'coercion',
+          'insider',
+          'legal-seizure',
+          'supply-chain',
+        ]),
+    ],
+    [
+      'paper across a century',
+      (plan) => {
+        plan.profile.horizonYears = 100
+        for (const key of plan.keys) for (const backup of key.backups) backup.medium = 'paper'
+      },
+    ],
+    [
+      'unencrypted digital backups',
+      (plan) => {
+        for (const key of plan.keys) {
+          for (const backup of key.backups) backup.medium = 'plain-digital'
+        }
+      },
+    ],
+    [
+      'no device PIN',
+      (plan) => {
+        for (const device of plan.devices) {
+          device.pin = { storage: 'none', locationId: null, knownBy: [] }
+        }
+      },
+    ],
+    [
+      'the PIN beside the device',
+      (plan) => {
+        for (const device of plan.devices) {
+          device.pin = { storage: 'written', locationId: 'loc_home', knownBy: [] }
+        }
+      },
+    ],
+    ['key material on the person', (plan) => void (plan.locations[0].kind = 'on-person')],
+    ['a service co-signer', (plan) => void (plan.devices[0].kind = 'service-cosigner')],
+    [
+      'a timelock on the only way to spend',
+      (plan) => void (plan.wallets[0].paths = [{ ...plan.wallets[0].paths[0], timelockDays: 365 }]),
+    ],
+    [
+      'a key no spend path uses',
+      (plan) => {
+        for (const wallet of plan.wallets) {
+          for (const path of wallet.paths) {
+            path.keyIds = path.keyIds.filter((id) => id !== 'key_c')
+          }
+        }
+      },
+    ],
+    ['two keys on one device', (plan) => void (plan.keys[1].deviceId = plan.keys[0].deviceId)],
+  ]
+  return mutations.map(([name, mutate]) => {
+    const plan = structuredClone(exampleById('two-of-three')!)
+    mutate(plan)
+    return [name, plan]
+  })
+}
+
+/** Every sentence one plan makes this program write. */
+function everySentence(plan: Plan): string[] {
+  const ctx = createContext(plan, { today: '2026-03-01' })
+  return strings([
+    analyze(plan, { today: '2026-03-01' }).findings,
+    buildRunbook(plan),
+    recoveryRoutes(ctx),
+    lettersFor(ctx),
+  ])
 }
 
 describe('the program obeys its own guard', () => {
@@ -39,6 +178,40 @@ describe('the program obeys its own guard', () => {
         const result = inspect(text)
         const refusals = result.hits.filter((hit) => hit.strength === 'refuse')
         expect(refusals, text).toEqual([])
+      }
+    })
+  }
+
+  for (const [name, plan] of shapes()) {
+    it(`every sentence for a plan with ${name} passes`, () => {
+      for (const text of everySentence(plan)) {
+        const refusals = inspect(text).hits.filter((hit) => hit.strength === 'refuse')
+        expect(refusals, text).toEqual([])
+      }
+    })
+  }
+
+  /**
+   * Counted prose has to agree with its own number.
+   *
+   * "Relocate material for at least 1 keys" shipped for months. It reads as
+   * carelessness, which is the one thing a tool whose whole claim is rigour
+   * cannot afford to read as, and it is mechanically checkable.
+   */
+  // "1 keys", "1 places", "1 days", and the other way round: "2 key".
+  const plural =
+    /\b1 (?:keys|places|wallets|days|devices|people|backups|shares|copies|steps|months|years|hours|minutes|locations|signatures|findings|vendors)\b/i
+  const singular =
+    /\b(?!1\b)\d+ (?:key|place|wallet|day|device|person|backup|share|copy|step|month|year|hour|minute|location|signature|finding|vendor)\b/i
+
+  for (const [name, plan] of [
+    ...EXAMPLES.map((example) => [`"${example.name}"`, example.build()] as [string, Plan]),
+    ...shapes().map(([name, plan]) => [`a plan with ${name}`, plan] as [string, Plan]),
+  ]) {
+    it(`counts things correctly in every sentence for ${name}`, () => {
+      for (const text of everySentence(plan)) {
+        expect(plural.test(text) ? text : null, text).toBeNull()
+        expect(singular.test(text) ? text : null, text).toBeNull()
       }
     })
   }

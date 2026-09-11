@@ -829,3 +829,48 @@ describe('two mistakes that look like good practice', () => {
     expect(rules(plan)).not.toContain('C007')
   })
 })
+
+describe('one device signing for more than one key', () => {
+  const twoOfThree = () => structuredClone(exampleById('two-of-three')!)
+
+  it('is critical when that device holds the whole threshold', () => {
+    const plan = twoOfThree()
+    // 2-of-3 with two of its keys on one device: whoever holds the device
+    // spends the wallet, so the threshold is a costume.
+    plan.keys[1].deviceId = plan.keys[0].deviceId
+    const found = analyze(plan, { today: '2026-03-01' }).findings.filter((f) => f.rule === 'S012')
+    expect(found).toHaveLength(1)
+    expect(found[0].severity).toBe('critical')
+    expect(found[0].detail).toContain('costume')
+  })
+
+  it('is high, and says what the real requirement is, when it holds part of it', () => {
+    const plan = twoOfThree()
+    // Not a vault holding most of the stack, because that is escalated a step
+    // and the point here is the step below critical.
+    plan.wallets[0].tier = 'active'
+    plan.wallets[0].stake = 'small'
+    // 3-of-5 with two keys on one device is really 2-of-4. Calling that a
+    // quorum that does not exist would be confidently wrong.
+    // Their own devices, or the one device would hold four of the five and be
+    // the other case.
+    plan.devices.push(
+      { ...structuredClone(plan.devices[0]), id: 'dev_d', label: 'Signer D' },
+      { ...structuredClone(plan.devices[0]), id: 'dev_e', label: 'Signer E' }
+    )
+    const spare = structuredClone(plan.keys[0])
+    plan.keys.push({ ...spare, id: 'key_d', label: 'Key D', deviceId: 'dev_d' })
+    plan.keys.push({ ...spare, id: 'key_e', label: 'Key E', deviceId: 'dev_e' })
+    plan.wallets[0].paths[0] = {
+      ...plan.wallets[0].paths[0],
+      threshold: 3,
+      keyIds: ['key_a', 'key_b', 'key_c', 'key_d', 'key_e'],
+    }
+    plan.keys[1].deviceId = plan.keys[0].deviceId
+    const found = analyze(plan, { today: '2026-03-01' }).findings.filter((f) => f.rule === 'S012')
+    expect(found).toHaveLength(1)
+    expect(found[0].severity).toBe('high')
+    expect(found[0].detail).toContain('2 independent decisions')
+    expect(found[0].detail).not.toContain('costume')
+  })
+})

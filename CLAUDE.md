@@ -168,6 +168,20 @@ carries the `Ref` whose own record would answer it, so the interface offers the
 field rather than only naming the gap; a `null` subject means the model has no
 field for it and the wording says so instead of promising one.
 
+**A rule that is right in its headline can be wrong in a subset.** S012 said a
+device holding two keys made the path "really 1-of-1", which is true when the
+device holds the whole threshold and false when it holds part of it: two of five
+on one device is 2-of-4, not 1-of-1. The severity now depends on which it is.
+When adding a rule, ask what it says about the case just inside its condition.
+
+**And a remediation can create another rule's finding.** X001 advised a
+timelocked path as "the only route to the balance", which is exactly what S020
+warns against. The examples exercise 26 of the 65 rules, so most remediations
+had never been read beside each other. `self-check.test.ts` runs every sentence
+of 18 plan shapes through the guard and through a pluralisation check, which is
+what caught "at least 1 keys" and two sentences this program's own guard
+refused.
+
 **Findings never carry a score.** No grade, no percentage, no progress bar to
 secure. A number is read as a target and gets optimised. What the user's stated
 concerns change is the _order_ findings are read in, never whether they appear.

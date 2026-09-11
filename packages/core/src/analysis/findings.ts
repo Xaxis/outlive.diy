@@ -267,7 +267,7 @@ export const RULES: Record<RuleId, Rule> = Object.fromEntries(
         'structure',
         'critical',
         'One device signing for more than one key in a path',
-        'The quorum is theatre. One device seized or failed takes every key it holds, so the path is really 1-of-1 wearing an m-of-n costume.'
+        'One device seized or failed takes every key it holds at once, so the path needs fewer independent decisions than it says. Where the device holds the whole threshold it needs one, and the quorum is a costume.'
       ),
       rule(
         'S013',

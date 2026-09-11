@@ -117,12 +117,13 @@ export function buildRunbook(plan: Plan): Runbook {
 
   const media = new Set(plan.keys.flatMap((key) => key.backups.map((backup) => backup.medium)))
   if (media.size > 0) {
+    const count = plan.keys.reduce((total, key) => total + key.backups.length, 0)
     steps.push(
       step(
         'backup-media',
         'prepare',
         'Get the backup media, one blank per backup in the plan',
-        `The plan calls for ${plan.keys.reduce((total, key) => total + key.backups.length, 0)} backups across ${[...media].join(', ')}. Have every blank in hand before you generate anything, so that no key exists for a week with nowhere to be written.`
+        `The plan calls for ${count} ${count === 1 ? 'backup' : 'backups'} across ${[...media].join(', ')}. Have every blank in hand before you generate anything, so that no key exists for a week with nowhere to be written.`
       )
     )
   }
