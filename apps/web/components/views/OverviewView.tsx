@@ -10,7 +10,7 @@ import {
   overdueVerifications,
 } from '@outlive/core'
 import { MEASURE, Card, Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
-import { PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
+import { DiagramOmissions, PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
 import { WalletStanding } from '@/components/graph/WalletStanding.tsx'
 import { SeverityBar, SeverityDot } from '@/components/ui/Severity.tsx'
 import { Button } from '@/components/ui/Button.tsx'
@@ -232,6 +232,7 @@ export function OverviewView() {
             height="30rem"
             onSelect={() => navigate({ view: 'map', section: null })}
           />
+          <DiagramOmissions graph={graph} />
         </Panel>
       ) : null}
     </div>

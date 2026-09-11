@@ -113,6 +113,7 @@ export type RuleId =
   | 'S021'
   | 'S022'
   | 'S023'
+  | 'S024'
   // loss
   | 'L001'
   | 'L002'
@@ -345,6 +346,13 @@ export const RULES: Record<RuleId, Rule> = Object.fromEntries(
         'high',
         'One key spending both a hot wallet and a vault',
         'A hot key lives on a machine that opens email and runs whatever it was told to. Reusing it in the vault hands the vault that exposure for one of its keys, and an attacker who takes the easy one is then a single key from the hard one.'
+      ),
+      rule(
+        'S024',
+        'structure',
+        'medium',
+        'A key no spend path uses',
+        'A key nothing can spend with is either a key that was forgotten half way through being attached, or a key this plan does not actually cover. Either way every conclusion in here is silent about it, and silence from this program reads as approval.'
       ),
       rule(
         'L001',

@@ -439,6 +439,50 @@ describe('vendor data', () => {
   })
 })
 
+describe('a plan built from nothing', () => {
+  it('says what the drawing leaves out, and why', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByRole('button', { name: /start a plan/i }))
+
+    // A place and a key and nothing joining them to a wallet yet, which is
+    // where the seven steps put you after five of them.
+    goto('#/design/locations')
+    await user.click(await screen.findByRole('button', { name: /add the first one/i }))
+    await user.clear(screen.getByLabelText('Label'))
+    await user.type(screen.getByLabelText('Label'), 'Home')
+    goto('#/design/keys')
+    await user.click(await screen.findByRole('button', { name: /add the first one/i }))
+    goto('#/design/wallets')
+    await user.click(await screen.findByRole('button', { name: /add the first one/i }))
+
+    goto('#/map')
+
+    // The drawing can only hold what a wallet reaches, so it holds almost
+    // nothing. Two boxes where the reader described four things reads as the
+    // program having lost the rest.
+    expect(await screen.findByText(/not in the drawing/i)).toBeInTheDocument()
+    expect(screen.getByText(/1 key, 1 place/i)).toBeInTheDocument()
+
+    // And the analysis is not silent about the key either.
+    goto('#/findings')
+    expect(await screen.findByText(/nothing can be spent with/i)).toBeInTheDocument()
+  })
+
+  it('says nothing about omissions when everything is reached', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/map')
+
+    expect(await screen.findByRole('heading', { name: /^map$/i })).toBeInTheDocument()
+    expect(screen.queryByText(/not in the drawing/i)).not.toBeInTheDocument()
+  })
+})
+
 describe('a recovery time that is a floor', () => {
   it('names what is missing and offers the field that would fix it', async () => {
     reset()

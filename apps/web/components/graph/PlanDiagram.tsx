@@ -810,6 +810,49 @@ export function DiagramSummary({ graph }: { graph: PlanGraph }) {
 }
 
 /**
+ * What the plan describes that the drawing does not reach.
+ *
+ * The drawing starts at the wallets and walks down, so a key no spend path uses
+ * is not in it, and nor is the device or the place or the person behind that
+ * key. That is right: nothing stops working if you take away a key nothing can
+ * spend with. It is also how a half-built plan produces two boxes, which reads
+ * as the program having lost the other eight rather than as a fact about the
+ * plan. So it says so.
+ */
+export function DiagramOmissions({
+  graph,
+  narrowed,
+}: {
+  graph: PlanGraph
+  /** Whether the reader asked for one wallet, which explains it by itself. */
+  narrowed?: boolean
+}) {
+  if (graph.omitted.length === 0) return null
+  const counted = graph.omitted.reduce<Record<string, number>>((totals, ref) => {
+    totals[ref.type] = (totals[ref.type] ?? 0) + 1
+    return totals
+  }, {})
+  const plural: Record<string, [string, string]> = {
+    key: ['key', 'keys'],
+    device: ['device', 'devices'],
+    location: ['place', 'places'],
+    person: ['person', 'people'],
+  }
+  const parts = Object.entries(counted).map(([type, count]) => {
+    const [one, many] = plural[type] ?? [type, `${type}s`]
+    return `${count} ${count === 1 ? one : many}`
+  })
+  return (
+    <p className="text-xs leading-relaxed text-faint">
+      Not in the drawing: {parts.join(', ')}.{' '}
+      {narrowed
+        ? 'This is one wallet, and the rest of the plan belongs to the others.'
+        : 'A drawing of what a wallet rests on can only contain what a wallet reaches, and nothing here is reached by a spend path. The findings say which.'}
+    </p>
+  )
+}
+
+/**
  * What the drawing means, in the terms of the world it is drawn in. One
  * sentence, and it has to change with the actor for the same reason the colours
  * do.

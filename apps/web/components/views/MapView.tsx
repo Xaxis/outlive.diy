@@ -4,7 +4,12 @@ import { useMemo, useState } from 'react'
 import { buildGraph, type Ref, type World } from '@outlive/core'
 import { MEASURE, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Disclosure } from '@/components/ui/Disclosure.tsx'
-import { DiagramLegend, DiagramSummary, PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
+import {
+  DiagramLegend,
+  DiagramOmissions,
+  DiagramSummary,
+  PlanDiagram,
+} from '@/components/graph/PlanDiagram.tsx'
 import { useLens } from '@/components/graph/Lens.tsx'
 import { WorldRail } from '@/components/graph/WorldRail.tsx'
 import { NodeDetail } from '@/components/graph/NodeDetail.tsx'
@@ -205,6 +210,7 @@ export function MapView() {
             ) : (
               <>
                 <DiagramSummary graph={graph} />
+                <DiagramOmissions graph={graph} narrowed={walletId !== null} />
                 <p className="mt-2 text-xs text-faint">
                   Click any box for what this world does to it, and for the two ways of taking it
                   away.

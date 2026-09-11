@@ -105,6 +105,18 @@ export interface PlanGraph {
   layers: number[]
   /** The world it was evaluated in, so a caption can say what is being shown. */
   world: World
+  /**
+   * Things the plan describes that this drawing does not reach.
+   *
+   * A dependency graph starts at the wallets and walks down, so a key no spend
+   * path uses, and the device and place and person hanging off it, are not in
+   * the picture. That is correct: nothing stops working if you take away a key
+   * nothing can spend with. It is also how a half-built plan produces a drawing
+   * with two boxes in it, which reads as the program having lost the other
+   * eight. Listed so the drawing can say what it left out rather than leaving
+   * the reader to wonder.
+   */
+  omitted: Ref[]
 }
 
 export interface GraphOptions {
@@ -452,5 +464,18 @@ export function buildGraph(plan: Plan, world: World, options: GraphOptions = {})
   }
 
   const layers = [...new Set(nodes.map((entry) => entry.layer))].sort((a, b) => a - b)
-  return { nodes, edges, layers, world }
+
+  const drawn = new Set(
+    nodes.filter((node) => node.ref).map((node) => `${node.ref!.type}:${node.ref!.id}`)
+  )
+  const omitted: Ref[] = []
+  const omit = (ref: Ref) => {
+    if (!drawn.has(`${ref.type}:${ref.id}`)) omitted.push(ref)
+  }
+  for (const key of plan.keys) omit({ type: 'key', id: key.id })
+  for (const device of plan.devices) omit({ type: 'device', id: device.id })
+  for (const location of plan.locations) omit({ type: 'location', id: location.id })
+  for (const person of plan.people) omit({ type: 'person', id: person.id })
+
+  return { nodes, edges, layers, world, omitted }
 }

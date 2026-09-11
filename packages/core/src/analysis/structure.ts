@@ -323,6 +323,29 @@ export function analyseStructure(ctx: AnalysisContext): Finding[] {
 
   // --- a key doing duty in two tiers ----------------------------------------
   //
+  // A key nothing can spend with. Every other rule here reasons from a wallet
+  // down to its keys, so this one is the only thing that ever mentions a key
+  // sitting outside all of them, and without it the analysis is silent about
+  // part of what the user described.
+  //
+  // It fires while a plan is being built, between describing the keys and
+  // attaching them, and that is correct rather than noise: until they are
+  // attached, nothing in the analysis is about them.
+  for (const key of plan.keys) {
+    if (plan.wallets.length === 0) continue
+    if (walletsUsingKey(plan, key.id).length > 0) continue
+    add(
+      makeFinding(plan, {
+        rule: 'S024',
+        key: key.id,
+        title: `Nothing can be spent with ${key.label}`,
+        detail: `No spend path on any wallet lists ${key.label}, so it takes part in nothing. Losing it breaks nothing and holding it protects nothing, which means every finding in this list is about the other keys.`,
+        remediation: `Add ${key.label} to the spend path of whichever wallet it belongs to, or delete it if this plan is not about it.`,
+        subjects: [{ type: 'key', id: key.id }],
+      })
+    )
+  }
+
   // Tiers exist so that the exposure of the loose one does not reach the
   // careful one. A key in both is a hole straight through that.
   for (const key of plan.keys) {

@@ -186,6 +186,14 @@ last of those; the other two need a person.
 explicitly, in the same words, because silence from a program that has been
 given nothing reads as reassurance on a tool whose job is to be unflattering.
 
+**Nor is a half-built one.** The drawing starts at the wallets and walks down,
+so a key no spend path uses is not in it, and nor is the device or place or
+person behind that key. That is correct and it is also how five described
+things produce a two-box picture, which reads as lost data. `buildGraph`
+returns `omitted` and the drawing says what it left out. `S024` says the same
+thing as a finding, because a key nothing can spend with is the one case every
+other structure rule is silent about.
+
 **Runbook progress lives in the plan file,** not in browser storage. Building one
 of these takes weeks; "half done, and here is which half" is state worth saving
 and handing over.
