@@ -119,6 +119,14 @@ what they need, keys, the material a key exists as, places, people. A diagram
 that can be rearranged into a false statement is worse than one that cannot be
 rearranged.
 
+**There is one place a plan is described, and it is guided.** `lib/sections.ts`
+holds the seven steps with one purpose sentence and one done rule each, and
+`views/DesignView.tsx` is the only screen that renders them. There used to be a
+tabbed editor and a guided route over the same seven editors, with two sets of
+section blurbs that had drifted apart, and a reader whose first decision was
+which door to use. Guidance is not a mode: every section says why it is being
+asked before the fields and what the answer did to the analysis after them.
+
 **Every answer on the purpose page has to change something visible.**
 `analysis/implications.ts` pairs each one with the thing in the plan it governs
 and measures: the horizon against the media the keys are written on, the

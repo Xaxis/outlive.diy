@@ -15,7 +15,6 @@ import { useCallback, useSyncExternalStore } from 'react'
 
 export type ViewId =
   | 'overview'
-  | 'start'
   | 'design'
   | 'findings'
   | 'map'
@@ -34,7 +33,6 @@ export interface Route {
 
 const VIEWS: ViewId[] = [
   'overview',
-  'start',
   'design',
   'findings',
   'map',
@@ -56,6 +54,9 @@ export function parseHash(hash: string): Route {
   // them. The map draws them and now carries the list, so a link to the old
   // page lands on the map, still naming the world it meant.
   if (first === 'scenarios') return { view: 'map', section }
+  // The guided route was a second shell around the design screens. They are one
+  // screen now, and it is guided, so a link to a step lands on that step.
+  if (first === 'start') return { view: 'design', section }
   const view = first as ViewId | undefined
   if (!view || !VIEWS.includes(view)) return DEFAULT_ROUTE
   return { view, section }

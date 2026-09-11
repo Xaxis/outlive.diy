@@ -4,7 +4,6 @@ import {
   BookOpenCheck,
   FileJson,
   GitCompareArrows,
-  Footprints,
   LayoutGrid,
   LifeBuoy,
   ListChecks,
@@ -39,9 +38,6 @@ export function navigation(report: AnalysisReport | null, letterCount: number): 
       title: 'Plan',
       items: [
         { view: 'overview', label: 'Overview', icon: LayoutGrid },
-        // The guided route is the same editors in a reasoned order. It stays
-        // reachable rather than being a one-time wizard you cannot get back to.
-        { view: 'start', label: 'Guided route', icon: Footprints },
         { view: 'design', label: 'Design', icon: SlidersHorizontal },
       ],
     },

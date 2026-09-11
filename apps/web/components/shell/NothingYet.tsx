@@ -19,12 +19,9 @@ export function NothingYet({ what }: { what: string }) {
         This plan is empty, so {what} Describe the places, the keys and the wallets first, and this
         page writes itself.
       </p>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <a href={href('start')} className="btn btn-primary no-underline">
-          Take the guided route
-        </a>
-        <a href={href('design', 'locations')} className="btn btn-default no-underline">
-          Just let me edit
+      <div className="mt-4">
+        <a href={href('design')} className="btn btn-primary no-underline">
+          Start describing it
         </a>
       </div>
     </div>

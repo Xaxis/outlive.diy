@@ -43,22 +43,20 @@ export function OverviewView() {
         <ViewHeader
           eyebrow="Plan"
           title={plan.name}
-          question="Nothing is described yet. The guided route asks about places first, because everything else in a custody plan is a statement about where something is."
+          question="Nothing is described yet. Describing it asks about places first, because everything else in a custody plan is a statement about where something is."
         />
         <Card className="p-6">
           <Compass className="size-5 text-accent" aria-hidden />
-          <h2 className="mt-3 text-sm font-semibold text-strong">Start with the guided route</h2>
+          <h2 className="mt-3 text-sm font-semibold text-strong">Describe what you have</h2>
           <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-muted">
-            Eight steps: what you are protecting against, the places, the people, the devices, the
-            keys, the wallets, the checks, and then what breaks. You can leave at any point and edit
-            anything directly.
+            Seven steps, in an order that makes the answers mean something: what you are protecting
+            against, the places, the people, the devices, the keys, the wallets and the checks. Each
+            one says why it is being asked, and reads back what your answer did to the analysis. You
+            can start anywhere and leave at any point.
           </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button variant="primary" onClick={() => navigate({ view: 'start', section: null })}>
+          <div className="mt-4">
+            <Button variant="primary" onClick={() => navigate({ view: 'design', section: null })}>
               Begin
-            </Button>
-            <Button onClick={() => navigate({ view: 'design', section: 'locations' })}>
-              Just let me edit
             </Button>
           </div>
         </Card>

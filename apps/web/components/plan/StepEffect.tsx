@@ -19,10 +19,10 @@ import { useStore, type EntityKind } from '@/lib/store.ts'
 /**
  * What the step just answered, and what the answer cost.
  *
- * A guided route that only collects fields is a form with a progress bar on it.
- * The thing that makes it guidance is that each answer is immediately read back
- * against everything else: describe three places and be told two of them fail
- * together, describe a threshold and be told which single loss ends it.
+ * A set of forms that only collects fields teaches nothing. The thing that
+ * makes it guidance is that each answer is immediately read back against
+ * everything else: describe three places and be told two of them fail together,
+ * describe a threshold and be told which single loss ends it.
  *
  * Only findings that name something in this step appear, so a step is never
  * blamed for a problem somewhere else, and the one currently open in the

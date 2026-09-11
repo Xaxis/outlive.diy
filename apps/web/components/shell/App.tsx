@@ -19,7 +19,6 @@ import { LetterView } from '@/components/views/LetterView.tsx'
 import { CompareView } from '@/components/views/CompareView.tsx'
 import { FileView } from '@/components/views/FileView.tsx'
 import { ReasoningView } from '@/components/views/ReasoningView.tsx'
-import { StartView } from '@/components/views/StartView.tsx'
 import { useShortcuts, useUnsavedWarning } from '@/lib/shortcuts.ts'
 import { cn } from '@/lib/cn.ts'
 
@@ -144,8 +143,6 @@ export function App() {
 function View() {
   const [route] = useRoute()
   switch (route.view) {
-    case 'start':
-      return <StartView />
     case 'design':
       return <DesignView />
     case 'findings':

@@ -27,7 +27,7 @@ const files = readdirSync(VIEWS).filter(
 
 describe('every view sits in the same column', () => {
   it('finds the views', () => {
-    expect(files.length).toBeGreaterThan(10)
+    expect(files.length).toBeGreaterThan(5)
   })
 
   for (const name of files) {

@@ -47,7 +47,7 @@ export function Welcome() {
           variant="primary"
           onClick={() => {
             startPlan()
-            window.location.hash = href('start').slice(1)
+            window.location.hash = href('design').slice(1)
           }}
           icon={<ArrowRight className="size-4" aria-hidden />}
         >

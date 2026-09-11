@@ -41,9 +41,10 @@ import {
 } from '@/lib/describe.ts'
 
 /**
- * The list-and-inspector pair, used by both the design screens and the guided
- * route. One implementation, so that editing a key in the middle of the guided
- * flow is exactly the same act as editing it later.
+ * The list of one kind of thing, and the form for whichever of them is open.
+ *
+ * One implementation for all six kinds, because a place and a key differ in
+ * what they are made of and not at all in how they are chosen from a list.
  */
 export function EntityWorkbench({
   plan,
@@ -51,14 +52,12 @@ export function EntityWorkbench({
   kind,
   singular,
   plural,
-  blurb,
 }: {
   plan: Plan
   report: AnalysisReport | null
   kind: EntityKind
   singular: string
   plural: string
-  blurb: string
 }) {
   const selection = useStore((state) => state.selection)
   const select = useStore((state) => state.select)
@@ -82,7 +81,9 @@ export function EntityWorkbench({
     return (
       <EmptyState
         title={`No ${plural.toLowerCase()} yet`}
-        body={blurb}
+        // The step above already says what this section is for. What an empty
+        // one needs to say is that empty is not the same as fine.
+        body="Nothing recorded is not the same as nothing wrong. The analysis has nothing to read here, and says so rather than going quiet."
         action={
           <Button variant="primary" icon={<Plus className="size-4" aria-hidden />} onClick={add}>
             Add the first one
@@ -103,7 +104,10 @@ export function EntityWorkbench({
       <div className="space-y-2">
         {/* On a phone this list sits above the form. Left uncapped, switching
             between keys means scrolling back past the whole of one. */}
-        <ul className="max-h-[13rem] space-y-2 overflow-y-auto lg:max-h-none lg:overflow-visible">
+        <ul
+          aria-label={plural}
+          className="max-h-[13rem] space-y-2 overflow-y-auto lg:max-h-none lg:overflow-visible"
+        >
           {entities.map((entity) => {
             const severity = worst(entity.id)
             return (

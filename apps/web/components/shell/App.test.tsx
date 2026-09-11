@@ -55,7 +55,7 @@ describe('the application', () => {
     expect(await screen.findByText(/Site A alone is enough to spend/i)).toBeInTheDocument()
   })
 
-  it('starts an empty plan and offers the guided route', async () => {
+  it('starts an empty plan on the first step of describing it', async () => {
     reset()
     const user = userEvent.setup()
     render(<App />)
@@ -131,13 +131,13 @@ describe('every view renders', () => {
   // is the one class of defect the type checker cannot see.
   const views: [string, RegExp][] = [
     ['#/overview', /two of three, three sites/i],
-    ['#/design/locations', /^design$/i],
-    ['#/design/people', /^design$/i],
-    ['#/design/devices', /^design$/i],
-    ['#/design/keys', /^design$/i],
-    ['#/design/wallets', /^design$/i],
-    ['#/design/checks', /^design$/i],
-    ['#/design/profile', /^design$/i],
+    ['#/design/locations', /^places$/i],
+    ['#/design/people', /^people$/i],
+    ['#/design/devices', /^devices$/i],
+    ['#/design/keys', /^keys$/i],
+    ['#/design/wallets', /^wallets$/i],
+    ['#/design/checks', /^checks$/i],
+    ['#/design/profile', /^purpose$/i],
     ['#/findings', /^findings$/i],
     ['#/map', /^map$/i],
     // The stress test was folded into the map, and its links still land there.
@@ -148,7 +148,10 @@ describe('every view renders', () => {
     ['#/compare', /compare plans/i],
     ['#/file', /your plan file/i],
     ['#/reasoning', /how it reasons/i],
-    ['#/start', /purpose/i],
+    // The guided route was folded into the design screens, and its links still
+    // land on the step they named.
+    ['#/start', /^purpose$/i],
+    ['#/start/keys', /^keys$/i],
   ]
 
   for (const [hash, heading] of views) {
@@ -554,8 +557,9 @@ describe('a policy with a timelock', () => {
     expect(screen.getByText(/after 180d/i)).toBeInTheDocument()
 
     // The phone wallet is one way to spend, available now. A picture of that
-    // would be a picture of the number beside it.
-    await user.click(screen.getByText('Daily'))
+    // would be a picture of the number beside it. Taken from the list rather
+    // than by name, because the step's own drawing has a box called Daily too.
+    await user.click(within(screen.getByRole('list', { name: /^wallets$/i })).getByText('Daily'))
     expect(screen.queryByText(/when each way opens/i)).not.toBeInTheDocument()
   })
 })
@@ -717,19 +721,39 @@ describe('the purpose questions', () => {
   })
 })
 
-describe('the guided route', () => {
+describe('describing a plan', () => {
   it('reads back what a step told the analysis', async () => {
     reset()
     const user = userEvent.setup()
     render(<App />)
     await user.click(await screen.findByText('Two of three, three sites'))
 
-    goto('#/start/locations')
+    goto('#/design/locations')
 
     expect(await screen.findByText(/what this told the analysis/i)).toBeInTheDocument()
     // Two of the three sites share a disaster group, which is the whole point
     // of asking for one.
     expect(screen.getByText(/Site A and Site B fail together/i)).toBeInTheDocument()
+  })
+
+  it('is one screen with a position in an order, not two screens', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/design/locations')
+
+    // The step says where it is, why it is being asked, and where it goes next.
+    expect(await screen.findByText(/step 2 of 7/i)).toBeInTheDocument()
+    expect(screen.getByText(/two sites in one flood plain are one site/i)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /^next/i }))
+    expect(await screen.findByRole('heading', { name: /^people$/i })).toBeInTheDocument()
+
+    // And the last step hands over to the findings rather than to nothing.
+    goto('#/design/checks')
+    await user.click(await screen.findByRole('button', { name: /read the findings/i }))
+    expect(await screen.findByRole('heading', { name: /^findings$/i })).toBeInTheDocument()
   })
 })
 
@@ -818,7 +842,8 @@ describe('the repeated parts of an entity', () => {
     await user.click(await screen.findByText('Two of three, three sites'))
 
     goto('#/design/wallets')
-    await user.click(await screen.findByText('Daily'))
+    const wallets = await screen.findByRole('list', { name: /^wallets$/i })
+    await user.click(within(wallets).getByText('Daily'))
 
     // One path, and no way to delete it from here: a wallet with none is a
     // description of coins nobody can move.
@@ -876,7 +901,7 @@ describe('the map, as one instrument', () => {
     expect(screen.getByRole('heading', { name: /^map$/i })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /^edit$/i }))
-    expect(await screen.findByRole('heading', { name: /^design$/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /^keys$/i })).toBeInTheDocument()
   })
 })
 

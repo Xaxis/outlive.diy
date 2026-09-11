@@ -243,8 +243,8 @@ export function ProfileEditor({ plan }: { plan: Plan }) {
 
       {/* After the questions rather than beside them. Answering comes first and
           reading back what the answers meant comes second, which is the order
-          the guided route already uses for every other step, and it gives the
-          questions the whole column instead of two thirds of it. */}
+          every other step uses, and it gives the questions the whole column
+          instead of two thirds of it. */}
       <Implications plan={plan} />
     </div>
   )
