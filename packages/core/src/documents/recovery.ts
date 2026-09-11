@@ -66,12 +66,6 @@ export interface RecoveryRoute {
   timing: RecoveryTiming | null
 }
 
-function names(items: readonly string[]): string {
-  if (items.length === 0) return 'nothing'
-  if (items.length === 1) return items[0]
-  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
-}
-
 function travelOrder(plan: Plan, locationIds: Id[]): Id[] {
   return [...locationIds].sort((a, b) => {
     const first = plan.locations.find((location) => location.id === a)?.travelMinutes ?? 0
@@ -165,19 +159,31 @@ function buildRoute(
           .map((wallet) => wallet.id)
       : []
 
-  // Whether anything is actually moving changes what the first hour is for,
-  // and the reader cannot tell from the outside. Said as a fact rather than an
-  // instruction, because the instruction is different for a burglary and for a
-  // session that has already happened.
-  const exposedLabels = exposed.map(
-    (id) => plan.wallets.find((wallet) => wallet.id === id)?.label ?? id
-  )
+  // What somebody else can spend is carried in exposedWalletIds, which a
+  // renderer can put where a reader looks for what to move first. What no
+  // structured field can say is that the answer is none of it: an empty list
+  // is silent, and silence about a burglary reads as reassurance.
   const clock =
-    scenario.perspective !== 'adversary'
-      ? ''
-      : exposedLabels.length > 0
-        ? ` ${names(exposedLabels)} can be spent with what they have.`
-        : ' Nothing in this plan can be spent with what they have.'
+    scenario.perspective === 'adversary' && exposed.length === 0
+      ? ' Nothing in this plan can be spent with what they have.'
+      : ''
+
+  // "Move first and investigate afterwards" is advice for a race, and there is
+  // no race when what they took spends nothing. The danger is the opposite
+  // shape: a door that opened once can open again, and the material behind it
+  // is public from now on whether or not anybody has used it yet.
+  const urgency =
+    scenario.kind === 'location-compromised' && exposed.length === 0
+      ? 'Nothing is moving, so this is not a race. Assume everything that was in there is public from today, replace it on a schedule you set rather than in a hurry, and establish how the place was opened before putting anything back into it.'
+      : firstMove
+
+  // And the step that ends the route says "now" for the same reason. When
+  // there is no race, telling the reader to hurry in step three unsays the
+  // paragraph above it.
+  const finalMove =
+    scenario.kind === 'location-compromised' && exposed.length === 0
+      ? 'Move the balance to keys that were never in that place'
+      : after
 
   const steps: RecoveryStep[] = []
   const config = configStep(plan, survivors, world)
@@ -214,7 +220,7 @@ function buildRoute(
   if (survivors.length > 0) {
     steps.push({
       order: steps.length,
-      title: after,
+      title: finalMove,
       detail:
         'Sign from the devices you have, to an address you generate on a device you still control. Confirm the destination on the device screen, not on the computer.',
       locationId: null,
@@ -232,7 +238,7 @@ function buildRoute(
     scenarioId: scenario.id,
     title: scenario.label,
     situation: `${situation}${clock}`,
-    firstMove,
+    firstMove: urgency,
     possible: survivors.length > 0,
     walletIds: survivors,
     lostWalletIds: lost,

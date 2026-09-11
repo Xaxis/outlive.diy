@@ -110,9 +110,12 @@ describe('recovery routes', () => {
         entry.scenarioId.startsWith('location-compromised:') && entry.exposedWalletIds.length === 0
     )
     // Whether anything is moving is the difference between this route and the
-    // one for the same place burning down, and it belongs in the sentence the
-    // reader reads first.
-    expect(exposing?.situation).toMatch(/can be spent with what they have/)
+    // one for the same place burning down. The list is structured so a
+    // renderer can lead with it; that there is no list is prose, because an
+    // empty array is silent and silence about a burglary reads as
+    // reassurance.
+    expect(exposing?.exposedWalletIds.length).toBeGreaterThan(0)
+    expect(exposing?.situation).not.toMatch(/Nothing in this plan/)
     expect(safe?.situation).toMatch(/Nothing in this plan can be spent with what they have/)
   })
 

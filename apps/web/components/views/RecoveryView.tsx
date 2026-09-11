@@ -93,7 +93,7 @@ export function RecoveryView() {
           items={visible.map((route) => ({
             id: route.scenarioId,
             title: route.title,
-            summary: summarise(route),
+            summary: summarise(route, (id) => index.wallets.get(id)?.label ?? 'a wallet'),
             badge: (
               <span
                 className={cn(
@@ -143,6 +143,16 @@ function Route({
         </div>
       ) : null}
 
+      {route.exposedWalletIds.length > 0 ? (
+        /* The one thing on this card with a clock on it. It is in the
+           situation sentence too, and a sentence is not where a reader looks
+           for the list of what to move first. */
+        <p className="mt-3 text-[0.8125rem] leading-relaxed text-critical">
+          Somebody else can spend: {route.exposedWalletIds.map(walletLabel).join(', ')}. Move{' '}
+          {route.exposedWalletIds.length === 1 ? 'it' : 'them'} before anything else on this page.
+        </p>
+      ) : null}
+
       {route.lostWalletIds.length > 0 ? (
         <p className="mt-3 text-[0.8125rem] leading-relaxed text-critical">
           Cannot be recovered in this situation: {route.lostWalletIds.map(walletLabel).join(', ')}.
@@ -190,13 +200,26 @@ function Route({
   )
 }
 
-/** What a route says when its row is shut: whether it works, and how long. */
-function summarise(route: RecoveryRoute): string {
+/**
+ * What a route says when its row is shut: whether it works, and how long.
+ *
+ * When somebody else can spend something, that goes first. These rows are read
+ * shut, on the day, and "they can spend Daily" is the line that has to be
+ * acted on within the hour; whether your own recovery takes four steps or five
+ * can wait until after.
+ */
+function summarise(route: RecoveryRoute, walletLabel: (id: string) => string): string {
+  const exposed =
+    route.exposedWalletIds.length > 0
+      ? `they can spend ${route.exposedWalletIds.map(walletLabel).join(', ')}`
+      : null
   if (!route.possible)
-    return `nothing recovers it${route.blockers[0] ? `: ${route.blockers[0]}` : ''}`
+    return [exposed, `nothing recovers it${route.blockers[0] ? `: ${route.blockers[0]}` : ''}`]
+      .filter(Boolean)
+      .join(' · ')
   const time = route.timing?.possible
     ? describeDuration(route.timing.days, route.timing.travelMinutes)
     : null
   const steps = `${route.steps.length} ${route.steps.length === 1 ? 'step' : 'steps'}`
-  return [time, steps].filter(Boolean).join(' · ')
+  return [exposed, time, steps].filter(Boolean).join(' · ')
 }

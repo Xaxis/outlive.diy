@@ -450,6 +450,15 @@ body {
     display: none !important;
   }
 
+  /* Text clipped to one line ends in an ellipsis, and on paper an ellipsis is
+     a dead end: there is no row to expand. Anything truncated on screen wraps
+     here instead. */
+  .truncate {
+    overflow: visible;
+    white-space: normal;
+    text-overflow: clip;
+  }
+
   .print-only {
     display: revert !important;
   }
