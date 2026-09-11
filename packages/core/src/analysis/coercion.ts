@@ -15,7 +15,7 @@ import type { AnalysisContext } from './context.ts'
 import { evaluateWallet } from './availability.ts'
 import { coercionScenario } from './scenarios.ts'
 import { keysetSpends } from './compromise.ts'
-import { keyLocationIds } from '../model/selectors.ts'
+import { keyHolderLabel, keyLocationIds } from '../model/selectors.ts'
 import type { Wallet } from '../model/types.ts'
 
 function names(items: readonly string[]): string {
@@ -77,7 +77,10 @@ export function analyseCoercion(ctx: AnalysisContext): Finding[] {
     (location) =>
       location.travelMinutes !== null && location.travelMinutes > ctx.options.coercionTravelMinutes
   )
-  const hasThirdParty = plan.keys.some((key) => key.heldBy !== null)
+  // A cosigning service is a second party as much as a person is: it has to be
+  // asked, and it can say no. Counting only key.heldBy let X003 tell a plan
+  // built around one that no key is held by another person.
+  const hasThirdParty = plan.keys.some((key) => keyHolderLabel(plan, key) !== null)
   if (!hasTimelock && !hasDistance && !hasThirdParty && plan.wallets.length > 0) {
     findings.push(
       makeFinding(plan, {

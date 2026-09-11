@@ -165,8 +165,18 @@ export function analyseLoss(ctx: AnalysisContext): Finding[] {
         rule: 'L003',
         key: device.id,
         title: `Losing ${device.label} makes ${names(hit.map((w) => w.label))} unspendable`,
-        detail: `A device is the single object in this plan most likely to fail on its own: batteries, firmware, drops, water, and airport bins. Nothing written down covers for this one.`,
-        remediation: `Write down the keys that live on ${device.label} and store the backup away from it.`,
+        // A cosigning service is not an object that can be dropped, and its
+        // key is not the user's to write down. Both halves of the sentence
+        // written for a hardware signer are wrong for it, and the failure it
+        // does have is a different one.
+        detail:
+          device.kind === 'service-cosigner'
+            ? `A cosigning service is a counterparty, not an object. It does not fail by being dropped: it is acquired, changes its terms, is compelled by somebody else, closes your account, or stops answering, and none of those arrive with notice.`
+            : `A device is the single object in this plan most likely to fail on its own: batteries, firmware, drops, water, and airport bins. Nothing written down covers for this one.`,
+        remediation:
+          device.kind === 'service-cosigner'
+            ? `Keep a spend path that works without ${device.label}, and know before you need it what the documented route out of the arrangement is.`
+            : `Write down the keys that live on ${device.label} and store the backup away from it.`,
         subjects: [
           { type: 'device', id: device.id },
           ...hit.map((wallet) => ({ type: 'wallet' as const, id: wallet.id })),

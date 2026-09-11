@@ -138,10 +138,22 @@ export const SHAPE_MUTATIONS: [string, (plan: Plan) => void][] = [
     },
   ],
   [
+    // A real one, not just a device with its kind changed: the key on it has
+    // no backup and no location, because neither is the user's to record. The
+    // shape that only flipped the kind left the backups in place, so every
+    // rule that reasons about the objects behind a key stayed quiet and four
+    // of them turned out to be telling the reader to write down somebody
+    // else's key and say where their servers are.
     'service cosigner',
     (p) => {
-      if (!p.devices[0]) return
-      p.devices[0].kind = 'service-cosigner'
+      if (!p.devices[0] || !p.keys[0]) return
+      p.devices[0] = { ...p.devices[0], kind: 'service-cosigner', vendor: 'A company' }
+      p.keys[0] = {
+        ...p.keys[0],
+        deviceId: p.devices[0].id,
+        deviceLocationId: null,
+        backups: [],
+      }
     },
   ],
   [

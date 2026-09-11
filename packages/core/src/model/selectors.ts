@@ -39,6 +39,25 @@ export function indexPlan(plan: Plan): PlanIndex {
   }
 }
 
+/**
+ * Who holds the things behind a key, when it is not the user.
+ *
+ * Two shapes in the model say that, and every rule which reasons about the
+ * objects behind a key has to step aside for both: a key another person holds,
+ * and a key that lives on a cosigning service. In neither case is the device,
+ * the backup regime or the premises the user's to record, to write down, or to
+ * say where they are kept, and advice to do any of those is advice they cannot
+ * follow. Returns the holder's name, or null when the key is the user's own.
+ */
+export function keyHolderLabel(plan: Plan, key: Key): string | null {
+  if (key.heldBy !== null) {
+    return plan.people.find((person) => person.id === key.heldBy)?.label ?? 'somebody else'
+  }
+  const device = key.deviceId ? plan.devices.find((entry) => entry.id === key.deviceId) : null
+  if (device?.kind === 'service-cosigner') return device.vendor || device.label
+  return null
+}
+
 /** Every key any spend path of the wallet can use. */
 export function walletKeyIds(wallet: Wallet): Id[] {
   const seen = new Set<Id>()

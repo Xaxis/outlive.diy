@@ -38,31 +38,61 @@ describe('the build runbook', () => {
     expect(buildRunbook(single).steps.map((step) => step.id)).not.toContain('config-wal_savings')
   })
 
+  it('does not tell a single-key wallet which keys to choose between', () => {
+    const one = plan()
+    one.wallets = [one.wallets.find((wallet) => wallet.paths[0].threshold === 1)!]
+    const spend = buildRunbook(one).steps.find((step) => step.id.startsWith('verify-spend-'))!
+    expect(spend.detail).not.toMatch(/nearest/)
+    expect(spend.detail).toContain('nothing to choose between')
+    // No dangling space from a conditional clause that did not fire. It is a
+    // printed document.
+    expect(spend.detail).toBe(spend.detail.trim())
+  })
+
+  it('gives every configuration copy it asks for somewhere to go', () => {
+    const config = buildRunbook(plan()).steps.find((step) => step.id.startsWith('config-'))!
+    const asked = Number(config.title.match(/copy it (\d+) times/)![1])
+    expect(asked).toBe(2)
+    // The example records one place. Asking for two copies and naming one home
+    // leaves the second wherever the reader was standing.
+    expect(config.detail).toContain('does not say where the other goes')
+  })
+
+  it('does not tell somebody with one device to buy them at different times', () => {
+    const one = plan()
+    one.devices = [one.devices[0]]
+    const acquire = buildRunbook(one).steps.find((step) => step.id === 'acquire')!
+    expect(acquire.title).toContain('1 signing device')
+    expect(acquire.detail).not.toMatch(/Buy them/)
+    expect(acquire.detail).toContain('Buy it direct from the maker')
+  })
+
+  it('does not tell the reader to unbox a cosigning service', () => {
+    const service = plan()
+    service.devices[1] = {
+      ...service.devices[1],
+      label: 'Cosigner service',
+      kind: 'service-cosigner',
+      vendor: 'A company',
+    }
+    service.keys[1] = { ...service.keys[1], deviceLocationId: null, backups: [] }
+    const steps = buildRunbook(service).steps
+    const acquire = steps.find((step) => step.id === 'acquire')!
+    // You do not buy it at a quiet time, open its packaging, or check a
+    // firmware signature on it.
+    expect(acquire.detail).not.toContain('Cosigner service')
+    expect(steps.find((step) => step.id === 'service')?.title).toContain('A company')
+    // And it is online by definition, so it is not generated offline with
+    // nothing else connected.
+    const generate = steps.find((step) => step.id === `generate-${service.keys[1].id}`)!
+    expect(generate.title).toContain('Have A company generate')
+    expect(generate.detail).not.toContain('offline')
+  })
+
   it('ends by telling the user to destroy the working notes', () => {
     const steps = buildRunbook(plan()).steps
     expect(steps[steps.length - 1].id).toBe('record-nothing')
   })
-})
-
-it('does not tell a single-key wallet which keys to choose between', () => {
-  const one = plan()
-  one.wallets = [one.wallets.find((wallet) => wallet.paths[0].threshold === 1)!]
-  const spend = buildRunbook(one).steps.find((step) => step.id.startsWith('verify-spend-'))!
-  expect(spend.detail).not.toMatch(/nearest/)
-  expect(spend.detail).toContain('nothing to choose between')
-  // No dangling space from a conditional clause that did not fire. It is a
-  // printed document.
-  expect(spend.detail).toBe(spend.detail.trim())
-})
-
-it('gives every configuration copy it asks for somewhere to go', () => {
-  const book = buildRunbook(plan())
-  const config = book.steps.find((step) => step.id.startsWith('config-'))!
-  const asked = Number(config.title.match(/copy it (\d+) times/)![1])
-  expect(asked).toBe(2)
-  // The example records one place. Asking for two copies and naming one home
-  // leaves the second wherever the reader was standing.
-  expect(config.detail).toContain('does not say where the other goes')
 })
 
 describe('recovery routes', () => {

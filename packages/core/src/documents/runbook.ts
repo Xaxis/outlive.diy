@@ -10,7 +10,7 @@
  */
 
 import type { Id, Plan, Ref } from '../model/types.ts'
-import { isMultisig, splitGroups, walletKeyIds } from '../model/selectors.ts'
+import { isMultisig, keyHolderLabel, splitGroups, walletKeyIds } from '../model/selectors.ts'
 import { indexPlan } from '../model/selectors.ts'
 
 export type RunbookPhase =
@@ -90,18 +90,30 @@ export function buildRunbook(plan: Plan): Runbook {
     id ? (index.locations.get(id)?.label ?? 'an unassigned place') : 'an unassigned place'
 
   // --- prepare --------------------------------------------------------------
-  if (plan.devices.length > 0) {
+  //
+  // A cosigning service is a device in the model and is not one on a table.
+  // You do not buy it at a quiet time, open its packaging, or check the
+  // firmware signature on it, so it is signed up for separately and the two
+  // steps about boxes are about boxes.
+  const boxes = plan.devices.filter((device) => device.kind !== 'service-cosigner')
+  const services = plan.devices.filter((device) => device.kind === 'service-cosigner')
+  if (boxes.length > 0) {
     steps.push(
       step(
         'acquire',
         'prepare',
-        `Acquire ${plan.devices.length} ${plan.devices.length === 1 ? 'signing device' : 'signing devices'}`,
-        `${plan.devices
+        `Acquire ${boxes.length} ${boxes.length === 1 ? 'signing device' : 'signing devices'}`,
+        `${boxes
           .map((device) => `${device.label}${device.vendor ? ` (${device.vendor})` : ''}`)
-          .join(
-            ', '
-          )}. Buy them at different times, from different routes, to an address that is not obviously yours. Do not use a device that arrived already initialised, and do not accept one whose packaging has been opened.`,
-        { subjects: plan.devices.map((device) => ({ type: 'device', id: device.id })) }
+          .join(', ')}. ${
+          // Spreading the purchase over time and over routes is advice about a
+          // set. With one device there is no set, and the sentence was telling
+          // the reader to buy "them" at different times.
+          boxes.length > 1
+            ? 'Buy them at different times, from different routes, to an address that is not obviously yours.'
+            : 'Buy it direct from the maker, to an address that is not obviously yours.'
+        } Do not use a device that arrived already initialised, and do not accept one whose packaging has been opened.`,
+        { subjects: boxes.map((device) => ({ type: 'device', id: device.id })) }
       )
     )
     steps.push(
@@ -110,7 +122,18 @@ export function buildRunbook(plan: Plan): Runbook {
         'prepare',
         'Verify firmware on every device before it holds anything',
         'Check the signature the vendor publishes, on a machine that is not the one you will use for anything else. A device compromised before the key exists compromises the key at the moment it is created, and nothing later fixes that.',
-        { gate: true, subjects: plan.devices.map((device) => ({ type: 'device', id: device.id })) }
+        { gate: true, subjects: boxes.map((device) => ({ type: 'device', id: device.id })) }
+      )
+    )
+  }
+  if (services.length > 0) {
+    steps.push(
+      step(
+        'service',
+        'prepare',
+        `Open the arrangement with ${services.map((device) => device.vendor || device.label).join(' and ')}`,
+        'Read what happens when they close, are acquired, or are ordered to act, and find the documented way out before you depend on it rather than after. A counterparty you can leave is a different object from one you cannot.',
+        { subjects: services.map((device) => ({ type: 'device', id: device.id })) }
       )
     )
   }
@@ -132,13 +155,16 @@ export function buildRunbook(plan: Plan): Runbook {
 
   // --- generate -------------------------------------------------------------
   for (const key of plan.keys) {
-    if (key.heldBy !== null) {
-      const holder = index.people.get(key.heldBy)
+    // Nothing to do here for a key the user does not generate, and "generate
+    // it on the device itself, offline, with nothing else connected" is the
+    // wrong instruction twice over for a service that is online by definition.
+    const holderLabel = keyHolderLabel(plan, key)
+    if (holderLabel !== null) {
       steps.push(
         step(
           `generate-${key.id}`,
           'generate',
-          `Have ${holder?.label ?? 'the holder'} generate ${key.label} themselves`,
+          `Have ${holderLabel} generate ${key.label} themselves`,
           'A key somebody else holds is only independent if you never saw it. Ask them to generate it on their own device and send you nothing but its public information.',
           { subjects: [{ type: 'key', id: key.id }] }
         )

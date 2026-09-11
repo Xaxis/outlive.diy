@@ -10,7 +10,13 @@
 import type { Finding } from './findings.ts'
 import { escalate, makeFinding, walletWeight } from './findings.ts'
 import type { AnalysisContext } from './context.ts'
-import { isMultisig, splitGroups, walletKeyIds, walletsUsingKey } from '../model/selectors.ts'
+import {
+  isMultisig,
+  keyHolderLabel,
+  splitGroups,
+  walletKeyIds,
+  walletsUsingKey,
+} from '../model/selectors.ts'
 import type { Backup, Key } from '../model/types.ts'
 
 function list(items: readonly string[]): string {
@@ -199,15 +205,15 @@ export function analyseStructure(ctx: AnalysisContext): Finding[] {
     // they cannot follow and would defeat the arrangement if they could. What
     // is true, and is said instead, is that the redundancy behind that key is
     // invisible from here.
-    if (key.heldBy !== null) {
-      const holder = index.people.get(key.heldBy)
+    const holderLabel = keyHolderLabel(plan, key)
+    if (holderLabel !== null) {
       add(
         makeFinding(plan, {
           rule: 'S025',
           key: key.id,
-          title: `${key.label} is held by ${holder?.label ?? 'somebody else'}`,
-          detail: `Whatever stands behind ${key.label} belongs to ${holder?.label ?? 'them'}: their device, their backup regime, their premises. None of it is in this plan, so every conclusion here about losing or reaching ${key.label} rests on their arrangements rather than on anything recorded.`,
-          remediation: `Satisfy yourself that ${holder?.label ?? 'the holder'} can actually reproduce ${key.label} if their copy fails, and keep a way to spend that does not need them at all.`,
+          title: `${key.label} is held by ${holderLabel}`,
+          detail: `Whatever stands behind ${key.label} belongs to ${holderLabel}: their device, their backup regime, their premises. None of it is in this plan, so every conclusion here about losing or reaching ${key.label} rests on their arrangements rather than on anything recorded.`,
+          remediation: `Satisfy yourself that ${holderLabel} can actually reproduce ${key.label} if their copy fails, and keep a way to spend that does not need them at all.`,
           subjects: [{ type: 'key', id: key.id }],
         })
       )
@@ -310,7 +316,7 @@ export function analyseStructure(ctx: AnalysisContext): Finding[] {
     // the holder is unavailable, so the analysis is not blind here. A finding
     // whose remediation is "go and find out where a company keeps its server"
     // is a finding nobody can act on.
-    if (key.deviceId && key.deviceLocationId === null && key.heldBy === null) {
+    if (key.deviceId && key.deviceLocationId === null && keyHolderLabel(plan, key) === null) {
       add(
         makeFinding(plan, {
           rule: 'S009',

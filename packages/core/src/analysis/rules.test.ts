@@ -896,6 +896,48 @@ describe('one device signing for more than one key', () => {
   })
 })
 
+describe('a key on a cosigning service', () => {
+  /** A 2-of-2 where the second key lives with a company. */
+  function withService(): Plan {
+    const plan = twoOfTwo()
+    plan.profile = { ...plan.profile, horizonYears: 25 }
+    plan.devices[1] = {
+      ...plan.devices[1],
+      label: 'Cosigner service',
+      kind: 'service-cosigner',
+      vendor: 'A company',
+    }
+    plan.keys[1] = { ...plan.keys[1], deviceLocationId: null, backups: [] }
+    return plan
+  }
+
+  // The model says a key is somebody else's in two ways, heldBy and a device
+  // whose kind is service-cosigner, and the rules that reason about the objects
+  // behind a key have to step aside for both. They only knew the first, so a
+  // plan built on a cosigning service was told to write the company's key down
+  // on steel and to record where the company keeps its hardware.
+  it("is not told to write the company's key down", () => {
+    const found = rules(withService())
+    expect(found).not.toContain('S006')
+    expect(found).not.toContain('S009')
+    expect(found).toContain('S025')
+  })
+
+  it('is described as a counterparty rather than as an object', () => {
+    const finding = findingFor(withService(), 'L003')
+    expect(finding?.detail).toContain('counterparty, not an object')
+    expect(finding?.detail).not.toMatch(/batteries|airport/)
+    expect(finding?.remediation).toContain('works without')
+  })
+
+  it('counts as the second party that makes somebody wait', () => {
+    // X003 says nothing in the plan imposes a delay. A cosigning service has
+    // to be asked and can say no, which is the same shape as a person holding
+    // a key, and X001's own advice names it.
+    expect(rules(withService())).not.toContain('X003')
+  })
+})
+
 describe('the decoy', () => {
   /** A vault and a pocket wallet that exists to be surrendered. */
   function withDecoy(decoyKeyIds: string[]): Plan {
