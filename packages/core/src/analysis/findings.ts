@@ -146,6 +146,7 @@ export type RuleId =
   | 'X003'
   | 'X004'
   | 'X005'
+  | 'X006'
   // succession
   | 'U001'
   | 'U002'
@@ -556,6 +557,13 @@ export const RULES: Record<RuleId, Rule> = Object.fromEntries(
         'A border is a place where you can be separated from a device and told to unlock it, with no lawyer, no clock and no obligation on anybody to explain. Carrying it is the one situation where distance protects nothing.'
       ),
       rule(
+        'X006',
+        'coercion',
+        'critical',
+        'The decoy is built from a key a real wallet needs',
+        'A decoy is surrendered on purpose. If the material that opens it is material a real wallet counts on, the surrender is not a decoy, it is a handover with a story attached.'
+      ),
+      rule(
         'U001',
         'succession',
         'critical',
@@ -668,7 +676,11 @@ export function escalate(severity: Severity, steps: number): Severity {
 
 /**
  * How much a wallet's own weight moves a finding about it. A vault holding most
- * of the stack earns a step; a hot wallet with pocket money gives one back.
+ * of the stack earns a step; a hot wallet with pocket money gives one back, and
+ * a decoy, which exists to be surrendered, gives back two. Callers pass the
+ * weight to escalate() unclamped: the half of this function that reduces a
+ * severity is the half that keeps a list of findings about the vault from being
+ * headed by a critical about the wallet you keep for coffee.
  */
 export function walletWeight(wallet: Wallet): number {
   let steps = 0

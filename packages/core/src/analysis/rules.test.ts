@@ -866,10 +866,11 @@ describe('one device signing for more than one key', () => {
 
   it('is high, and says what the real requirement is, when it holds part of it', () => {
     const plan = twoOfThree()
-    // Not a vault holding most of the stack, because that is escalated a step
-    // and the point here is the step below critical.
+    // A wallet of no particular weight, because a vault holding most of the
+    // stack is escalated a step and pocket money is de-escalated one, and the
+    // point here is the step below critical.
     plan.wallets[0].tier = 'active'
-    plan.wallets[0].stake = 'small'
+    plan.wallets[0].stake = 'moderate'
     // 3-of-5 with two keys on one device is really 2-of-4. Calling that a
     // quorum that does not exist would be confidently wrong.
     // Their own devices, or the one device would hold four of the five and be
@@ -892,6 +893,81 @@ describe('one device signing for more than one key', () => {
     expect(found[0].severity).toBe('high')
     expect(found[0].detail).toContain('2 independent decisions')
     expect(found[0].detail).not.toContain('costume')
+  })
+})
+
+describe('the decoy', () => {
+  /** A vault and a pocket wallet that exists to be surrendered. */
+  function withDecoy(decoyKeyIds: string[]): Plan {
+    const plan = twoOfTwo()
+    plan.profile = { ...plan.profile, concerns: ['coercion'] }
+    plan.wallets = [
+      { ...plan.wallets[0], tier: 'vault', stake: 'large' },
+      createWallet({
+        id: 'w_decoy',
+        label: 'Pocket wallet',
+        tier: 'hot',
+        stake: 'small',
+        decoy: true,
+        paths: [createSpendPath({ id: 'p_decoy', threshold: 1, keyIds: decoyKeyIds })],
+      }),
+    ]
+    return plan
+  }
+
+  it('says a decoy built from its own key is not being surrendered twice', () => {
+    const plan = withDecoy(['k_decoy'])
+    plan.devices.push(createDevice({ id: 'd_decoy', label: 'Phone', vendor: 'Three' }))
+    plan.keys.push(
+      createKey({
+        id: 'k_decoy',
+        label: 'Pocket key',
+        deviceId: 'd_decoy',
+        deviceLocationId: 'a',
+        backups: [createBackup({ id: 'b_decoy', locationId: 'a' })],
+      })
+    )
+    expect(rules(plan)).not.toContain('X006')
+  })
+
+  it('reports a decoy whose key counts toward the real wallet', () => {
+    const finding = findingFor(withDecoy(['k1']), 'X006')
+    // One key of a 2-of-2 is not the wallet, so the sentence is about what the
+    // attacker walks away holding rather than about losing the coins.
+    expect(finding?.title).toContain("Pocket wallet is built from Vault's key")
+    expect(finding?.detail).toContain('part of a real threshold')
+  })
+
+  it('says so plainly when surrendering the decoy surrenders the wallet', () => {
+    const finding = findingFor(withDecoy(['k1', 'k2']), 'X006')
+    expect(finding?.title).toBe('Handing over Pocket wallet hands over Vault')
+    expect(finding?.severity).toBe('critical')
+  })
+
+  it('does not report a decoy at the pitch of the vault it protects', () => {
+    // The decoy exists to be lost. A critical about its single point of
+    // failure sits above the vault's findings and is read first.
+    const plan = withDecoy(['k_decoy'])
+    plan.locations.push(createLocation({ id: 'c', label: 'Drawer', disasterGroup: 'east' }))
+    plan.devices.push(createDevice({ id: 'd_decoy', label: 'Phone', vendor: 'Three' }))
+    plan.keys.push(
+      createKey({
+        id: 'k_decoy',
+        label: 'Pocket key',
+        deviceId: 'd_decoy',
+        deviceLocationId: 'c',
+        backups: [createBackup({ id: 'b_decoy', locationId: 'c' })],
+      })
+    )
+    // Losing the drawer breaks the decoy and nothing else. Losing Site A
+    // breaks the vault, and that one is still critical.
+    const found = analyze(plan, { today: TODAY }).findings.filter(
+      (finding) => finding.rule === 'L001'
+    )
+    const drawer = found.find((finding) => finding.subjects.some((subject) => subject.id === 'c'))!
+    expect(drawer.title).toBe('Losing Drawer makes Pocket wallet unspendable')
+    expect(drawer.severity).toBe('medium')
+    expect(found.find((f) => f.title.includes('Vault'))?.severity).toBe('critical')
   })
 })
 

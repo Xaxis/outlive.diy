@@ -43,7 +43,7 @@ export function analyseLoss(ctx: AnalysisContext): Finding[] {
   if (live.length === 0) return findings
 
   const worst = (wallets: readonly Wallet[]) =>
-    Math.max(0, ...wallets.map((wallet) => walletWeight(wallet)))
+    wallets.length === 0 ? 0 : Math.max(...wallets.map((wallet) => walletWeight(wallet)))
 
   // --- locations ------------------------------------------------------------
   for (const location of plan.locations) {

@@ -54,7 +54,7 @@ export function analyseCompromise(ctx: AnalysisContext): CompromiseResult {
   const findings: Finding[] = []
   const spendingPeople = new Set<Id>()
   const worst = (wallets: readonly Wallet[]) =>
-    Math.max(0, ...wallets.map((wallet) => walletWeight(wallet)))
+    wallets.length === 0 ? 0 : Math.max(...wallets.map((wallet) => walletWeight(wallet)))
 
   // --- one place ------------------------------------------------------------
   for (const location of plan.locations) {

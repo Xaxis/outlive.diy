@@ -426,6 +426,33 @@ export const SHAPE_MUTATIONS: [string, (plan: Plan) => void][] = [
       }
     },
   ],
+  [
+    // The decoy this program tells people to build, built the way it is
+    // easiest to build it: a second wallet on a key the real one already
+    // uses. Surrendering it is then a handover.
+    'a decoy sharing a key with the real wallet',
+    (p) => {
+      const wallet = p.wallets[0]
+      const path = wallet?.paths[0]
+      if (!wallet || !path || !path.keyIds[0]) return
+      p.profile = { ...p.profile, concerns: [...p.profile.concerns, 'coercion'] }
+      p.wallets = [
+        ...p.wallets,
+        {
+          ...structuredClone(wallet),
+          id: 'wal_decoy',
+          label: 'Pocket wallet',
+          tier: 'hot',
+          stake: 'small',
+          decoy: true,
+          configBackups: [],
+          paths: [
+            { ...structuredClone(path), id: 'pat_decoy', threshold: 1, keyIds: [path.keyIds[0]] },
+          ],
+        },
+      ]
+    },
+  ],
 ]
 
 function base(): Plan {

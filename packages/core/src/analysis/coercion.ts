@@ -14,6 +14,7 @@ import { escalate, makeFinding, walletWeight } from './findings.ts'
 import type { AnalysisContext } from './context.ts'
 import { evaluateWallet } from './availability.ts'
 import { coercionScenario } from './scenarios.ts'
+import { keysetSpends } from './compromise.ts'
 import { keyLocationIds } from '../model/selectors.ts'
 import type { Wallet } from '../model/types.ts'
 
@@ -47,7 +48,7 @@ export function analyseCoercion(ctx: AnalysisContext): Finding[] {
         subjects: hit.map((wallet) => ({ type: 'wallet' as const, id: wallet.id })),
         world: scenario.label,
         scenarioId: scenario.id,
-        severity: escalate('critical', Math.max(0, ...hit.map(walletWeight))),
+        severity: escalate('critical', Math.max(...hit.map(walletWeight))),
       })
     )
   }
@@ -111,6 +112,45 @@ export function analyseCoercion(ctx: AnalysisContext): Finding[] {
           remediation:
             'Carry nothing that is part of a threshold. If something must travel, make it a key the wallet can be spent without.',
           subjects: onPerson.map((key) => ({ type: 'key' as const, id: key.id })),
+        })
+      )
+    }
+  }
+
+  // --- the decoy that gives away a real key -----------------------------------
+  //
+  // X004 tells people to build a decoy, and nothing used to look at the one
+  // they built. A decoy is surrendered on purpose, so every key that opens it
+  // is a key the plan has decided in advance to lose. Sharing one with a real
+  // wallet turns the surrender from theatre into a handover.
+  for (const decoy of plan.wallets.filter((wallet) => wallet.decoy)) {
+    const decoyKeyIds = new Set(decoy.paths.flatMap((path) => path.keyIds))
+    if (decoyKeyIds.size === 0) continue
+    for (const wallet of real) {
+      const shared = plan.keys.filter(
+        (key) =>
+          decoyKeyIds.has(key.id) && wallet.paths.some((path) => path.keyIds.includes(key.id))
+      )
+      if (shared.length === 0) continue
+      const spends = keysetSpends(wallet, decoyKeyIds)
+      const labels = names(shared.map((key) => key.label))
+      findings.push(
+        makeFinding(plan, {
+          rule: 'X006',
+          key: `${decoy.id}:${wallet.id}`,
+          title: spends.yes
+            ? `Handing over ${decoy.label} hands over ${wallet.label}`
+            : `${decoy.label} is built from ${wallet.label}'s ${shared.length === 1 ? 'key' : 'keys'}`,
+          detail: spends.yes
+            ? `${decoy.label} is the wallet you intend to surrender, and the material that opens it reaches the threshold on ${wallet.label}'s ${spends.pathLabel}. Whoever you hand it to does not leave with a small balance and a story. They leave with ${wallet.label}.`
+            : `${decoy.label} is the wallet you intend to surrender, and ${labels} also ${shared.length === 1 ? 'counts' : 'count'} toward ${wallet.label}. Surrendering the decoy means agreeing in advance to lose that material: they walk away holding part of a real threshold, and nothing tells you it now has to be replaced.`,
+          remediation: `Generate ${decoy.label} from key material that appears nowhere else in this plan. A decoy is only worth having if losing it costs what it looks like it costs.`,
+          subjects: [
+            { type: 'wallet', id: decoy.id },
+            { type: 'wallet', id: wallet.id },
+            ...shared.map((key) => ({ type: 'key' as const, id: key.id })),
+          ],
+          severity: escalate(spends.yes ? 'critical' : 'high', walletWeight(wallet)),
         })
       )
     }

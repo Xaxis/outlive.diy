@@ -3,6 +3,7 @@ import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { App } from './App.tsx'
 import { useStore } from '@/lib/store.ts'
+import { analyze, exampleById } from '@outlive/core'
 
 /** Navigate the fragment router the way the address bar would. */
 function goto(hash: string) {
@@ -551,16 +552,24 @@ describe('narrowing the findings', () => {
     // The counts above the list are the controls, which is not something two
     // rows of numbers say on their own.
     expect(await screen.findByText(/narrow the list/i)).toBeInTheDocument()
-    const critical = screen.getByRole('button', { name: /8 critical/ })
+    // The two numbers come from the button's own label rather than being
+    // written down here: some of this example's findings are overdue checks,
+    // so the totals move with the calendar and a literal 8 was a test with an
+    // expiry date on it.
+    const critical = screen.getByRole('button', { name: /critical/ })
+    const counted = Number(critical.textContent?.match(/\d+/)?.[0])
+    const total = analyze(exampleById('two-of-three')!).findings.length
+    expect(counted).toBeGreaterThan(0)
     expect(critical).toHaveAttribute('aria-pressed', 'false')
 
     await user.click(critical)
     expect(critical).toHaveAttribute('aria-pressed', 'true')
     // A filtered list that does not say so has quietly stopped being the list.
-    expect(await screen.findByText(/showing 8 of 24/i)).toBeInTheDocument()
+    const showing = new RegExp(`showing ${counted} of ${total}`, 'i')
+    expect(await screen.findByText(showing)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /show all of them/i }))
-    expect(screen.queryByText(/showing 8 of 24/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(showing)).not.toBeInTheDocument()
     expect(critical).toHaveAttribute('aria-pressed', 'false')
   })
 })

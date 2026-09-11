@@ -151,7 +151,7 @@ export function analyseSuccession(ctx: AnalysisContext): Finding[] {
         subjects: unreachable.map((wallet) => ({ type: 'wallet' as const, id: wallet.id })),
         world: death.label,
         scenarioId: death.id,
-        severity: escalate('critical', Math.max(0, ...unreachable.map(walletWeight))),
+        severity: escalate('critical', Math.max(...unreachable.map(walletWeight))),
       })
     )
   }
@@ -174,7 +174,7 @@ export function analyseSuccession(ctx: AnalysisContext): Finding[] {
           ],
           world: now.label,
           scenarioId: now.id,
-          severity: escalate('critical', Math.max(0, ...live.map(walletWeight))),
+          severity: escalate('critical', Math.max(...live.map(walletWeight))),
         })
       )
     }

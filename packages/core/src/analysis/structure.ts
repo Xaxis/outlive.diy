@@ -99,7 +99,7 @@ export function analyseStructure(ctx: AnalysisContext): Finding[] {
             rule: 'S012',
             // Escalated like every other finding about this wallet, so a vault
             // holding most of the stack is raised a step and a decoy is not.
-            severity: escalate(spendsAlone ? 'critical' : 'high', Math.max(0, weight)),
+            severity: escalate(spendsAlone ? 'critical' : 'high', weight),
             key: `${wallet.id}:${path.id}:${deviceId}`,
             title: `${device?.label ?? 'One device'} signs for ${keys.length} keys in ${wallet.label}`,
             detail: spendsAlone
@@ -126,7 +126,7 @@ export function analyseStructure(ctx: AnalysisContext): Finding[] {
           remediation:
             'Either move to a multisig policy, or record explicitly that this is a considered single-signature choice and make its backup redundancy carry the weight instead.',
           subjects: [{ type: 'wallet', id: wallet.id }],
-          severity: escalate('medium', Math.max(0, weight)),
+          severity: escalate('medium', weight),
         })
       )
     }
@@ -231,7 +231,7 @@ export function analyseStructure(ctx: AnalysisContext): Finding[] {
           detail: `${key.label} has no written backup. A dead battery, a failed firmware update, a fall, or a customs officer removes it permanently.`,
           remediation: `Write ${key.label} down on a durable medium and place it somewhere that does not share a disaster group with the device.`,
           subjects: [{ type: 'key', id: key.id }],
-          severity: escalate('high', Math.max(0, weight)),
+          severity: escalate('high', weight),
         })
       )
     }
@@ -268,7 +268,7 @@ export function analyseStructure(ctx: AnalysisContext): Finding[] {
               { type: 'key', id: key.id },
               { type: 'backup', id: backup.id },
             ],
-            severity: escalate('high', Math.max(0, weight)),
+            severity: escalate('high', weight),
           })
         )
       }
@@ -336,7 +336,7 @@ export function analyseStructure(ctx: AnalysisContext): Finding[] {
             remediation:
               'Either write the passphrase down and store it away from every seed backup, split it across locations, or accept explicitly that this key dies with your memory of it.',
             subjects: [{ type: 'key', id: key.id }],
-            severity: escalate('high', Math.max(0, weight)),
+            severity: escalate('high', weight),
           })
         )
       }
