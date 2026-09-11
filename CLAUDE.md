@@ -86,6 +86,27 @@ English, so the literal three-word rule refuses "steel plate, safe" and trains
 users to work around the guard. The test suite proves ten thousand generated
 mnemonics are still refused, and that the program's own prose passes.
 
+**A seed has three other written forms and the guard knows all of them.** Four
+letters to a word, which is how a metal plate is stamped and is unambiguous
+because BIP-39 guarantees it; wordlist positions as numbers; and the raw
+entropy in hexadecimal, where the threshold is 32 characters and not 64 because
+128 bits is the commonest seed there is. The four-letter pass is deliberately
+separate from the whole-word pass and fires only at the hard length: a prefix is
+a far weaker signal, and "week", "plan" and "read" are all of them.
+
+**The guard stops a careless paste, not a determined author.** Words run
+together, a filler word between each one, three-letter abbreviations and base64
+all get past it, and no pattern rule closes that. Say so when describing it. The
+claim it earns is that key material cannot be stored here by accident.
+
+**A field that saves as you type commits the longest thing the guard allowed.**
+So part of a seed lands while the rest is still being typed. Two things keep
+that window small and both are load-bearing: the four-letter rule fires after
+four pieces of nonsense rather than after twelve words, and `GuardedInput` puts
+the stored value back to where the typing started when a refused field is left.
+Do not make a threshold laxer without checking what a field would then hold
+half way through.
+
 **Do not populate `vendors/`.** Device facts rot. The shipped vendor data is
 empty on purpose, the engine runs identically without it, and anything it does
 say is rendered as a dated claim from a file the user loaded rather than as a

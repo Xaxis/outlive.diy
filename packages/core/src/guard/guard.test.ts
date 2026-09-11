@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { accepts, AMBIENT_VOCABULARY_WORDS, firstRefusal, inspect, inspectDeep } from './guard.ts'
+import {
+  accepts,
+  AMBIENT_VOCABULARY_WORDS,
+  BIP39_ENGLISH_PREFIXES,
+  firstRefusal,
+  inspect,
+  inspectDeep,
+} from './guard.ts'
 import { BIP39_ENGLISH, BIP39_ENGLISH_SET, BIP39_ENGLISH_SHA256 } from './bip39-english.ts'
 
 describe('the wordlist itself', () => {
@@ -11,6 +18,20 @@ describe('the wordlist itself', () => {
   it('is sorted, which is what makes it the canonical list', () => {
     const sorted = [...BIP39_ENGLISH].sort()
     expect(BIP39_ENGLISH).toEqual(sorted)
+  })
+
+  it('identifies every word uniquely by its first four letters', () => {
+    // The premise of the four-letter rule below, and the reason a metal plate
+    // can be stamped with four letters instead of a whole word. If this ever
+    // stopped being true the rule would be refusing an ambiguity rather than a
+    // seed.
+    const long = BIP39_ENGLISH.filter((word) => word.length > 4)
+    expect(new Set(long.map((word) => word.slice(0, 4))).size).toBe(long.length)
+    expect(BIP39_ENGLISH_PREFIXES.size).toBe(long.length)
+    // And no prefix collides with a whole word, so a token is one or the other.
+    for (const prefix of BIP39_ENGLISH_PREFIXES) {
+      expect(BIP39_ENGLISH_SET.has(prefix), prefix).toBe(false)
+    }
   })
 
   it('hashes to the value the specification publishes', async () => {
@@ -125,6 +146,71 @@ describe('seed words', () => {
     expect(accepts(phrase)).toBe(false)
   })
 
+  it('refuses a seed stamped four letters to a word', () => {
+    // What a metal plate actually looks like. Four letters identify a BIP-39
+    // word uniquely, so this is the seed and not a shorthand for it.
+    const words = 'legal winner thank year wave sausage worth useful legal winner thank yellow'
+      .split(' ')
+      .map((word) => word.slice(0, 4))
+    expect(accepts(words.join(' '))).toBe(false)
+    expect(accepts(words.slice(0, 8).join(' '))).toBe(false)
+    // And well before the twelfth, because a field that saves as you type
+    // commits whatever the guard accepted last. Four distinct pieces of
+    // nonsense is the boundary: "lega winn than year" reaches it, three do not.
+    expect(accepts('lega winn than saus')).toBe(false)
+    expect(accepts('lega winn than year')).toBe(true)
+  })
+
+  it('leaves the short-word English that a lower boundary would have refused', () => {
+    // Three distinct four-letter prefixes refuses each of these, and somebody
+    // might write any of them. Four does not.
+    for (const line of [
+      'they said they read some plan they made last week',
+      'some plan some read some note some copy some file',
+      'less than half the time they read them they miss the point',
+      'this plan they read last week says less',
+      'keep this plan and read it once a week',
+    ]) {
+      expect(accepts(line), line).toBe(true)
+    }
+  })
+
+  it('leaves short-word prose alone, which is what the four-letter rule risks', () => {
+    // Every one of these is dense in short wordlist-or-prefix words, which is
+    // the shape a false refusal would have to take. Ordinary English keeps
+    // putting "and", "the" and "at" in the way, and none of those is on the
+    // wordlist.
+    for (const note of [
+      'one copy at home and one copy in a box at the bank',
+      'steel plate safe site box key card code note page',
+      'plan kind draft plan name title plan copy list item',
+      'keep both keys away from the same room and the same city',
+      'Site A holds Key A, Site B holds Key B, Site C holds Key C',
+      'check the seal, the tape, the bag, the box, the lid, the lock',
+    ]) {
+      expect(accepts(note), note).toBe(true)
+    }
+  })
+
+  it('refuses a seed written as wordlist positions', () => {
+    // Some plates are stamped with numbers. Twelve is the shortest mnemonic.
+    const indices = '1017 2020 1785 2036 1998 1533 2027 1918 1017 2020 1785 2040'
+    expect(accepts(indices)).toBe(false)
+    expect(accepts(indices.split(' ').slice(0, 11).join(' '))).toBe(true)
+    // A number outside the wordlist's range breaks the run, and a year is not
+    // a wordlist position even when it looks like one.
+    expect(accepts('checked in 2019 2020 2021 2022 2023 2024 2025 2026')).toBe(true)
+  })
+
+  it('refuses the entropy behind a twelve word seed, not only a longer key', () => {
+    // Thirty two hexadecimal characters is 128 bits, which is the commonest
+    // seed there is. Sixty four was the old threshold and let this through.
+    expect(accepts('0f3b1c4d5e6f708192a3b4c5d6e7f809')).toBe(false)
+    // A fingerprint is eight and stays allowed, because the plan legitimately
+    // talks about one.
+    expect(accepts('fingerprint 73c5da0a on that signer')).toBe(true)
+  })
+
   it('keeps every ambient word inside the wordlist', () => {
     for (const word of AMBIENT_VOCABULARY_WORDS) {
       expect(BIP39_ENGLISH_SET.has(word), word).toBe(true)
@@ -165,6 +251,11 @@ describe('seed words', () => {
       'Site B is a four hour drive, which is the point of it',
       'Group the three shares so that no single visit collects two of them',
       'Ask the executor to contact the technical helper named on page two',
+      // Each of these refused until the word that caused it was admitted as
+      // ordinary English: close, type, heavy.
+      'Read back every word off the metal before you close the box',
+      'Never type any of this into a phone, a laptop or a browser',
+      'The box is heavy; you will need help to lift the lid off',
     ]
     for (const note of notes) {
       const result = inspect(note)

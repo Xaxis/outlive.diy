@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useId, useState, type ReactNode } from 'react'
+import { createContext, useContext, useId, useRef, useState, type ReactNode } from 'react'
 import { inspect, type GuardHit } from '@outlive/core'
 import { AlertTriangle, ShieldAlert } from 'lucide-react'
 import { cn } from '@/lib/cn.ts'
@@ -75,6 +75,14 @@ export function GuardedInput({
   const [draft, setDraft] = useState(value)
   const [hits, setHits] = useState<GuardHit[]>([])
   const [committed, setCommitted] = useState(value)
+  // What the field held before this editing run started.
+  //
+  // A field that saves as you type commits the longest thing the guard was
+  // willing to accept, and while somebody types a seed word by word that is a
+  // partial seed. The guard refuses the whole once enough of it exists, and
+  // this is what makes the refusal undo the part that was already stored
+  // rather than leaving five words of twelve behind.
+  const baseline = useRef(value)
   const fallbackId = useId()
   const labelledBy = useFieldLabel()
   const fieldId = id ?? fallbackId
@@ -115,11 +123,17 @@ export function GuardedInput({
         aria-invalid={refusal ? true : undefined}
         aria-describedby={refusal ? `${fieldId}-guard` : undefined}
         onChange={(event) => handle(event.target.value)}
+        onFocus={() => {
+          baseline.current = value
+        }}
         onBlur={() => {
-          if (refusal) {
-            setDraft(value)
-            setHits([])
-          }
+          if (!refusal) return
+          setDraft(baseline.current)
+          setHits([])
+          // On blur rather than on the keystroke that refused, because putting
+          // the stored value back mid-keystroke would reset the draft under
+          // the reader and take away what they are looking at.
+          if (value !== baseline.current) onCommit(baseline.current)
         }}
       />
       {refusal ? (

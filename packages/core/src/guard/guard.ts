@@ -14,9 +14,48 @@
  *
  * Matched text is never echoed back in full. The message describes what was
  * found, not what it said.
+ *
+ * What it is, and what it is not. Every form a seed is ordinarily written in is
+ * recognised: whole words however they are punctuated or cased, the four-letter
+ * form a metal plate is stamped in, wordlist positions, and the raw entropy in
+ * hexadecimal down to the 128 bits behind a twelve word phrase. What it does
+ * not recognise is a seed somebody has deliberately disguised. Running the
+ * words together with no separator, interleaving a filler word between each
+ * one, cutting each word to three letters, or base64 will all get past it, and
+ * no pattern rule can close that: a determined author can always encode a
+ * secret into text that looks like prose. This guard exists to stop a careless
+ * paste and an idle "I will just note it here for now", which is how key
+ * material actually ends up in a planning tool. It is not a barrier against
+ * its own user, and nothing here should be described as one.
+ *
+ * One consequence of the fields saving as they are typed: a field commits the
+ * longest value this guard accepted, so part of a seed does land while the rest
+ * of it is still being typed. The thresholds here are set low enough that the
+ * refusal arrives after a few words rather than after twelve, and
+ * `GuardedInput` puts the stored value back to where the typing started once
+ * the field is left. Between those two the window is a few words wide and a few
+ * seconds long, and it is not nothing.
  */
 
-import { BIP39_ENGLISH_SET } from './bip39-english.ts'
+import { BIP39_ENGLISH, BIP39_ENGLISH_SET } from './bip39-english.ts'
+
+/**
+ * The four-letter prefixes of every wordlist word longer than four letters.
+ *
+ * BIP-39 guarantees that the first four letters identify a word uniquely, which
+ * is why metal backup plates are stamped with four letters and not whole words.
+ * A list of them is a complete seed phrase, written the way the hardware writes
+ * it, so the guard has to recognise it as one.
+ *
+ * Derived here rather than written into the wordlist file, which holds only
+ * what the generator emits and is checked against the canonical list. None of
+ * these is itself a wordlist word, so a token is a word or a prefix and never
+ * ambiguously both; the 545 words of four letters or fewer are their own prefix
+ * and are already in the set above.
+ */
+export const BIP39_ENGLISH_PREFIXES: ReadonlySet<string> = new Set(
+  BIP39_ENGLISH.filter((word) => word.length > 4).map((word) => word.slice(0, 4))
+)
 
 export type GuardStrength = 'refuse' | 'warn'
 
@@ -142,7 +181,11 @@ const RULES: PatternRule[] = [
   {
     kind: 'hex-blob',
     strength: 'refuse',
-    pattern: /\b[0-9a-fA-F]{64,}\b/g,
+    // Thirty two, not sixty four. Sixty four hexadecimal characters is a
+    // 256-bit key, and thirty two is the 128-bit entropy behind a twelve word
+    // seed, which is the commonest seed there is. A checksum of that length
+    // being refused costs a reword; the other way costs a seed.
+    pattern: /\b[0-9a-fA-F]{32,}\b/g,
     reason: 'That is a long hexadecimal string.',
     instead:
       'A raw seed, a private key and a signed transaction all look like this. If it is genuinely none of those, describe it in words instead.',
@@ -231,6 +274,16 @@ const SEED_RUN_THRESHOLD = 3
 /** At or above this, a run is refused whatever the words are. */
 const HARD_SEED_RUN = 8
 
+/** How many wordlist positions in a row are a seed rather than a coincidence. */
+const SEED_INDEX_RUN = 12
+
+/**
+ * How many distinct four-letter prefixes that are not words at all make a run a
+ * stamped seed. Measured: ordinary English reaches two, a stamped twelve word
+ * phrase reaches seven, and three refuses sentences a person might write.
+ */
+const STAMPED_RUN = 4
+
 /**
  * BIP-39 words that are also ordinary English or ordinary storage vocabulary.
  * Every entry is verified against the wordlist by the test suite.
@@ -313,6 +366,7 @@ const AMBIENT_VOCABULARY: ReadonlySet<string> = new Set([
   'clay',
   'clip',
   'clock',
+  'close',
   'cloud',
   'code',
   'coin',
@@ -407,6 +461,7 @@ const AMBIENT_VOCABULARY: ReadonlySet<string> = new Set([
   'harbor',
   'have',
   'head',
+  'heavy',
   'help',
   'high',
   'hill',
@@ -654,6 +709,7 @@ const AMBIENT_VOCABULARY: ReadonlySet<string> = new Set([
   'turn',
   'twice',
   'two',
+  'type',
   'uncle',
   'under',
   'unit',
@@ -757,6 +813,109 @@ function findSeedRuns(text: string): GuardHit[] {
   return hits
 }
 
+/**
+ * A seed written the way a metal plate is stamped: four letters per word.
+ *
+ * BIP-39 guarantees the first four letters identify a word uniquely, so this is
+ * a complete seed phrase and not a shorthand for one. It is a separate pass
+ * from the one above rather than a widening of it, because a four-letter prefix
+ * is a far weaker signal than a whole word and must not be allowed to join,
+ * extend or split a run of whole words.
+ *
+ * Every token four letters or fewer, which is what a stamped plate looks like
+ * and what ordinary prose does not manage for long: "and", "the", "at" and
+ * their kind are not in the wordlist and break the run. Within such a run, four
+ * distinct tokens that are prefixes and not words at all: four pieces of
+ * nonsense together, which is what a seed looks like well before the twelfth
+ * word has been typed.
+ *
+ * Four, and distinct, and nothing about the length of the run. Three refuses
+ * "they said they read some plan they made last week". Counting repeats
+ * refuses "plan plan plan", which this program's own source contains. And a
+ * long run with one piece of nonsense in it refuses "some plan some read some
+ * note some copy some file", where the nonsense is "plan" and "read".
+ */
+function findStampedRuns(text: string): GuardHit[] {
+  const hits: GuardHit[] = []
+  let run: Token[] = []
+
+  const flush = () => {
+    // Tokens that are a prefix and not a word at all: "lega", "winn", "saus".
+    // Nonsense in English, and four distinct ones in a row is the signal. The
+    // whole run reaching the hard length is the other. Distinct, because prose
+    // repeats a word and a seed does not: the worst this repository's own prose
+    // manages is "plan plan plan", which is one.
+    const nonsense = new Set(
+      run.filter((token) => !BIP39_ENGLISH_SET.has(token.word)).map((token) => token.word)
+    )
+    if (nonsense.size >= STAMPED_RUN) {
+      hits.push({
+        kind: 'seed-words',
+        strength: 'refuse',
+        start: run[0].start,
+        end: run[run.length - 1].end,
+        found: `${run.length} consecutive BIP-39 words, shortened to four letters`,
+        reason:
+          'Four letters identify a BIP-39 word uniquely, which is why a metal plate is stamped with four and not with the whole word. That is a seed phrase.',
+        instead:
+          'Write down what the backup is and where it lives: "Key A, steel plate, Site B". The seed itself belongs on metal, in a place, and nowhere else.',
+      })
+    }
+    run = []
+  }
+
+  for (const token of tokenize(text)) {
+    const known = BIP39_ENGLISH_SET.has(token.word) || BIP39_ENGLISH_PREFIXES.has(token.word)
+    if (known && token.word.length <= 4) run.push(token)
+    else flush()
+  }
+  flush()
+  return hits
+}
+
+/**
+ * Wordlist positions, which is the other way a seed gets written down: some
+ * metal plates are stamped with numbers rather than letters.
+ *
+ * Twelve is the shortest real mnemonic, and twelve numbers in a row that all
+ * land inside the wordlist's range is not a thing that happens in a sentence
+ * about where a backup is kept.
+ */
+function findIndexRuns(text: string): GuardHit[] {
+  const hits: GuardHit[] = []
+  const pattern = /[A-Za-z]+|\d+/g
+  let run: { start: number; end: number }[] = []
+  let match: RegExpExecArray | null
+
+  const flush = () => {
+    if (run.length >= SEED_INDEX_RUN) {
+      hits.push({
+        kind: 'seed-words',
+        strength: 'refuse',
+        start: run[0].start,
+        end: run[run.length - 1].end,
+        found: `${run.length} numbers in a row, every one of them a BIP-39 wordlist position`,
+        reason:
+          'That is a seed phrase written as wordlist positions, which is how some metal plates are stamped.',
+        instead:
+          'Write down what the backup is and where it lives: "Key A, steel plate, Site B". The seed itself belongs on metal, in a place, and nowhere else.',
+      })
+    }
+    run = []
+  }
+
+  while ((match = pattern.exec(text)) !== null) {
+    const value = Number(match[0])
+    if (/^\d+$/.test(match[0]) && value >= 1 && value <= BIP39_ENGLISH.length) {
+      run.push({ start: match.index, end: match.index + match[0].length })
+    } else {
+      flush()
+    }
+  }
+  flush()
+  return hits
+}
+
 /** Exported so the test suite can prove every entry is a real wordlist word. */
 export const AMBIENT_VOCABULARY_WORDS: readonly string[] = [...AMBIENT_VOCABULARY]
 
@@ -768,7 +927,7 @@ export const AMBIENT_VOCABULARY_WORDS: readonly string[] = [...AMBIENT_VOCABULAR
  */
 export function inspect(text: string): GuardResult {
   if (text.length === 0) return CLEAN
-  const hits: GuardHit[] = [...findSeedRuns(text)]
+  const hits: GuardHit[] = [...findSeedRuns(text), ...findStampedRuns(text), ...findIndexRuns(text)]
 
   for (const rule of RULES) {
     rule.pattern.lastIndex = 0

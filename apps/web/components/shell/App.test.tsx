@@ -91,6 +91,35 @@ describe('the input guard, in the interface', () => {
     expect(JSON.stringify(plan)).not.toContain('sausage')
   })
 
+  it('refuses the four-letter form a metal plate is stamped in', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(await screen.findByText('One signer, one backup'))
+    goto('#/design/locations')
+
+    const label = await screen.findByLabelText('Label')
+    await user.clear(label)
+    await user.type(label, 'lega winn than year wave saus wort usef lega winn than yell')
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(/not stored/i)
+    expect(alert).toHaveTextContent(/shortened to four letters/i)
+    expect(alert).not.toHaveTextContent('saus')
+
+    // A field that saves as you type commits whatever the guard accepted last,
+    // so a partial seed does briefly land. Leaving the field puts the stored
+    // value back to what it was before the typing started, rather than keeping
+    // the first few words of twelve.
+    await user.tab()
+    const plan = () =>
+      useStore.getState().plans.find((entry) => entry.id === useStore.getState().activeId)
+    expect(JSON.stringify(plan())).not.toContain('lega')
+    expect(JSON.stringify(plan())).not.toContain('winn')
+    expect(plan()?.locations[0].label).toBe('Site A')
+  })
+
   it('accepts ordinary prose about a backup', async () => {
     reset()
     const user = userEvent.setup()
