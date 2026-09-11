@@ -390,6 +390,64 @@ describe('personal detail', () => {
     const result = inspect('51.50735, -0.12776')
     expect(result.hits.some((hit) => hit.kind === 'coordinates')).toBe(true)
   })
+
+  // The rule this replaced matched three-three-four and nothing else, so a
+  // phone number was personal detail in one country and invisible in the rest.
+  it('warns about a phone number, whatever country wrote it', () => {
+    const numbers = [
+      'Call the lawyer on 07700 900123 if I am gone',
+      'Ring +44 7700 900123 when you get there',
+      'The bank is on 020 7946 0958, ask for the manager',
+      'Executor: 555-867-5309',
+      'Executor: (555) 867 5309',
+      'His mobile is +33 6 12 34 56 78',
+      'Office 212.555.0147 before five',
+    ]
+    for (const note of numbers) {
+      const result = inspect(note)
+      expect(
+        result.hits.some((hit) => hit.kind === 'phone'),
+        note
+      ).toBe(true)
+      // Personal detail is said, never refused: the field is the only place the
+      // reader has to write, and taking it away sends them somewhere worse.
+      expect(result.ok, note).toBe(true)
+    }
+  })
+
+  it('does not let an incidental wordlist run hide it', () => {
+    // "Ring ... when you" is five ordinary words that are also BIP-39 words,
+    // and it covers the number. Collapsing overlapping hits to the outer one
+    // is right for a descriptor inside a hex blob and wrong here: the reader
+    // would be told about BIP-39 when the problem is a number that identifies
+    // somebody.
+    const result = inspect('Ring +44 7700 900123 when you get there')
+    expect(result.hits.some((hit) => hit.kind === 'phone')).toBe(true)
+    // And it is the one shown, because the field beside the input reads the
+    // first hit.
+    expect(result.hits[0].kind).toBe('phone')
+  })
+
+  it("leaves this program's own numbers alone", () => {
+    // Nine digits is the floor because everything this app writes is shorter:
+    // an ISO date is eight, and a day count, a travel time, a threshold and a
+    // box number are shorter still.
+    const notNumbers = [
+      'Saved 2026-03-01 by outlive.diy',
+      'About 45 minutes away, and 120 days before probate clears',
+      'The plan defines 2 checks and 3 backups on steel',
+      'Bank box 4471, second row',
+      'Firmware 2.1.4 installed on 2026-01-15',
+      'Key 1 of 3, Site A, shelf 2',
+      'It cost 1200 and took 90 days',
+    ]
+    for (const note of notNumbers) {
+      expect(
+        inspect(note).hits.filter((hit) => hit.kind === 'phone'),
+        note
+      ).toEqual([])
+    }
+  })
 })
 
 describe('walking a whole object', () => {

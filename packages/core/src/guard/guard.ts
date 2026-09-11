@@ -74,6 +74,26 @@ export type GuardKind =
   | 'coordinates'
   | 'url'
 
+/**
+ * Whether a hit is about key material or about who and where you are.
+ *
+ * Two hits covering the same characters are collapsed to the outer one, so
+ * that a descriptor sitting inside a hex blob is reported once. That is only
+ * true of hits describing the same thing two ways: a phone number inside an
+ * incidental run of wordlist words is two different findings, and letting the
+ * word run swallow it tells the reader about BIP-39 when the problem is a
+ * number that identifies somebody.
+ */
+function category(kind: GuardKind): 'key-material' | 'personal' {
+  return kind === 'email' ||
+    kind === 'phone' ||
+    kind === 'street-address' ||
+    kind === 'coordinates' ||
+    kind === 'url'
+    ? 'personal'
+    : 'key-material'
+}
+
 export interface GuardHit {
   kind: GuardKind
   strength: GuardStrength
@@ -237,9 +257,17 @@ const RULES: PatternRule[] = [
     describe: () => 'a street address',
   },
   {
+    // Nine to fifteen digits, which is what E.164 allows, in a run broken only
+    // by the separators a person writes a number with. The rule it replaced
+    // matched three-three-four and nothing else, so it caught a number in one
+    // country and missed "07700 900123", "020 7946 0958" and
+    // "+33 6 12 34 56 78" in the rest. Nine digits is the floor that leaves
+    // this program's own numbers alone: an ISO date is eight, and a day count,
+    // a travel time and a threshold are all shorter still.
     kind: 'phone',
     strength: 'warn',
-    pattern: /(?:\+\d{1,3}[\s.-]?)?(?:\(\d{3}\)|\d{3})[\s.-]\d{3}[\s.-]\d{4}\b/g,
+    pattern:
+      /(?<![\d-])(?:\+\d{1,3}[\s.-]?)?(?:\(\d{1,4}\)[\s.-]?\d(?:[\s.-]?\d){5,13}|\d(?:[\s.-]?\d){8,14})(?![\d-])/g,
     reason: 'That looks like a phone number.',
     instead: 'People are recorded by role here. Contact details belong in the sealed instructions.',
     describe: () => 'a phone number',
@@ -1103,14 +1131,23 @@ export function inspect(text: string): GuardResult {
 
   // A descriptor and a hex blob can cover the same characters. Report the
   // outermost hit only, so the message names one thing rather than three.
-  const ordered = hits.sort((a, b) =>
-    a.strength === b.strength ? a.start - b.start : a.strength === 'refuse' ? -1 : 1
-  )
+  // Refusals first, because one of those is the message. Then personal detail
+  // ahead of an ambient wordlist run, because a hit that names a phone number
+  // or an address found a specific thing, and the note about ordinary words
+  // that happen to be in BIP-39 is a hedge. Whatever reads only the first hit,
+  // which is the field beside the input and the line in the toast on open,
+  // should read the stronger claim.
+  const rank = (hit: GuardHit) =>
+    hit.strength === 'refuse' ? 0 : category(hit.kind) === 'personal' ? 1 : 2
+  const ordered = hits.sort((a, b) => rank(a) - rank(b) || a.start - b.start)
   const kept: GuardHit[] = []
   for (const hit of ordered) {
     const covered = kept.some(
       (existing) =>
-        existing.strength === hit.strength && existing.start <= hit.start && existing.end >= hit.end
+        existing.strength === hit.strength &&
+        category(existing.kind) === category(hit.kind) &&
+        existing.start <= hit.start &&
+        existing.end >= hit.end
     )
     if (!covered) kept.push(hit)
   }
