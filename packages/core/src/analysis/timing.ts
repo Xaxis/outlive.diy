@@ -24,7 +24,7 @@
  * longest of them; the travelling starts once the waiting is over.
  */
 
-import type { Id, Plan, Wallet } from '../model/types.ts'
+import type { Id, Plan, Ref, Wallet } from '../model/types.ts'
 import { isMultisig, splitGroups, wholeBackups } from '../model/selectors.ts'
 import {
   backupAvailable,
@@ -73,7 +73,19 @@ export interface RecoveryTiming {
    * What the plan does not record, which is why this figure is a floor. Listed
    * so the interface can say so instead of presenting a guess as a measurement.
    */
-  unknowns: string[]
+  unknowns: TimingUnknown[]
+}
+
+export interface TimingUnknown {
+  /** What is not known, as a sentence. */
+  note: string
+  /**
+   * The thing whose own record would answer it, so the interface can offer to
+   * go and fill it in. Null where there is nothing to fill in: a vault's
+   * opening hours are not in the model at all, and offering a door that leads
+   * to no field is worse than offering none.
+   */
+  subject: Ref | null
 }
 
 interface Route {
@@ -186,7 +198,7 @@ function marginal(route: Route, chosen: Set<Id>, travel: (id: Id) => number): nu
 
 export function recoveryTiming(plan: Plan, wallet: Wallet, world: World): RecoveryTiming {
   const availability = evaluateWallet(plan, wallet, world)
-  const unknowns: string[] = []
+  const unknowns: TimingUnknown[] = []
 
   if (!availability.spendable || availability.viaPathId === null) {
     return {
@@ -303,7 +315,10 @@ export function recoveryTiming(plan: Plan, wallet: Wallet, world: World): Recove
       const person = plan.people.find((entry) => entry.id === personId)
       if (!person) continue
       if (person.availability === 'unknown') {
-        unknowns.push(`How quickly ${person.label} could act is not recorded.`)
+        unknowns.push({
+          note: `How quickly ${person.label} could act is not recorded.`,
+          subject: { type: 'person', id: person.id },
+        })
         continue
       }
       const days = AVAILABILITY_DAYS[person.availability] ?? 0
@@ -335,12 +350,21 @@ export function recoveryTiming(plan: Plan, wallet: Wallet, world: World): Recove
 
   for (const id of unknownPlaces) {
     const location = plan.locations.find((entry) => entry.id === id)
-    unknowns.push(`How far away ${location?.label ?? id} is has not been recorded.`)
+    unknowns.push({
+      note: `How far away ${location?.label ?? id} is has not been recorded.`,
+      subject: { type: 'location', id },
+    })
   }
   for (const id of placeIds) {
     const location = plan.locations.find((entry) => entry.id === id)
     if (location && (location.kind === 'bank-vault' || location.kind === 'private-vault')) {
-      unknowns.push(`${location.label} opens on somebody else's hours, which are not recorded.`)
+      // No subject, and the wording says why: opening hours are not a field
+      // anywhere in the model, so this is the program's gap and not the
+      // reader's to close.
+      unknowns.push({
+        note: `${location.label} opens on somebody else's hours, which this program does not model.`,
+        subject: null,
+      })
     }
   }
 

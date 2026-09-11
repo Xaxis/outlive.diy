@@ -11,6 +11,7 @@ import {
   Minus,
   Plus,
   Puzzle,
+  RotateCcw,
   ShieldEllipsis,
   Split,
   User,
@@ -25,6 +26,8 @@ import {
   NODE_HEIGHT,
   NODE_WIDTH,
   PADDING,
+  ROW_GAP,
+  type ColumnOrders,
   type PlacedNode,
 } from '@/lib/graph-layout.ts'
 import { cn } from '@/lib/cn.ts'
@@ -107,6 +110,8 @@ const MAX_SCALE = 2
 const MIN_FIT_SCALE = 0.6
 /** Room left around the drawing when it is fitted to the viewport. */
 const FIT_PADDING = 20
+/** How far a press has to travel before it is a drag rather than a click. */
+const DRAG_THRESHOLD = 4
 /** How far one arrow key moves the surface, and one press of a zoom button. */
 const PAN_STEP = 48
 const ZOOM_STEP = 1.25
@@ -205,11 +210,17 @@ export function PlanDiagram({
    */
   onHeight?: (px: number) => void
 }) {
-  const layout = useMemo(() => layoutGraph(graph), [graph])
+  // Row order for any column the reader has rearranged by hand. Held here and
+  // not in the plan file: where a box sits on a screen is not a fact about
+  // custody, and a plan handed to somebody else should arrive in the order the
+  // layout argues for rather than the order somebody once dragged it into.
+  const [orders, setOrders] = useState<ColumnOrders>(() => new Map())
+  const layout = useMemo(() => layoutGraph(graph, orders), [graph, orders])
   const viewport = useRef<HTMLDivElement>(null)
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 })
   const [available, setAvailable] = useState(0)
   const [panning, setPanning] = useState(false)
+  const [dragging, setDragging] = useState<string | null>(null)
   const [focused, setFocused] = useState<string | null>(null)
 
   // Whether the reader has moved the surface themselves. If they have, a change
@@ -221,6 +232,9 @@ export function PlanDiagram({
   const moved = useRef(false)
   const pointers = useRef(new Map<number, { x: number; y: number }>())
   const pinch = useRef<number | null>(null)
+  // A press on a box is a click until it has moved far enough to be a drag,
+  // and once it has, the click that follows the release is not one.
+  const grab = useRef<{ id: string; y: number; moved: boolean } | null>(null)
 
   // How tall the drawing needs the surface to be. Only the width matters here:
   // it decides the scale at which the whole drawing fits across, and therefore
@@ -351,11 +365,54 @@ export function PlanDiagram({
     })
   }
 
+  /**
+   * Put one box at a given row inside its own column.
+   *
+   * Only inside its own column, and that is the whole design. The column a box
+   * sits in is what kind of thing it is: wallets, then what they need, then
+   * keys, then the material a key exists as, then places, then people. A box
+   * dragged across that boundary would state something false about the plan,
+   * and a drawing that can be made to lie is worse than one that cannot be
+   * rearranged. Up and down says nothing false, and is how a reader untangles
+   * one corner of a plan with forty keys in it.
+   */
+  const reorder = (node: PlacedNode, to: number) => {
+    const column = layout.nodes
+      .filter((entry) => entry.layer === node.layer)
+      .sort((a, b) => a.y - b.y)
+    const ids = column.map((entry) => entry.id)
+    const from = ids.indexOf(node.id)
+    const target = clamp(to, 0, ids.length - 1)
+    if (from < 0 || from === target) return
+    ids.splice(target, 0, ids.splice(from, 1)[0])
+    setOrders((current) => new Map(current).set(node.layer, ids))
+  }
+
+  const rowOf = (node: PlacedNode) =>
+    layout.nodes
+      .filter((entry) => entry.layer === node.layer)
+      .sort((a, b) => a.y - b.y)
+      .findIndex((entry) => entry.id === node.id)
+
+  /** Which row a pointer is over, in the column the drag started in. */
+  const rowUnder = (node: PlacedNode, clientY: number) => {
+    const element = viewport.current
+    if (!element) return rowOf(node)
+    const top = layout.nodes
+      .filter((entry) => entry.layer === node.layer)
+      .reduce((least, entry) => Math.min(least, entry.y), Number.MAX_SAFE_INTEGER)
+    const stageY = (clientY - element.getBoundingClientRect().top - view.y) / view.scale
+    return Math.round((stageY - top - NODE_HEIGHT / 2) / (NODE_HEIGHT + ROW_GAP))
+  }
+
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     // A press that lands on a box is a click on that box, not a drag of the
     // surface underneath it.
+    //
+    // The capture call is optional because the environment the tests run in has
+    // no pointer capture, and nothing there is dragged far enough to need it.
     if ((event.target as HTMLElement).closest('[data-node]')) return
-    event.currentTarget.setPointerCapture(event.pointerId)
+    event.currentTarget.setPointerCapture?.(event.pointerId)
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
     if (pointers.current.size === 2) pinch.current = null
     setPanning(true)
@@ -455,7 +512,7 @@ export function PlanDiagram({
         ref={viewport}
         tabIndex={0}
         role="group"
-        aria-label="The plan, drawn. Drag to move, arrow keys to pan, plus and minus to zoom."
+        aria-label="The plan, drawn. Drag the background to move it, arrow keys to pan, plus and minus to zoom. Drag a box, or hold alt and press up or down, to move it within its column."
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -529,6 +586,7 @@ export function PlanDiagram({
                 ? 'normal'
                 : 'lost'
             const interactive = Boolean(onSelectNode || (node.ref && onSelect))
+            const moving = dragging === node.id
             const state = adversary
               ? node.available
                 ? 'They have this.'
@@ -542,6 +600,39 @@ export function PlanDiagram({
                 type="button"
                 data-node
                 disabled={!interactive}
+                onPointerDown={(event) => {
+                  if (!interactive) return
+                  event.currentTarget.setPointerCapture?.(event.pointerId)
+                  grab.current = { id: node.id, y: event.clientY, moved: false }
+                }}
+                onPointerMove={(event) => {
+                  const held = grab.current
+                  if (!held || held.id !== node.id) return
+                  if (!held.moved && Math.abs(event.clientY - held.y) < DRAG_THRESHOLD) return
+                  held.moved = true
+                  setDragging(node.id)
+                  reorder(node, rowUnder(node, event.clientY))
+                }}
+                onPointerUp={() => {
+                  grab.current = null
+                  setDragging(null)
+                }}
+                onPointerCancel={() => {
+                  grab.current = null
+                  setDragging(null)
+                }}
+                onKeyDown={(event) => {
+                  // The same move from the keyboard. A drag is the only way to
+                  // do this otherwise, and a drag is not a way at all for
+                  // somebody who is not using a pointer.
+                  if (!event.altKey) return
+                  const delta = event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : 0
+                  if (delta === 0) return
+                  event.preventDefault()
+                  // Or the surface underneath would pan as well.
+                  event.stopPropagation()
+                  reorder(node, rowOf(node) + delta)
+                }}
                 onMouseEnter={() => setFocused(node.id)}
                 onFocus={(event) => {
                   setFocused(node.id)
@@ -556,6 +647,10 @@ export function PlanDiagram({
                 }}
                 onBlur={() => setFocused(null)}
                 onClick={() => {
+                  // The release at the end of a drag also fires a click, and a
+                  // box the reader has just moved is not a box they asked to
+                  // open.
+                  if (moving) return
                   if (onSelectNode) onSelectNode(node.id)
                   else if (node.ref) onSelect?.(node.ref)
                 }}
@@ -563,9 +658,12 @@ export function PlanDiagram({
                 // carry, so the whole of it is also the tooltip.
                 title={`${node.label}${node.detail ? ` (${node.detail})` : ''}. ${state}`}
                 className={cn(
-                  'absolute flex flex-col justify-center gap-0.5 rounded-[var(--radius-control)] border px-2.5 text-left transition-opacity',
+                  'absolute flex flex-col justify-center gap-0.5 rounded-[var(--radius-control)] border px-2.5 text-left',
                   'disabled:cursor-default',
-                  interactive && 'cursor-pointer hover:border-accent',
+                  // Not while it is being moved: a box animating its opacity
+                  // under a finger that is dragging it lags behind the finger.
+                  moving ? 'z-10 shadow-[0_8px_24px_-8px_rgb(0_0_0/0.7)]' : 'transition-opacity',
+                  interactive && 'cursor-grab active:cursor-grabbing hover:border-accent',
                   TONE_BOX[tone],
                   selectedId === node.id && 'border-accent ring-1 ring-accent'
                 )}
@@ -636,6 +734,13 @@ export function PlanDiagram({
         <CanvasButton label="Fit the whole plan" onClick={fit}>
           <Crosshair className="size-3.5" aria-hidden />
         </CanvasButton>
+        {/* Only once something has been moved. A control for undoing a thing
+            nobody has done is a control that has to be read and dismissed. */}
+        {orders.size > 0 ? (
+          <CanvasButton label="Put the boxes back in order" onClick={() => setOrders(new Map())}>
+            <RotateCcw className="size-3.5" aria-hidden />
+          </CanvasButton>
+        ) : null}
       </div>
     </div>
   )
@@ -718,8 +823,9 @@ export function DiagramLegend({ graph }: { graph: PlanGraph }) {
         ? 'A solid red box is one they hold in this world; a faint dashed box is out of their reach and out of the story.'
         : 'A dashed red box cannot be reached in this world, and the line into it is dashed too.'}{' '}
       Hovering a box lights the chain it belongs to; clicking one holds that chain and says what
-      this world does to it. Drag the surface to move it, scroll or pinch to zoom, and double-click
-      the background to fit the whole plan again.
+      this world does to it. Drag the background to move the surface, scroll or pinch to zoom, and
+      double-click it to fit the whole plan again. A box can be dragged up or down within its own
+      column, and not out of it: which column it is in is what kind of thing it is.
     </p>
   )
 }

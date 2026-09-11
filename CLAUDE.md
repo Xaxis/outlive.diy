@@ -113,11 +113,15 @@ drawing any of them, and a map that drew one world at a time and made you find
 it in a dropdown. Two pages asking one question, and the one with the answer in
 it was the one you had to go looking for.
 
-**A box cannot be dragged out of its column.** The surface pans and zooms, and
-the boxes do not move, because the column a box sits in is information: wallets,
-what they need, keys, the material a key exists as, places, people. A diagram
-that can be rearranged into a false statement is worse than one that cannot be
-rearranged.
+**A box moves up and down its column and never out of it.** The column a box
+sits in is information: wallets, what they need, keys, the material a key exists
+as, places, people. Across that boundary a box would state something false, and
+a drawing that can be rearranged into a lie is worse than one that cannot be
+rearranged at all. Within a column it says nothing false, and it is how a reader
+untangles one corner of a plan with forty keys in it, so dragging and alt with
+an arrow key both do it. The arrangement lives in the component and not in the
+plan file: where a box sits on a screen is not a fact about custody, and a plan
+handed to somebody else should arrive in the order the layout argues for.
 
 **There is one place a plan is described, and it is guided.** `lib/sections.ts`
 holds the seven steps with one purpose sentence and one done rule each, and
@@ -138,7 +142,10 @@ option that states what it commits you to is answered on purpose.
 **`analysis/timing.ts` invents nothing.** Travel, probate and timelocks all come
 from fields the user filled in. Anything not recorded is reported in `unknowns`
 and contributes zero, so the figure is a floor and says so. A recovery estimate
-that quietly fills in its own blanks is worse than no estimate.
+that quietly fills in its own blanks is worse than no estimate. Each unknown
+carries the `Ref` whose own record would answer it, so the interface offers the
+field rather than only naming the gap; a `null` subject means the model has no
+field for it and the wording says so instead of promising one.
 
 **Findings never carry a score.** No grade, no percentage, no progress bar to
 secure. A number is read as a target and gets optimised. What the user's stated

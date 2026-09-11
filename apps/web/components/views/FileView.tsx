@@ -164,11 +164,50 @@ export function FileView() {
             title="Optional vendor data"
             hint="Device facts rot, so they are not in the engine."
           />
+          {/* Rendered whichever branch is showing, because replacing a file
+              you have already loaded is the commonest thing to do with one:
+              the whole point of keeping your own is that it goes out of date. */}
+          <input
+            ref={vendorInput}
+            type="file"
+            accept="application/json,.json"
+            aria-label="Choose a vendor data file to load"
+            className="sr-only"
+            onChange={async (event) => {
+              const file = event.target.files?.[0]
+              event.target.value = ''
+              if (!file) return
+              try {
+                const parsed: unknown = JSON.parse(await readTextFile(file))
+                const result = parseVendorData(parsed)
+                if (!result.ok) {
+                  notify({
+                    tone: 'error',
+                    message: 'That vendor file could not be read',
+                    detail: result.problems.join(' · '),
+                  })
+                  return
+                }
+                setVendorData(result.value as VendorData)
+                notify({
+                  tone: 'ok',
+                  message: 'Vendor data loaded',
+                  detail: `As of ${result.value.asOf}. Nothing in the analysis uses it; it appears as dated notes beside your devices.`,
+                })
+              } catch {
+                notify({ tone: 'error', message: 'That file is not valid JSON' })
+              }
+            }}
+          />
           {vendorData ? (
             <div className="space-y-2 text-[0.875rem] text-muted">
               <p>
-                Loaded: <span className="text-strong">{vendorData.vendors.length} vendors</span>,
-                stated as of <span className="mono text-strong">{vendorData.asOf}</span> (
+                Loaded:{' '}
+                <span className="text-strong">
+                  {vendorData.vendors.length}{' '}
+                  {vendorData.vendors.length === 1 ? 'vendor' : 'vendors'}
+                </span>
+                , stated as of <span className="mono text-strong">{vendorData.asOf}</span> (
                 {vendorDataAgeDays(vendorData, today())} days ago). Source: {vendorData.source}
               </p>
               <p className="text-xs">
@@ -176,9 +215,18 @@ export function FileView() {
                 so that a claim from a file you loaded is never mistaken for a conclusion this
                 program reached.
               </p>
-              <Button size="sm" variant="ghost" onClick={() => setVendorData(null)}>
-                Remove it
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  icon={<Database className="size-3.5" aria-hidden />}
+                  onClick={() => vendorInput.current?.click()}
+                >
+                  Replace it
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setVendorData(null)}>
+                  Remove it
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-3 text-[0.875rem] leading-relaxed text-muted">
@@ -194,38 +242,6 @@ export function FileView() {
                   {`{ "version": ${VENDOR_DATA_VERSION}, "asOf": "YYYY-MM-DD", "source": "...", "vendors": [...] }`}
                 </code>
               </p>
-              <input
-                ref={vendorInput}
-                type="file"
-                accept="application/json,.json"
-                aria-label="Choose a vendor data file to load"
-                className="sr-only"
-                onChange={async (event) => {
-                  const file = event.target.files?.[0]
-                  event.target.value = ''
-                  if (!file) return
-                  try {
-                    const parsed: unknown = JSON.parse(await readTextFile(file))
-                    const result = parseVendorData(parsed)
-                    if (!result.ok) {
-                      notify({
-                        tone: 'error',
-                        message: 'That vendor file could not be read',
-                        detail: result.problems.join(' · '),
-                      })
-                      return
-                    }
-                    setVendorData(result.value as VendorData)
-                    notify({
-                      tone: 'ok',
-                      message: 'Vendor data loaded',
-                      detail: `As of ${result.value.asOf}. Nothing in the analysis uses it; it appears as dated notes beside your devices.`,
-                    })
-                  } catch {
-                    notify({ tone: 'error', message: 'That file is not valid JSON' })
-                  }
-                }}
-              />
               <Button
                 size="sm"
                 icon={<Database className="size-3.5" aria-hidden />}

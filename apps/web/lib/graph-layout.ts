@@ -73,7 +73,16 @@ function barycentre(ids: string[], positions: Map<string, number>): number | nul
   return known.reduce((total, value) => total + value, 0) / known.length
 }
 
-export function layoutGraph(graph: PlanGraph): Layout {
+/**
+ * Row order for a column the reader has rearranged by hand, keyed by layer.
+ *
+ * Ids not in the list sort after the ones that are, so adding a key to a plan
+ * whose keys column has been reordered puts the new one at the bottom rather
+ * than throwing the arrangement away.
+ */
+export type ColumnOrders = ReadonlyMap<number, readonly string[]>
+
+export function layoutGraph(graph: PlanGraph, orders?: ColumnOrders): Layout {
   const layers = graph.layers
   const byLayer = new Map<number, GraphNode[]>()
   for (const layer of layers) {
@@ -130,6 +139,23 @@ export function layoutGraph(graph: PlanGraph): Layout {
   for (let pass = 0; pass < PASSES; pass += 1) {
     sweep(forward, predecessors, (i) => i - 1)
     sweep(backward, successors, (i) => i + 1)
+  }
+
+  // A column the reader has arranged themselves is left exactly as they left
+  // it. Crossing reduction is a guess at what is readable; a person dragging a
+  // box is not guessing.
+  for (const layer of layers) {
+    const given = orders?.get(layer)
+    if (!given) continue
+    const rank = new Map(given.map((id, index) => [id, index]))
+    const nodes = byLayer.get(layer) ?? []
+    byLayer.set(
+      layer,
+      [...nodes].sort(
+        (a, b) =>
+          (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER)
+      )
+    )
   }
 
   const columns = layers.map((layer, index) => ({

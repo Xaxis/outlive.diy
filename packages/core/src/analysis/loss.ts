@@ -275,7 +275,9 @@ export function analyseLoss(ctx: AnalysisContext): Finding[] {
         title: `Recovering ${wallet.label} takes ${describeDuration(worstCase.timing.days, worstCase.timing.travelMinutes)}`,
         detail: `${worstCase.scenario.label}, and ${wallet.label} still spends. Getting there means ${describeSteps(worstCase.timing)}: ${worstCase.timing.days} days against a stated tolerance of ${tolerance}. A route that works and takes that long is a route people abandon halfway, or never rehearse.${
           worstCase.timing.unknowns.length > 0
-            ? ` It is also a floor rather than an estimate: ${worstCase.timing.unknowns.join(' ')}`
+            ? ` It is also a floor rather than an estimate: ${worstCase.timing.unknowns
+                .map((unknown) => unknown.note)
+                .join(' ')}`
             : ''
         }`,
         remediation:

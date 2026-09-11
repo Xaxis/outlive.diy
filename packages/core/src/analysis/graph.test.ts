@@ -220,7 +220,10 @@ describe('how long a recovery takes', () => {
     const plan = twoOfThree()
     plan.locations[1] = { ...plan.locations[1], travelMinutes: null }
     const timing = recoveryTiming(plan, plan.wallets[0], baseWorld(plan))
-    expect(timing.unknowns.join(' ')).toContain('Site B')
+    expect(timing.unknowns.map((unknown) => unknown.note).join(' ')).toContain('Site B')
+    // And it names the place whose record would answer it, so the interface can
+    // offer to go there rather than only saying that something is missing.
+    expect(timing.unknowns.some((unknown) => unknown.subject?.type === 'location')).toBe(true)
   })
 
   it('says nothing at all about a wallet that cannot be recovered', () => {

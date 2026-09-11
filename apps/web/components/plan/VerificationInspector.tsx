@@ -2,6 +2,7 @@
 
 import {
   DEFAULT_INTERVAL_DAYS,
+  daysBetween,
   today,
   type EntityType,
   type Plan,
@@ -27,6 +28,14 @@ const SUBJECT_TYPE: Record<VerificationKind, EntityType> = {
   'device-firmware': 'device',
   'passphrase-recall': 'key',
   'inventory-check': 'plan',
+}
+
+/** How long ago a date was, in the words the rest of the program uses. */
+function describeAgo(date: string): string {
+  const days = daysBetween(date, today())
+  if (days <= 0) return 'today'
+  if (days === 1) return 'yesterday'
+  return `${days} days ago`
 }
 
 /** A date field that names itself from the field it sits in, like the others. */
@@ -120,22 +129,34 @@ export function VerificationInspector({
         label="Last done"
         help="Blank means never. That is not a scolding; it is the difference between a fact and a belief, and the analysis treats it that way."
       >
-        <div className="flex items-center gap-2">
-          <DateInput
-            value={verification.lastVerifiedAt}
-            onChange={(next) => set({ lastVerifiedAt: next })}
-          />
-          {/* The commonest act on this screen is "I just did this", and it
-              should not need a date picker. */}
-          {verification.lastVerifiedAt !== today() ? (
-            <Button size="sm" onClick={() => set({ lastVerifiedAt: today() })}>
-              Done today
-            </Button>
-          ) : null}
-          {verification.lastVerifiedAt !== null ? (
-            <Button size="sm" variant="ghost" onClick={() => set({ lastVerifiedAt: null })}>
-              Clear
-            </Button>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <DateInput
+              value={verification.lastVerifiedAt}
+              onChange={(next) => set({ lastVerifiedAt: next })}
+            />
+            {/* The commonest act on this screen is "I just did this", and it
+                should not need a date picker. */}
+            {verification.lastVerifiedAt !== today() ? (
+              <Button size="sm" onClick={() => set({ lastVerifiedAt: today() })}>
+                Done today
+              </Button>
+            ) : null}
+            {verification.lastVerifiedAt !== null ? (
+              <Button size="sm" variant="ghost" onClick={() => set({ lastVerifiedAt: null })}>
+                Clear
+              </Button>
+            ) : null}
+          </div>
+
+          {/* The picker renders in the browser's own locale, where 02/01/2025
+              is two different dates depending on where the reader is sitting.
+              Everything else in this program writes a date one way, so the
+              value is said back that way. */}
+          {verification.lastVerifiedAt ? (
+            <p className="mono text-[0.6875rem] text-faint">
+              {verification.lastVerifiedAt} · {describeAgo(verification.lastVerifiedAt)}
+            </p>
           ) : null}
         </div>
       </Field>

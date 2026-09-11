@@ -82,7 +82,8 @@ export function Timeline({ timing, className }: { timing: RecoveryTiming; classN
 
       {timing.unknowns.length > 0 ? (
         <p className="mt-2 text-[0.6875rem] leading-relaxed text-faint">
-          This is a floor rather than an estimate. {timing.unknowns.join(' ')}
+          This is a floor rather than an estimate.{' '}
+          {timing.unknowns.map((unknown) => unknown.note).join(' ')}
         </p>
       ) : null}
     </div>

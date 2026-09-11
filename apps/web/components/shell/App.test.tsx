@@ -352,6 +352,94 @@ describe('an empty plan', () => {
   })
 })
 
+describe('vendor data', () => {
+  const file = (body: unknown) =>
+    new File([JSON.stringify(body)], 'vendors.json', { type: 'application/json' })
+
+  it('ships with none, and what a loaded file says is dated and disclaimed', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/file')
+    // Empty on purpose: a built-in table of which signer has a secure element
+    // is correct on the day it ships and quietly wrong a year later.
+    expect(await screen.findByText(/none loaded, which is the default/i)).toBeInTheDocument()
+
+    await user.upload(
+      screen.getByLabelText(/choose a vendor data file/i),
+      file({
+        version: 1,
+        asOf: '2026-08-01',
+        source: 'My own notes',
+        vendors: [
+          {
+            id: 'Vendor One',
+            name: 'Vendor One',
+            architecture: 'Own firmware',
+            secureElement: true,
+          },
+        ],
+      })
+    )
+    // One vendor, said as one vendor.
+    expect(await screen.findByText(/^1 vendor$/)).toBeInTheDocument()
+
+    // Beside the device it is a claim from a file, with the day it was true.
+    goto('#/design/devices')
+    expect(await screen.findByText(/from your vendor file, as of 2026-08-01/i)).toBeInTheDocument()
+    expect(screen.getByText(/architecture: own firmware/i)).toBeInTheDocument()
+    expect(screen.getByText(/not conclusions this program reached/i)).toBeInTheDocument()
+  })
+
+  it('refuses a file it cannot read rather than half-loading it', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/file')
+    await user.upload(
+      await screen.findByLabelText(/choose a vendor data file/i),
+      file({ version: 1 })
+    )
+
+    expect(await screen.findByText(/could not be read/i)).toBeInTheDocument()
+    expect(screen.getByText(/none loaded, which is the default/i)).toBeInTheDocument()
+  })
+})
+
+describe('a recovery time that is a floor', () => {
+  it('names what is missing and offers the field that would fix it', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    // Site A is on the route for both wallets, so forgetting how far away it is
+    // is a gap the figure depends on. Site B is not, and the engine is right
+    // not to call that a gap.
+    goto('#/design/locations')
+    await user.click(
+      within(await screen.findByRole('list', { name: /^places$/i })).getByText('Site A')
+    )
+    await user.clear(screen.getByLabelText(/travel time/i))
+
+    goto('#/overview')
+
+    // Said out loud rather than in a tooltip, which is not a place a reader
+    // finds anything and not a place a finger reaches at all.
+    expect(await screen.findByText(/floors rather than estimates/i)).toBeInTheDocument()
+    const gap = screen.getByText(/how far away site a is has not been recorded/i)
+    expect(gap).toBeInTheDocument()
+
+    await user.click(within(gap).getByRole('button', { name: /record it/i }))
+    expect(await screen.findByRole('heading', { name: /^places$/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Site A', level: 2 })).toBeInTheDocument()
+  })
+})
+
 describe('the rules it applies', () => {
   it('opens a category and shows what each rule looks for', async () => {
     reset()
@@ -707,7 +795,45 @@ describe('the diagram', () => {
     expect(screen.getByRole('button', { name: /zoom out/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /fit the whole plan/i })).toBeInTheDocument()
     // And the surface itself is reachable from the keyboard.
-    expect(screen.getByRole('group', { name: /drag to move/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('group', { name: /drag the background to move it/i })
+    ).toBeInTheDocument()
+  })
+
+  it('moves a box within its column, and not out of it', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/map')
+
+    const box = (label: RegExp) => screen.getByRole('button', { name: label })
+    const topOf = (label: RegExp) => Number.parseFloat((box(label) as HTMLElement).style.top || '0')
+    const keyB = /^Key B.*key\./i
+    const keyC = /^Key C.*key\./i
+
+    // Two boxes in the keys column, in the order the layout argued for.
+    const before = topOf(keyB)
+    expect(before).toBeLessThan(topOf(keyC))
+    const column = (box(keyB) as HTMLElement).style.left
+
+    // Dragging is the usual way and is no way at all without a pointer.
+    await user.click(box(keyB))
+    await user.keyboard('{Alt>}{ArrowDown}{/Alt}')
+
+    expect(topOf(keyB)).toBeGreaterThan(topOf(keyC))
+    // Down the column it already belonged to. Across that boundary the box
+    // would be claiming to be a different kind of thing.
+    expect((box(keyB) as HTMLElement).style.left).toBe(column)
+
+    // And there is a way back, which only appears once there is something to
+    // go back from.
+    await user.click(screen.getByRole('button', { name: /put the boxes back in order/i }))
+    expect(topOf(keyB)).toBeLessThan(topOf(keyC))
+    expect(
+      screen.queryByRole('button', { name: /put the boxes back in order/i })
+    ).not.toBeInTheDocument()
   })
 
   it('reads a wallet an intruder can spend as the failure, not as good news', async () => {
