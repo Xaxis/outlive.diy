@@ -352,6 +352,32 @@ describe('an empty plan', () => {
   })
 })
 
+describe('the rules it applies', () => {
+  it('opens a category and shows what each rule looks for', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/reasoning')
+
+    // The page promises every rule, behind eight doors that have to look like
+    // doors. Shut to begin with, because sixty four rules is not a page.
+    const loss = await screen.findByRole('button', { name: /remove one thing/i })
+    expect(loss).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByText(/fire, flood, theft and eviction/i)).not.toBeInTheDocument()
+
+    await user.click(loss)
+    expect(loss).toHaveAttribute('aria-expanded', 'true')
+    // What the rule looks for, and why, which is what makes disagreeing with
+    // it a legitimate outcome of reading it.
+    expect(
+      screen.getByText(/one location lost and a wallet becomes unspendable/i)
+    ).toBeInTheDocument()
+    expect(screen.getByText(/fire, flood, theft and eviction/i)).toBeInTheDocument()
+  })
+})
+
 describe('narrowing the findings', () => {
   it('says it is narrowed, and offers the way back', async () => {
     reset()

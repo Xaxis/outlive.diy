@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { ChevronRight } from 'lucide-react'
 import {
   CATEGORY_LABEL,
   CATEGORY_ORDER,
@@ -131,7 +132,17 @@ export function ReasoningView() {
                 aria-expanded={expanded}
                 className="flex w-full items-baseline justify-between gap-3 p-4 text-left"
               >
-                <span>
+                {/* Eight cards with a count on them and nothing to say they
+                    open. The page promises every one of the sixty four rules,
+                    and they were behind eight invisible doors. */}
+                <ChevronRight
+                  className={cn(
+                    'mt-0.5 size-4 flex-none text-faint transition-transform',
+                    expanded && 'rotate-90'
+                  )}
+                  aria-hidden
+                />
+                <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-strong">
                     {CATEGORY_LABEL[category]}
                   </span>
