@@ -59,6 +59,47 @@ failing on any URL that is not same-origin.
 failed requests. If a font or the icon 404s, something is asking for an absolute
 path that only a web server can answer.
 
+## Reading the sentences
+
+The other thing neither suite can tell you: whether a sentence is true of the
+plan it is about. `packages/core/src/self-check.test.ts` sweeps thirty nine plan
+shapes and every pair of them, and everything it can assert is mechanical. That
+the guard does not refuse the program's own prose. That nothing says "1 keys".
+That every rule fires somewhere. None of that notices "1 of the keys in this
+plan were generated on Vendor One hardware", or a spend test telling the owner
+of a single-key wallet not to sign with "the two that happen to be nearest", or
+a runbook asking somebody to unbox a cosigning service.
+
+So build a plan of a shape the three examples do not cover, print every finding,
+every runbook step, every recovery route and every letter, and read all of it as
+the person it is addressed to. A dozen shapes and an hour each, outside the
+checkout, the same way the browser work is done:
+
+```ts
+import {
+  analyze,
+  createContext,
+  buildRunbook,
+  lettersFor,
+  recoveryRoutes,
+} from '/path/to/outlive.diy/packages/core/src/index.ts'
+const report = analyze(plan, { today: '2026-03-01' })
+for (const f of report.findings)
+  console.log(`${f.rule} [${f.severity}] ${f.title}\n  ${f.detail}\n  ${f.remediation}`)
+```
+
+The shapes that have paid for themselves: one signer and one plate, which is
+what most people have; collaborative custody, where one key is somebody else's;
+a cosigning service, which is a device in the model and not an object in the
+world; a decaying multisig with a duress wallet; a split of one seed across
+three places; and a family plan with two heirs on different terms, read as two
+letters side by side.
+
+Every one of those found something, and the defects were all of one kind: a
+sentence written for the common case, correct there and a template leak
+everywhere else. Whatever you fix, add the shape to `shapes.fixture.ts` so the
+sweep reads it from then on, and a test for the sentence itself.
+
 ## Accessibility
 
 Run axe over every view in both themes and expect zero violations. Both themes
