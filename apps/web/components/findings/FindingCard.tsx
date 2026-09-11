@@ -8,18 +8,6 @@ import { navigateTo } from '@/lib/router.ts'
 import { cn } from '@/lib/cn.ts'
 
 /** Where an entity is edited, so a finding can send you to the thing it is about. */
-export const SUBJECT_SECTION: Record<string, string> = {
-  location: 'locations',
-  person: 'people',
-  device: 'devices',
-  key: 'keys',
-  wallet: 'wallets',
-  backup: 'keys',
-  path: 'wallets',
-  verification: 'checks',
-  plan: 'profile',
-}
-
 export function FindingCard({
   finding,
   labelOf,

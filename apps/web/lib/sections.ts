@@ -1,4 +1,4 @@
-import type { Plan } from '@outlive/core'
+import type { EntityType, Plan } from '@outlive/core'
 import type { EntityKind } from './store.ts'
 
 export type Section = 'profile' | 'locations' | 'people' | 'devices' | 'keys' | 'wallets' | 'checks'
@@ -100,3 +100,27 @@ export const SECTIONS: SectionDefinition[] = [
     done: (plan) => plan.verifications.length > 0,
   },
 ]
+
+/**
+ * Which step a thing is edited on.
+ *
+ * There were two of these, written as bare strings: one beside the findings and
+ * one inside the map, both of them mapping a reference to a section name, both
+ * silently wrong the moment a section is renamed. Typed against every kind of
+ * thing a reference can point at, so a new one cannot be added without saying
+ * where it is edited.
+ *
+ * A backup is edited inside the key it belongs to and a spend path inside its
+ * wallet, which is why those two do not have steps of their own.
+ */
+export const SECTION_FOR: Record<EntityType, Section> = {
+  plan: 'profile',
+  location: 'locations',
+  person: 'people',
+  device: 'devices',
+  key: 'keys',
+  backup: 'keys',
+  wallet: 'wallets',
+  path: 'wallets',
+  verification: 'checks',
+}

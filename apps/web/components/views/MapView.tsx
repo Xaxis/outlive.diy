@@ -15,6 +15,7 @@ import { useActivePlan, useStore } from '@/lib/store.ts'
 import { useReport, useScenarioResults } from '@/lib/analysis.ts'
 import { NothingYet } from '@/components/shell/NothingYet.tsx'
 import { navigateTo, useRoute } from '@/lib/router.ts'
+import { SECTION_FOR } from '@/lib/sections.ts'
 
 /**
  * The map, which is now where the diagnosis happens rather than a picture of
@@ -86,20 +87,10 @@ export function MapView() {
   }
 
   const edit = (ref: Ref) => {
-    const section =
-      ref.type === 'location'
-        ? 'locations'
-        : ref.type === 'person'
-          ? 'people'
-          : ref.type === 'device'
-            ? 'devices'
-            : ref.type === 'backup' || ref.type === 'key'
-              ? 'keys'
-              : 'wallets'
     // A backup and a path are edited inside the thing that owns them, so the
     // selection has to point at an owner rather than at the part.
     if (ref.type !== 'backup' && ref.type !== 'path') select(ref)
-    navigateTo('design', section)
+    navigateTo('design', SECTION_FOR[ref.type])
   }
 
   return (

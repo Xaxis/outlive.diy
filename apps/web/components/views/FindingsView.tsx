@@ -15,10 +15,11 @@ import { MEASURE, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { PrintHeader } from '@/components/shell/PrintHeader.tsx'
 import { SeverityBar } from '@/components/ui/Severity.tsx'
-import { FindingCard, SUBJECT_SECTION } from '@/components/findings/FindingCard.tsx'
+import { FindingCard } from '@/components/findings/FindingCard.tsx'
 import { useActivePlan, useStore } from '@/lib/store.ts'
 import { useReport } from '@/lib/analysis.ts'
 import { useRoute } from '@/lib/router.ts'
+import { SECTION_FOR } from '@/lib/sections.ts'
 import { planIsStarted } from '@/lib/describe.ts'
 import { NothingYet } from '@/components/shell/NothingYet.tsx'
 import { cn } from '@/lib/cn.ts'
@@ -59,7 +60,7 @@ export function FindingsView() {
 
   const openSubject = (ref: Ref) => {
     select(ref)
-    navigate({ view: 'design', section: SUBJECT_SECTION[ref.type] ?? 'profile' })
+    navigate({ view: 'design', section: SECTION_FOR[ref.type] })
   }
 
   const visible = report.findings.filter(
