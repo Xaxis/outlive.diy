@@ -5,7 +5,8 @@ import { RULES } from './analysis/findings.ts'
 import { buildRunbook } from './documents/runbook.ts'
 import { recoveryRoutes } from './documents/recovery.ts'
 import { lettersFor } from './documents/successor-letter.ts'
-import { EXAMPLES, exampleById } from './model/examples.ts'
+import { EXAMPLES } from './model/examples.ts'
+import { shapePairs, shapes } from './shapes.fixture.ts'
 import { inspect } from './guard/guard.ts'
 import { parsePlanFile, referentialProblems } from './model/schema.ts'
 import { SCHEMA_VERSION, type Plan } from './model/types.ts'
@@ -22,404 +23,6 @@ function strings(value: unknown, out: string[] = []): string[] {
   else if (value && typeof value === 'object')
     for (const entry of Object.values(value)) strings(entry, out)
   return out
-}
-
-/**
- * Plan shapes the worked examples do not contain.
- *
- * The three examples exercise twenty six of the sixty five rules, so for the
- * other thirty nine nothing had ever read the sentence they produce. Two of
- * those sentences turned out to be refused by this program's own guard, which
- * is the one thing the checks below exist to make impossible, and three
- * disagreed with their own numbers.
- *
- * Between these and the examples every rule fires at least once, which is what
- * `every rule has had its sentence read` asserts. Each mutation is the smallest
- * change that makes a family of rules speak, and several exist only because a
- * rule declined to fire for a reason worth knowing: R004 skips anybody who
- * could already spend, so its shape needs a passphrase to be the thing
- * stopping them, and L005 only speaks when the group is worse than its
- * members, so its shape needs the descriptor kept outside the group.
- */
-function shapes(): [string, Plan][] {
-  const mutations: [string, (plan: Plan) => void][] = [
-    [
-      'memorised passphrases',
-      (p) => {
-        p.keys.forEach((k) => {
-          k.passphrase = {
-            enabled: true,
-            storage: 'memorized',
-            locationIds: [],
-            splitThreshold: null,
-            knownBy: [],
-          }
-        })
-      },
-    ],
-    [
-      'passphrase beside the seed',
-      (p) => {
-        p.keys.forEach((k) => {
-          k.passphrase = {
-            enabled: true,
-            storage: 'written',
-            locationIds: ['loc_home'],
-            splitThreshold: null,
-            knownBy: [],
-          }
-        })
-      },
-    ],
-    [
-      'key with nothing',
-      (p) => {
-        p.keys[0].deviceId = null
-        p.keys[0].backups = []
-      },
-    ],
-    [
-      'one place',
-      (p) => {
-        p.locations = [p.locations[0]]
-      },
-    ],
-    [
-      'nobody',
-      (p) => {
-        p.people = []
-        p.locations.forEach((l) => {
-          l.access = []
-          l.custodianId = null
-        })
-      },
-    ],
-    [
-      'every concern',
-      (p) => {
-        p.profile.concerns = [
-          'loss',
-          'theft',
-          'fire-flood',
-          'death',
-          'incapacity',
-          'coercion',
-          'insider',
-          'supply-chain',
-          'legal-seizure',
-        ]
-      },
-    ],
-    [
-      'paper century',
-      (p) => {
-        p.profile.horizonYears = 100
-        p.keys.forEach((k) =>
-          k.backups.forEach((b) => {
-            b.medium = 'paper'
-          })
-        )
-      },
-    ],
-    [
-      'plain digital',
-      (p) => {
-        p.keys.forEach((k) =>
-          k.backups.forEach((b) => {
-            b.medium = 'plain-digital'
-          })
-        )
-      },
-    ],
-    [
-      'no pin',
-      (p) => {
-        p.devices.forEach((d) => {
-          d.pin = { storage: 'none', locationId: null, knownBy: [] }
-        })
-      },
-    ],
-    [
-      'pin beside device',
-      (p) => {
-        p.devices.forEach((d) => {
-          d.pin = { storage: 'written', locationId: 'loc_home', knownBy: [] }
-        })
-      },
-    ],
-    [
-      'on person',
-      (p) => {
-        p.locations[0].kind = 'on-person'
-      },
-    ],
-    [
-      'service cosigner',
-      (p) => {
-        p.devices[0].kind = 'service-cosigner'
-      },
-    ],
-    [
-      'timelock only',
-      (p) => {
-        p.wallets[0].paths = [{ ...p.wallets[0].paths[0], timelockDays: 365 }]
-      },
-    ],
-    [
-      'orphan key',
-      (p) => {
-        p.wallets.forEach((w) =>
-          w.paths.forEach((path) => {
-            path.keyIds = path.keyIds.filter((k) => k !== 'key_c')
-          })
-        )
-      },
-    ],
-    [
-      'two on one device',
-      (p) => {
-        p.keys[1].deviceId = p.keys[0].deviceId
-      },
-    ],
-    [
-      'no way to spend',
-      (p) => {
-        p.wallets[0].paths = []
-      },
-    ],
-    [
-      'threshold above the keys',
-      (p) => {
-        p.wallets[0].paths[0].threshold = 9
-      },
-    ],
-    [
-      'a path with no keys',
-      (p) => {
-        p.wallets[0].paths[0].keyIds = []
-      },
-    ],
-    [
-      'no written backup',
-      (p) => {
-        p.keys.forEach((k) => {
-          k.backups = []
-        })
-      },
-    ],
-    [
-      'nothing has a place',
-      (p) => {
-        p.keys.forEach((k) => {
-          k.deviceLocationId = null
-          k.backups.forEach((b) => {
-            b.locationId = null
-          })
-        })
-      },
-    ],
-    [
-      'no configuration backup',
-      (p) => {
-        p.wallets.forEach((w) => {
-          w.configBackups = []
-        })
-      },
-    ],
-    [
-      'split short of its threshold',
-      (p) => {
-        p.keys[0].backups[0].split = { groupId: 'g1', threshold: 5 }
-      },
-    ],
-    [
-      'a hot wallet holding most of it',
-      (p) => {
-        p.wallets[0].tier = 'hot'
-        p.wallets[0].stake = 'large'
-      },
-    ],
-    [
-      'a co-signer with no key',
-      (p) => {
-        p.people.push({
-          id: 'per_co',
-          label: 'Co-signer 1',
-          role: 'cosigner',
-          availability: 'days',
-          technicalSkill: 'competent',
-          knowsPlanExists: true,
-          knowsWhereInstructionsAre: true,
-          notes: '',
-        })
-      },
-    ],
-    [
-      'a place with no disaster group',
-      (p) => {
-        p.locations.forEach((l) => {
-          l.disasterGroup = null
-        })
-      },
-    ],
-    [
-      'one backup is the whole margin',
-      (p) => {
-        p.keys.forEach((k, i) => {
-          if (i > 0) {
-            k.deviceId = null
-          }
-        })
-      },
-    ],
-    [
-      'everything in one disaster group',
-      (p) => {
-        p.locations.forEach((l) => {
-          l.disasterGroup = 'Home city'
-        })
-      },
-    ],
-    [
-      'a tolerance of nothing',
-      (p) => {
-        p.profile.recoveryToleranceDays = 0
-        p.locations.forEach((l) => {
-          l.travelMinutes = 600
-        })
-      },
-    ],
-    [
-      'one person can open everything',
-      (p) => {
-        p.locations.forEach((l) => {
-          l.access = [{ personId: 'per_successor', condition: 'always', delayDays: 0 }]
-        })
-      },
-    ],
-    [
-      'one architecture',
-      (p) => {
-        p.devices.forEach((d) => {
-          d.architecture = 'One silicon'
-        })
-      },
-    ],
-    [
-      'one supply route',
-      (p) => {
-        p.devices.forEach((d) => {
-          d.supplyChain = 'second-hand'
-        })
-      },
-    ],
-    [
-      'a successor who was never told',
-      (p) => {
-        p.people.forEach((x) => {
-          x.knowsPlanExists = false
-          x.knowsWhereInstructionsAre = false
-        })
-      },
-    ],
-    [
-      'losing one backup ends it',
-      (p) => {
-        p.keys.forEach((k) => {
-          k.deviceId = null
-          k.deviceLocationId = null
-        })
-        p.wallets[0].paths[0].threshold = 3
-      },
-    ],
-    [
-      'a quorum in one disaster group',
-      (p) => {
-        p.locations[0].disasterGroup = 'Home city'
-        p.locations[1].disasterGroup = 'Home city'
-        p.locations[2].disasterGroup = 'Coast'
-        p.keys.forEach((k, i) => {
-          k.deviceLocationId = p.locations[i].id
-          k.backups.forEach((b) => {
-            b.locationId = p.locations[i].id
-          })
-        })
-        // The descriptor outside the group, or losing the group's first site takes
-        // the wallet on its own and the group says nothing extra.
-        p.wallets.forEach((w) => {
-          w.configBackups.forEach((c) => {
-            c.locationId = p.locations[2].id
-          })
-        })
-      },
-    ],
-    [
-      'a co-signer who can open enough',
-      (p) => {
-        p.people.push({
-          id: 'per_helper',
-          label: 'Co-signer 1',
-          role: 'cosigner',
-          availability: 'days',
-          technicalSkill: 'competent',
-          knowsPlanExists: true,
-          knowsWhereInstructionsAre: true,
-          notes: '',
-        })
-        p.locations.forEach((l) => {
-          l.access = [{ personId: 'per_helper', condition: 'always', delayDays: 0 }]
-        })
-      },
-    ],
-    [
-      'a co-signer who can reach the backups but not spend',
-      (p) => {
-        p.people.push({
-          id: 'per_helper',
-          label: 'Co-signer 1',
-          role: 'cosigner',
-          availability: 'days',
-          technicalSkill: 'competent',
-          knowsPlanExists: true,
-          knowsWhereInstructionsAre: true,
-          notes: '',
-        })
-        p.locations.forEach((l) => {
-          l.access = [{ personId: 'per_helper', condition: 'always', delayDays: 0 }]
-        })
-        // A passphrase they do not have is the something else stopping them.
-        p.keys.forEach((k) => {
-          k.passphrase = {
-            enabled: true,
-            storage: 'memorized',
-            locationIds: [],
-            splitThreshold: null,
-            knownBy: [],
-          }
-        })
-      },
-    ],
-    [
-      'material that travels',
-      (p) => {
-        p.profile.travelsFrequently = true
-        p.locations[0].kind = 'on-person'
-      },
-    ],
-    [
-      'a successor nobody has confirmed',
-      (p) => {
-        p.people.forEach((x) => {
-          x.availability = 'unknown'
-        })
-      },
-    ],
-  ]
-  return mutations.map(([name, mutate]) => {
-    const plan = structuredClone(exampleById('two-of-three')!)
-    mutate(plan)
-    return [name, plan]
-  })
 }
 
 /** Every sentence one plan makes this program write. */
@@ -485,6 +88,28 @@ describe('the program obeys its own guard', () => {
       }
     })
   }
+
+  /**
+   * And every pair of them, in one pass rather than seven hundred cases.
+   *
+   * Nothing goes wrong one thing at a time. A sentence that only exists when
+   * two conditions hold is a sentence nothing had read, and this is insurance
+   * against the class of defect that found five of them one at a time.
+   */
+  it('every finding for every pair of those shapes passes too', () => {
+    for (const [name, plan] of shapePairs()) {
+      // The findings only, and not the three documents. Seven hundred plans
+      // through the scenario enumeration is thirty seconds; the findings are
+      // where sixty five rules interact, and the documents are covered one
+      // shape at a time above.
+      for (const text of strings(analyze(plan, { today: '2026-03-01' }).findings)) {
+        const refusals = inspect(text).hits.filter((hit) => hit.strength === 'refuse')
+        expect(refusals, `${name}: ${text}`).toEqual([])
+        expect(plural.test(text) ? text : null, name).toBeNull()
+        expect(singular.test(text) ? text : null, name).toBeNull()
+      }
+    }
+  })
 
   /**
    * Every rule has had its sentence read by something.

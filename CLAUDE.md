@@ -179,13 +179,16 @@ timelocked path as "the only route to the balance", which is exactly what S020
 warns against. The examples exercise 26 of the 65 rules, so most remediations
 had never been read beside each other.
 
-**Every rule has to have had its sentence read.** `self-check.test.ts` keeps a
-list of plan shapes, each the smallest mutation that makes a family of rules
-speak, and asserts that between them and the examples every rule fires. Every
-sentence they produce goes through the guard and through a pluralisation check.
-That found five sentences this program's own guard refused and three that
-disagreed with their own number, all of them in rules no example exercises. Add
-a rule, add a shape: the assertion will tell you.
+**Every rule has to have had its sentence read.** `shapes.fixture.ts` keeps the
+plan shapes, each the smallest mutation that makes a family of rules speak, and
+`self-check.test.ts` asserts that between them and the examples every rule
+fires. Every sentence they produce goes through the guard and through a
+pluralisation check, one shape at a time and then in all seven hundred pairs,
+because nothing goes wrong one thing at a time. That found five sentences this
+program's own guard refused and three that disagreed with their own number, all
+in rules no example exercises. Add a rule, add a shape: the assertion will tell
+you. A mutation must be a no-op when the thing it changes is absent, or the
+pairs cannot compose.
 
 **Findings never carry a score.** No grade, no percentage, no progress bar to
 secure. A number is read as a target and gets optimised. What the user's stated
