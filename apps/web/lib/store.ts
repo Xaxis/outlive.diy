@@ -497,7 +497,8 @@ export const useStore = create<StoreState>()(
 
       // A file carrying secrets is refused at the door rather than loaded and
       // then quietly written back to local storage.
-      const hits = inspectDeep(parsed).filter((hit) => hit.strength === 'refuse')
+      const found = inspectDeep(parsed)
+      const hits = found.filter((hit) => hit.strength === 'refuse')
       if (hits.length > 0) {
         get().notify({
           tone: 'error',
@@ -526,11 +527,27 @@ export const useStore = create<StoreState>()(
         state.dirty = false
       })
       persist(get())
-      get().notify({
-        tone: 'ok',
-        message: `Opened ${result.value.plans.length === 1 ? 'the plan' : `${result.value.plans.length} plans`}`,
-        detail: `Saved ${result.value.savedAt} by ${result.value.generator}.`,
-      })
+      // A warning is not a reason to refuse a file, and it is a reason to say
+      // something. A plan that has been edited by hand, written by an older
+      // build, or handed over by somebody else is exactly where an address or
+      // a real name accumulates, and "Opened the plan" is the moment the
+      // reader is looking.
+      const warnings = found.filter((hit) => hit.strength === 'warn')
+      get().notify(
+        warnings.length > 0
+          ? {
+              tone: 'warn',
+              message: `Opened, with ${warnings.length === 1 ? 'something' : `${warnings.length} things`} worth looking at`,
+              detail: `${warnings[0].field}: ${warnings[0].reason} ${
+                warnings.length > 1 ? `And ${warnings.length - 1} more like it. ` : ''
+              }Nothing was refused, so it is all in the file as it stands.`,
+            }
+          : {
+              tone: 'ok',
+              message: `Opened ${result.value.plans.length === 1 ? 'the plan' : `${result.value.plans.length} plans`}`,
+              detail: `Saved ${result.value.savedAt} by ${result.value.generator}.`,
+            }
+      )
     },
 
     save: async () => {

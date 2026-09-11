@@ -450,6 +450,34 @@ describe('vendor data', () => {
     expect(screen.getByText(/not conclusions this program reached/i)).toBeInTheDocument()
   })
 
+  it('says what a file it accepted contains', async () => {
+    reset()
+    render(<App />)
+    const plan = exampleById('one-signer')!
+    // A plan somebody wrote by hand, or an older build wrote, with a real
+    // address in a note. Nothing here is refused, so it loads, and the moment
+    // it loads is the only moment the reader is looking at this file.
+    plan.locations[0] = { ...plan.locations[0], notes: 'The safe at 42 Oakfield Road' }
+    act(() => {
+      useStore.getState().importFile(
+        JSON.stringify({
+          schemaVersion: 1,
+          generator: 'a hand',
+          savedAt: '2026-03-01',
+          plans: [plan],
+          activePlanId: plan.id,
+        })
+      )
+    })
+    const toast = useStore.getState().toast!
+    expect(toast.tone).toBe('warn')
+    expect(toast.message).toMatch(/worth looking at/i)
+    expect(toast.detail).toMatch(/street address/i)
+    expect(toast.detail).toMatch(/all in the file as it stands/i)
+    // And on screen, not only in the store.
+    expect(await screen.findByText(/worth looking at/i)).toBeInTheDocument()
+  })
+
   it('refuses a file it cannot read rather than half-loading it', async () => {
     reset()
     const user = userEvent.setup()
