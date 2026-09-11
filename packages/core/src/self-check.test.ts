@@ -96,7 +96,11 @@ describe('the program obeys its own guard', () => {
    * two conditions hold is a sentence nothing had read, and this is insurance
    * against the class of defect that found five of them one at a time.
    */
-  it('every finding for every pair of those shapes passes too', () => {
+  // The default five seconds is roughly what this sweep costs, so it was a
+  // test that failed on a slow machine and passed on a fast one. A flaky check
+  // in this position is worse than a slow one: the thing it guards is prose
+  // nobody reads by any other route.
+  it('every finding for every pair of those shapes passes too', { timeout: 30_000 }, () => {
     for (const [name, plan] of shapePairs()) {
       // The findings only, and not the three documents. Seven hundred plans
       // through the scenario enumeration is thirty seconds; the findings are

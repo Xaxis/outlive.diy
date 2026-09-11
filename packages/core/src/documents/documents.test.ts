@@ -44,6 +44,27 @@ describe('the build runbook', () => {
   })
 })
 
+it('does not tell a single-key wallet which keys to choose between', () => {
+  const one = plan()
+  one.wallets = [one.wallets.find((wallet) => wallet.paths[0].threshold === 1)!]
+  const spend = buildRunbook(one).steps.find((step) => step.id.startsWith('verify-spend-'))!
+  expect(spend.detail).not.toMatch(/nearest/)
+  expect(spend.detail).toContain('nothing to choose between')
+  // No dangling space from a conditional clause that did not fire. It is a
+  // printed document.
+  expect(spend.detail).toBe(spend.detail.trim())
+})
+
+it('gives every configuration copy it asks for somewhere to go', () => {
+  const book = buildRunbook(plan())
+  const config = book.steps.find((step) => step.id.startsWith('config-'))!
+  const asked = Number(config.title.match(/copy it (\d+) times/)![1])
+  expect(asked).toBe(2)
+  // The example records one place. Asking for two copies and naming one home
+  // leaves the second wherever the reader was standing.
+  expect(config.detail).toContain('does not say where the other goes')
+})
+
 describe('recovery routes', () => {
   it('exist for every location, both lost and opened', () => {
     const routes = recoveryRoutes(createContext(plan(), { today: TODAY }))

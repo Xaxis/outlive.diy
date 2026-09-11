@@ -123,7 +123,9 @@ export function buildRunbook(plan: Plan): Runbook {
         'backup-media',
         'prepare',
         'Get the backup media, one blank per backup in the plan',
-        `The plan calls for ${count} ${count === 1 ? 'backup' : 'backups'} across ${[...media].join(', ')}. Have every blank in hand before you generate anything, so that no key exists for a week with nowhere to be written.`
+        `The plan calls for ${count} ${count === 1 ? 'backup' : 'backups'} ${
+          media.size === 1 ? `on ${[...media][0]}` : `across ${[...media].join(', ')}`
+        }. Have every blank in hand before you generate anything, so that no key exists for a week with nowhere to be written.`
       )
     )
   }
@@ -261,9 +263,15 @@ export function buildRunbook(plan: Plan): Runbook {
           'assemble',
           `Export ${wallet.label}'s configuration and copy it ${Math.max(2, wallet.configBackups.length)} times`,
           `The descriptor holds the participant public keys, the derivation paths and the policy. It contains no secret, so it can be stored more widely than a seed, and it must be: without it the seeds restore nothing.${
-            wallet.configBackups.length
+            // The title asks for at least two copies whatever the plan says.
+            // Naming only the places the plan records then tells the reader to
+            // make two and gives them one home, and the copy with no home is
+            // the one that stays wherever they were standing.
+            wallet.configBackups.length >= 2
               ? ` Copies go to ${wallet.configBackups.map((backup) => place(backup.locationId)).join(', ')}.`
-              : ' The plan does not yet say where the copies go.'
+              : wallet.configBackups.length === 1
+                ? ` One copy goes to ${place(wallet.configBackups[0].locationId)}. The plan does not say where the other goes: decide that now and record it.`
+                : ' The plan does not yet say where the copies go.'
           }`,
           { subjects: [{ type: 'wallet', id: wallet.id }] }
         )
@@ -306,11 +314,22 @@ export function buildRunbook(plan: Plan): Runbook {
         `verify-spend-${wallet.id}`,
         'verify',
         `Send a small amount out of ${wallet.label}`,
-        `Sign with the keys you would actually use in a recovery, not the two that happen to be nearest. ${
+        // "Not the two that happen to be nearest" is advice for a 2-of-n, and
+        // this step runs for every wallet: on a single-key wallet there is
+        // nothing to choose between, and the sentence reads as a template.
+        [
+          Math.max(
+            ...wallet.paths.filter((path) => path.timelockDays === 0).map((path) => path.threshold),
+            1
+          ) > 1
+            ? 'Sign with the keys you would actually use in a recovery, not the ones that happen to be nearest.'
+            : 'Sign from the device, and confirm the destination on its own screen rather than on the computer. With one key there is nothing to choose between, so what this proves is that the device still signs and that you can still drive it.',
           wallet.paths.some((path) => path.timelockDays > 0)
             ? 'Test the timelocked path separately, on a testnet or with an amount you can leave locked.'
-            : ''
-        }`,
+            : null,
+        ]
+          .filter(Boolean)
+          .join(' '),
         { gate: true, subjects: [{ type: 'wallet', id: wallet.id }] }
       )
     )
