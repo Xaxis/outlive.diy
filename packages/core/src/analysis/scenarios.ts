@@ -50,6 +50,19 @@ export interface Scenario {
   question: string
   perspective: Perspective
   world: World
+  /**
+   * The reader's world once this has happened, when that is not the world the
+   * scenario asks its question in.
+   *
+   * An adversary scenario asks "can they spend", and every answer it gives is
+   * about them. A recovery route asks "what can you still do", which is a
+   * different actor inside the same event, and reading one off the other
+   * inverts every word: the wallets the attacker cannot touch come out
+   * labelled lost, and the reasons the reader is safe come out as the reasons
+   * there is no route. Same rule as the diagram's colours, and the same one as
+   * World.unknownPlacementReachable.
+   */
+  aftermath?: World
   subjects: Ref[]
 }
 
@@ -223,6 +236,14 @@ export function locationCompromisedScenario(ctx: AnalysisContext, locationId: Id
       cooperating: [],
       elapsedDays: 0,
     }),
+    // Whatever was in there is in somebody else's hands, so you plan without
+    // it. That is the same world as losing the place, which is the
+    // conservative reading and the only safe one: a container you can still
+    // open is a container they can open again.
+    aftermath: {
+      ...without(ctx.base, { locations: [locationId] }),
+      label: `Without ${location?.label ?? 'that place'}`,
+    },
     subjects: [{ type: 'location', id: locationId }],
   }
 }
@@ -248,6 +269,12 @@ export function personCompromisedScenario(ctx: AnalysisContext, personId: Id): S
       cooperating: [personId],
       elapsedDays: 0,
     }),
+    // Your own reach does not shrink because somebody turned. What you lose is
+    // them, and anything only they could open.
+    aftermath: {
+      ...without(ctx.base, { people: [personId], locations: locationsHeldBy(ctx.plan, personId) }),
+      label: `Without ${person?.label ?? 'that person'}`,
+    },
     subjects: [{ type: 'person', id: personId }],
   }
 }
@@ -282,6 +309,9 @@ export function coercionScenario(ctx: AnalysisContext, budgetMinutes?: number): 
       cooperating: [],
       elapsedDays: 0,
     }),
+    // Everything inside the session was handed over, so afterwards you are
+    // working from what was not.
+    aftermath: { ...without(ctx.base, { locations: reachable }), label: `Beyond ${hours}h` },
     subjects: [{ type: 'plan', id: ctx.plan.id }],
   }
 }

@@ -78,6 +78,55 @@ describe('recovery routes', () => {
     const opened = routes.find((entry) => entry.scenarioId === 'location-compromised:loc_home')
     expect(opened?.steps.some((step) => step.title.startsWith('Move the balance now'))).toBe(true)
   })
+
+  // A route answers "what can you still do". The compromise and coercion
+  // scenarios ask "can they spend", and reading the route off that answer
+  // inverts the whole document: the places whose burglary the plan survives
+  // come out as total losses, and the ones that end it come out recoverable.
+  it("answer the reader's question after a burglary, not the intruder's", () => {
+    const routes = recoveryRoutes(createContext(repaired(), { today: TODAY }))
+    for (const location of repaired().locations) {
+      const opened = routes.find(
+        (entry) => entry.scenarioId === `location-compromised:${location.id}`
+      )!
+      const gone = routes.find((entry) => entry.scenarioId === `location-lost:${location.id}`)!
+      // Somebody else having a copy is at least as bad as the copy burning, and
+      // the plan is the same plan either way.
+      expect(opened.possible).toBe(gone.possible)
+      expect(opened.walletIds).toEqual(gone.walletIds)
+      expect(opened.blockers).toEqual(gone.blockers)
+    }
+  })
+
+  it('say in the situation what the intruder can spend', () => {
+    const ctx = createContext(repaired(), { today: TODAY })
+    const routes = recoveryRoutes(ctx)
+    const exposing = routes.find(
+      (entry) =>
+        entry.scenarioId.startsWith('location-compromised:') && entry.exposedWalletIds.length > 0
+    )
+    const safe = routes.find(
+      (entry) =>
+        entry.scenarioId.startsWith('location-compromised:') && entry.exposedWalletIds.length === 0
+    )
+    // Whether anything is moving is the difference between this route and the
+    // one for the same place burning down, and it belongs in the sentence the
+    // reader reads first.
+    expect(exposing?.situation).toMatch(/can be spent with what they have/)
+    expect(safe?.situation).toMatch(/Nothing in this plan can be spent with what they have/)
+  })
+
+  it('does not claim a route survives a session that reached everything', () => {
+    const all = repaired()
+    // Every location within the coercion budget, so the session reaches the
+    // whole plan and there is nothing left afterwards.
+    all.locations = all.locations.map((location) => ({ ...location, travelMinutes: 5 }))
+    const coerced = recoveryRoutes(createContext(all, { today: TODAY })).find((entry) =>
+      entry.scenarioId.startsWith('coercion:')
+    )!
+    expect(coerced.exposedWalletIds.length).toBeGreaterThan(0)
+    expect(coerced.possible).toBe(false)
+  })
 })
 
 describe('the successor letter', () => {

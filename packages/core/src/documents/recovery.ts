@@ -47,6 +47,12 @@ export interface RecoveryRoute {
   possible: boolean
   walletIds: Id[]
   lostWalletIds: Id[]
+  /**
+   * Wallets somebody else can spend in this scenario. Empty unless the event
+   * is somebody else getting hold of something, and the reason this route is
+   * urgent rather than merely inconvenient.
+   */
+  exposedWalletIds: Id[]
   steps: RecoveryStep[]
   /** Why it cannot be done, when it cannot. */
   blockers: string[]
@@ -58,6 +64,12 @@ export interface RecoveryRoute {
    * start.
    */
   timing: RecoveryTiming | null
+}
+
+function names(items: readonly string[]): string {
+  if (items.length === 0) return 'nothing'
+  if (items.length === 1) return items[0]
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
 }
 
 function travelOrder(plan: Plan, locationIds: Id[]): Id[] {
@@ -125,12 +137,19 @@ function buildRoute(
   after: string
 ): RecoveryRoute {
   const { plan } = ctx
+  // The route is what the reader can still do. For an adversary scenario that
+  // is not the world the scenario asks its question in: asking "can they
+  // spend" and printing the answer as a recovery route labels the wallets the
+  // attacker cannot touch as lost, hands the reader a procedure for the
+  // wallets that are gone, and prints the reasons they are safe as the
+  // reasons there is no route.
+  const world = scenario.aftermath ?? scenario.world
   const survivors: Id[] = []
   const lost: Id[] = []
   const blockers = new Set<string>()
 
   for (const wallet of plan.wallets) {
-    const availability = evaluateWallet(plan, wallet, scenario.world)
+    const availability = evaluateWallet(plan, wallet, world)
     if (availability.spendable) survivors.push(wallet.id)
     else {
       lost.push(wallet.id)
@@ -138,12 +157,34 @@ function buildRoute(
     }
   }
 
+  // What the other party can spend, which is the clock on the whole route.
+  const exposed =
+    scenario.perspective === 'adversary'
+      ? plan.wallets
+          .filter((wallet) => evaluateWallet(plan, wallet, scenario.world).spendable)
+          .map((wallet) => wallet.id)
+      : []
+
+  // Whether anything is actually moving changes what the first hour is for,
+  // and the reader cannot tell from the outside. Said as a fact rather than an
+  // instruction, because the instruction is different for a burglary and for a
+  // session that has already happened.
+  const exposedLabels = exposed.map(
+    (id) => plan.wallets.find((wallet) => wallet.id === id)?.label ?? id
+  )
+  const clock =
+    scenario.perspective !== 'adversary'
+      ? ''
+      : exposedLabels.length > 0
+        ? ` ${names(exposedLabels)} can be spent with what they have.`
+        : ' Nothing in this plan can be spent with what they have.'
+
   const steps: RecoveryStep[] = []
-  const config = configStep(plan, survivors, scenario.world)
+  const config = configStep(plan, survivors, world)
   if (config) steps.push(config)
 
   const places = travelOrder(plan, [
-    ...new Set(survivors.flatMap((walletId) => locationsNeeded(plan, walletId, scenario.world))),
+    ...new Set(survivors.flatMap((walletId) => locationsNeeded(plan, walletId, world))),
   ])
   for (const locationId of places) {
     const location = plan.locations.find((entry) => entry.id === locationId)
@@ -190,11 +231,12 @@ function buildRoute(
   return {
     scenarioId: scenario.id,
     title: scenario.label,
-    situation,
+    situation: `${situation}${clock}`,
     firstMove,
     possible: survivors.length > 0,
     walletIds: survivors,
     lostWalletIds: lost,
+    exposedWalletIds: exposed,
     steps,
     blockers: [...blockers],
     // The slowest survivor, because a route is finished when the last thing on
@@ -204,7 +246,7 @@ function buildRoute(
         recoveryTiming(
           plan,
           plan.wallets.find((wallet) => wallet.id === walletId)!,
-          scenario.world
+          world
         )
       )
       .reduce<RecoveryTiming | null>(
