@@ -45,16 +45,21 @@ verifications, described by role and by shape.
 - WIF private keys, mainnet and testnet
 - bech32 addresses
 - output descriptors
-- hexadecimal strings of 64 characters or more
+- hexadecimal strings of 32 characters or more, which is the entropy behind a
+  twelve word seed and not only the twenty four word one
 - PEM private key blocks
 
 It warns, without blocking, about email addresses, phone numbers, street
 addresses, coordinates, URLs and derivation paths. Those are not key material,
 but they are the kind of personal detail this model is designed not to hold.
+The warnings are shown beside the field, because a note that is computed and
+never displayed is not a note.
 
 A plan file is inspected the same way at the moment it is opened, so a file
 carrying key material is refused at the door rather than loaded and silently
-written back to local storage.
+written back to local storage. A file carrying personal detail is opened, and
+what was in it is said then, which is the only moment the reader is looking at
+that file.
 
 ## What it does not protect against
 
