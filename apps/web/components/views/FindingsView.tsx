@@ -108,37 +108,63 @@ export function FindingsView() {
         <NothingYet what="the silence below means nothing." />
       ) : (
         <>
-          <div className="mb-5 space-y-3">
+          {/* Two rows of counts that were also the controls, and looked
+              exactly like the counts on the overview that are not. The label
+              says which of the two this is; on paper it goes and the severity
+              row is left as the summary it reads as there. */}
+          <div className="mb-5">
+            <p className="eyebrow mb-1.5 no-print">Narrow the list</p>
             <SeverityBar counts={report.counts} onSelect={setSeverity} selected={severity} />
             {presentCategories.length > 1 ? (
-              <div className="flex flex-wrap gap-1.5 no-print">
-                {presentCategories.map((entry) => (
-                  <button
-                    key={entry}
-                    type="button"
-                    onClick={() => setCategory(category === entry ? null : entry)}
-                    title={CATEGORY_QUESTION[entry]}
-                    className={cn(
-                      'chip transition-colors',
-                      category === entry
-                        ? 'border-accent/60 bg-accent/10 text-strong'
-                        : 'hover:border-line-strong hover:text-body'
-                    )}
-                  >
-                    {CATEGORY_LABEL[entry]}
-                    <span className="mono text-faint">
-                      {report.findings.filter((finding) => finding.category === entry).length}
-                    </span>
-                  </button>
-                ))}
+              <div className="mt-2 flex flex-wrap gap-1.5 no-print">
+                {presentCategories.map((entry) => {
+                  const on = category === entry
+                  return (
+                    <button
+                      key={entry}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => setCategory(on ? null : entry)}
+                      title={CATEGORY_QUESTION[entry]}
+                      className={cn(
+                        'chip transition-colors',
+                        on
+                          ? 'border-accent/60 bg-accent/10 text-strong'
+                          : 'hover:border-line-strong hover:text-body'
+                      )}
+                    >
+                      {CATEGORY_LABEL[entry]}
+                      <span className={cn('mono', on ? 'text-muted' : 'text-faint')}>
+                        {report.findings.filter((finding) => finding.category === entry).length}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
             ) : null}
           </div>
 
-          {category ? (
-            <p className="mb-4 border-l-2 border-accent/50 pl-3 text-sm italic text-muted">
-              {CATEGORY_QUESTION[category]}
-            </p>
+          {/* A filtered list that does not say it is filtered is a list that
+              has quietly stopped being the whole list. */}
+          {severity || category ? (
+            <div className="mb-4 border-l-2 border-accent/50 pl-3 no-print">
+              {category ? (
+                <p className="text-sm italic text-muted">{CATEGORY_QUESTION[category]}</p>
+              ) : null}
+              <p className="mt-0.5 text-xs text-muted">
+                Showing {visible.length} of {report.findings.length}.{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSeverity(null)
+                    setCategory(null)
+                  }}
+                  className="link"
+                >
+                  Show all of them
+                </button>
+              </p>
+            </div>
           ) : null}
 
           {visible.length === 0 ? (

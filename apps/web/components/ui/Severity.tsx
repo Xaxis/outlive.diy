@@ -48,23 +48,42 @@ export function SeverityBar({
         const count = counts[severity]
         if (count === 0) return null
         const active = selected === severity
-        return (
-          <button
-            key={severity}
-            type="button"
-            data-sev={severity}
-            onClick={() => onSelect?.(active ? null : severity)}
-            className={cn(
-              'chip sev-tint transition-opacity',
-              onSelect ? 'cursor-pointer' : 'cursor-default',
-              selected && !active && 'opacity-40'
-            )}
-          >
+        const body = (
+          <>
             <span className="sev-dot" aria-hidden />
             <span className="sev-text font-semibold">{count}</span>
             {/* Body rather than muted: this sits on a tinted ground, where the
                 dimmer step no longer clears 4.5:1. */}
             <span className="text-body">{SEVERITY_LABEL[severity].toLowerCase()}</span>
+          </>
+        )
+        // The same row is the filter on the findings page and the count on the
+        // overview. A count is not a control, so where there is nothing to
+        // press it is not a button: a disabled one would be announced as
+        // unavailable, which is a different and wrong claim.
+        if (!onSelect) {
+          return (
+            <span key={severity} data-sev={severity} className="chip sev-tint">
+              {body}
+            </span>
+          )
+        }
+        return (
+          <button
+            key={severity}
+            type="button"
+            data-sev={severity}
+            aria-pressed={active}
+            onClick={() => onSelect(active ? null : severity)}
+            // Marked rather than dimmed. Fading the other four to two fifths
+            // showed which one was on by making the rest unreadable, and the
+            // line under the row says a filter is on in words anyway.
+            className={cn(
+              'chip sev-tint cursor-pointer transition-shadow',
+              active && 'ring-1 ring-accent'
+            )}
+          >
+            {body}
           </button>
         )
       })}

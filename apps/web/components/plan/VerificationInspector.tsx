@@ -8,7 +8,7 @@ import {
   type Verification,
   type VerificationKind,
 } from '@outlive/core'
-import { Field, GuardedInput, NumberInput, Select, useFieldLabel } from '@/components/ui/Field.tsx'
+import { Field, GuardedInput, PresetNumber, Select, useFieldLabel } from '@/components/ui/Field.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { Callout } from '@/components/ui/Surface.tsx'
 import { useEntityUpdater } from '@/lib/edit.ts'
@@ -49,6 +49,17 @@ function DateInput({
     />
   )
 }
+
+/**
+ * The intervals a check is actually kept at. A restore test every month is a
+ * test nobody does; one every five years is one the plan has outlived.
+ */
+const INTERVALS = [
+  { value: 90, label: 'Every 3 months' },
+  { value: 180, label: 'Twice a year' },
+  { value: 365, label: 'Once a year' },
+  { value: 730, label: 'Every 2 years' },
+]
 
 export function VerificationInspector({
   plan,
@@ -133,9 +144,9 @@ export function VerificationInspector({
         label="How often"
         help="If the interval is unrealistic, change the interval rather than living with it overdue."
       >
-        <NumberInput
+        <PresetNumber
           value={verification.intervalDays}
-          min={1}
+          presets={INTERVALS}
           max={3650}
           suffix="days"
           onChange={(days) => set({ intervalDays: days ?? 365 })}

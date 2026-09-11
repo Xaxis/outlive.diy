@@ -2,7 +2,14 @@
 
 import { Plus } from 'lucide-react'
 import type { AccessCondition, Location, LocationAccess, LocationKind, Plan } from '@outlive/core'
-import { Field, GuardedInput, NumberInput, Select, Toggle } from '@/components/ui/Field.tsx'
+import {
+  Field,
+  GuardedInput,
+  NumberInput,
+  PresetNumber,
+  Select,
+  Toggle,
+} from '@/components/ui/Field.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { ItemList } from '@/components/ui/ItemList.tsx'
 import { SectionHeading } from '@/components/ui/Surface.tsx'
@@ -20,6 +27,19 @@ function describeAccess(access: LocationAccess): string {
     ? `after your death, ${access.delayDays} days later`
     : 'after your death'
 }
+
+/**
+ * How long an estate takes to release something, in the units estates are
+ * measured in. Nobody knows their own probate to the day, and a number box
+ * invites a guess that then gets treated as a fact by the timing analysis.
+ */
+const PROBATE = [
+  { value: 0, label: 'No delay' },
+  { value: 30, label: 'About a month' },
+  { value: 60, label: 'About two months' },
+  { value: 180, label: 'About six months' },
+  { value: 365, label: 'About a year' },
+]
 
 export function LocationInspector({ plan, location }: { plan: Plan; location: Location }) {
   const update = useEntityUpdater('location')
@@ -194,10 +214,11 @@ export function LocationInspector({ plan, location }: { plan: Plan; location: Lo
                     {access.condition === 'after-death' ? (
                       <Field
                         label="Delay before it opens"
-                        help="Probate, mostly. Real time during which nobody can act."
+                        help="Probate, mostly. Real time during which nobody can act, and the reason a successor letter tells them to start the paperwork and then wait."
                       >
-                        <NumberInput
+                        <PresetNumber
                           value={access.delayDays}
+                          presets={PROBATE}
                           max={3650}
                           suffix="days"
                           onChange={(days) =>

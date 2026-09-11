@@ -178,6 +178,65 @@ export function Select<T extends string>({
   )
 }
 
+/**
+ * A number with the answers that mean something offered beside it.
+ *
+ * "How often" and "how long until" were number boxes with a sentence of help
+ * underneath, which is the shape that produces round numbers nobody meant: 365
+ * gets typed because it is a year, not because a year was decided. Naming the
+ * intervals makes the decision the thing you pick. The box stays, because the
+ * answer is sometimes genuinely 45 days and a control that cannot say so is a
+ * control that gets lied to.
+ */
+export function PresetNumber({
+  value,
+  onChange,
+  presets,
+  suffix,
+  max,
+  nullable,
+}: {
+  value: number | null
+  onChange: (next: number | null) => void
+  presets: { value: number; label: string }[]
+  suffix?: string
+  max?: number
+  nullable?: boolean
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-1.5">
+        {presets.map((preset) => {
+          const on = value === preset.value
+          return (
+            <button
+              key={preset.value}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onChange(preset.value)}
+              className={cn(
+                'chip transition-colors',
+                on
+                  ? 'border-accent/60 bg-accent/10 text-strong'
+                  : 'hover:border-line-strong hover:text-body'
+              )}
+            >
+              {preset.label}
+            </button>
+          )
+        })}
+      </div>
+      <NumberInput
+        value={value}
+        onChange={onChange}
+        max={max}
+        suffix={suffix}
+        nullable={nullable}
+      />
+    </div>
+  )
+}
+
 export function NumberInput({
   value,
   onChange,

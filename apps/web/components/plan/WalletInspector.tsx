@@ -19,6 +19,7 @@ import {
   Field,
   GuardedInput,
   NumberInput,
+  PresetNumber,
   Select,
   Toggle,
 } from '@/components/ui/Field.tsx'
@@ -33,6 +34,18 @@ const TIERS = Object.keys(TIER) as WalletTier[]
 const STAKES = Object.keys(STAKE) as Stake[]
 const PATH_KINDS = Object.keys(PATH_KIND) as SpendPathKind[]
 const MEDIA = Object.keys(BACKUP_MEDIUM) as BackupMedium[]
+
+/**
+ * What a timelock is set to when it is set deliberately. Zero is an everyday
+ * path and is the answer most paths want; the rest are long enough that
+ * somebody holding you cannot simply wait.
+ */
+const TIMELOCKS = [
+  { value: 0, label: 'Opens now' },
+  { value: 90, label: 'After 3 months' },
+  { value: 180, label: 'After 6 months' },
+  { value: 365, label: 'After a year' },
+]
 
 function PathEditor({
   plan,
@@ -100,10 +113,11 @@ function PathEditor({
 
       <Field
         label="Timelock"
-        help="Days of inactivity before this path opens. Zero for an everyday path. A timelocked path is the only thing in a custody plan that makes an attacker wait."
+        help="Days of inactivity before this path opens. A timelocked path is the only thing in a custody plan that makes an attacker wait, and the only reason to hold one is that the wait is longer than the danger."
       >
-        <NumberInput
+        <PresetNumber
           value={path.timelockDays}
+          presets={TIMELOCKS}
           max={3650}
           suffix="days"
           onChange={(days) => patch((entry) => void (entry.timelockDays = days ?? 0))}

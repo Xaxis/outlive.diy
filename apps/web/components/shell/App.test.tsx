@@ -352,6 +352,32 @@ describe('an empty plan', () => {
   })
 })
 
+describe('narrowing the findings', () => {
+  it('says it is narrowed, and offers the way back', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/findings')
+
+    // The counts above the list are the controls, which is not something two
+    // rows of numbers say on their own.
+    expect(await screen.findByText(/narrow the list/i)).toBeInTheDocument()
+    const critical = screen.getByRole('button', { name: /8 critical/ })
+    expect(critical).toHaveAttribute('aria-pressed', 'false')
+
+    await user.click(critical)
+    expect(critical).toHaveAttribute('aria-pressed', 'true')
+    // A filtered list that does not say so has quietly stopped being the list.
+    expect(await screen.findByText(/showing 8 of 24/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /show all of them/i }))
+    expect(screen.queryByText(/showing 8 of 24/i)).not.toBeInTheDocument()
+    expect(critical).toHaveAttribute('aria-pressed', 'false')
+  })
+})
+
 describe('linking to one finding', () => {
   it('opens it, from the overview, in a list of twenty-three', async () => {
     reset()
@@ -734,6 +760,27 @@ describe('describing a plan', () => {
     // Two of the three sites share a disaster group, which is the whole point
     // of asking for one.
     expect(screen.getByText(/Site A and Site B fail together/i)).toBeInTheDocument()
+  })
+
+  it('offers the intervals that mean something instead of a number box', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/design/checks')
+
+    // 365 gets typed because it is a year, not because a year was decided.
+    const yearly = await screen.findByRole('button', { name: 'Once a year' })
+    expect(yearly).toHaveAttribute('aria-pressed', 'true')
+
+    await user.click(screen.getByRole('button', { name: 'Every 3 months' }))
+    expect(screen.getByRole('button', { name: 'Every 3 months' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    )
+    // And the exact number is still there, because sometimes it is 45 days.
+    expect(screen.getByLabelText(/how often/i)).toHaveValue(90)
   })
 
   it('is one screen with a position in an order, not two screens', async () => {
