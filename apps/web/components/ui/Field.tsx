@@ -90,10 +90,21 @@ export function GuardedInput({
   // The committed value can change underneath this field: an undo, a plan
   // switch, a change made elsewhere. Resetting during render is React's own
   // answer to that, and avoids the extra pass an effect would cost.
+  //
+  // Our own commit arriving back is not somebody else changing the field, and
+  // treating it as one wiped every warning in the same pass that allowed it: a
+  // warn commits, the commit lands as a new value, the hits are cleared, and
+  // the notice the guard wrote never paints. That made every warn-strength hit
+  // in the program invisible, including the ones about a street address or a
+  // person's name, which are the ones this app most needs to say out loud.
+  // Comparing against the draft tells the two apart: what we committed is what
+  // is already in the box.
   if (committed !== value) {
     setCommitted(value)
-    setDraft(value)
-    setHits([])
+    if (value !== draft) {
+      setDraft(value)
+      setHits([])
+    }
   }
 
   const handle = (next: string) => {

@@ -214,12 +214,48 @@ describe('seed words', () => {
     expect(accepts('fingerprint 73c5da0a on that signer')).toBe(true)
   })
 
+  /**
+   * What the ambient list costs, so that widening it is a decision with a
+   * number attached rather than a habit.
+   *
+   * A run whose every word is on the list is warned about rather than refused,
+   * so this is the rate at which a short seed fragment is downgraded from
+   * refusal to warning, not the rate at which one passes unremarked. Eight or
+   * more consecutive wordlist words is refused whatever the words are, which
+   * is where a whole phrase lives; this window is the price of not refusing
+   * "keep them apart" and "one trip".
+   */
+  it('the price of admitting ordinary English', () => {
+    const sample = (length: number) => {
+      let admitted = 0
+      const runs = 20000
+      for (let attempt = 0; attempt < runs; attempt += 1) {
+        const words: string[] = []
+        for (let index = 0; index < length; index += 1) {
+          words.push(BIP39_ENGLISH[Math.floor(Math.random() * BIP39_ENGLISH.length)])
+        }
+        if (accepts(words.join(' '))) admitted += 1
+      }
+      return admitted / runs
+    }
+    // Measured at 606 of 2048 words ambient: 2.6% of three-word runs, 0.02% of
+    // seven-word ones. The bounds are loose enough not to fail on the sample
+    // and tight enough that doubling the list again fails here first.
+    expect(sample(3)).toBeLessThan(0.05)
+    expect(sample(5)).toBeLessThan(0.01)
+    expect(sample(7)).toBeLessThan(0.002)
+  })
+
   it('keeps every ambient word inside the wordlist', () => {
     for (const word of AMBIENT_VOCABULARY_WORDS) {
       expect(BIP39_ENGLISH_SET.has(word), word).toBe(true)
     }
-    // The exception only stays defensible while it is a minority of the list.
-    expect(AMBIENT_VOCABULARY_WORDS.length).toBeLessThan(512)
+    // This was a quarter of the wordlist, as a stand-in for the leak it
+    // permits. The test above measures that leak directly, which is the thing
+    // the number was a proxy for, so this is now only a backstop against the
+    // list growing without anybody thinking about it. It must stay a minority
+    // of the wordlist, and well inside one.
+    expect(AMBIENT_VOCABULARY_WORDS.length).toBeLessThan(BIP39_ENGLISH.length / 3)
   })
 
   it('does not fire on the prose people actually write in these fields', () => {
@@ -259,6 +295,31 @@ describe('seed words', () => {
       'Read back every word off the metal before you close the box',
       'Never type any of this into a phone, a laptop or a browser',
       'The box is heavy; you will need help to lift the lid off',
+      // And these, from a second pass: decide, aware, able, choose, alert.
+      // This app is mostly about decisions, so the verbs for making one are
+      // the last words that should be refused in it.
+      'I still have to decide that now rather than next year',
+      'Choose a second site before the winter',
+      'Successor 1 should be able to open this without help',
+      'Make my brother aware that the plan exists',
+      'Keep an alert on the calendar so this does not slip',
+      'Decide who gets to hold the spare device',
+      'Nobody here is able to read a descriptor yet',
+      'Stay aware that the bank changes its hours',
+      'Decide now whether the child or the sibling is the executor',
+      'Accept that a single vendor is a risk I am able to live with',
+      'Alert the custodian that the access list has changed',
+      'Ask the lawyer to explain what probate will need from them',
+      'Remind me to agree this with my partner before it is final',
+      'I would prefer the metal plate to the paper copy',
+      'Arrange the visit so that one trip does not collect two shares',
+      // And these, from the third pass: every BIP-39 word this program writes
+      // in its own sentences. The vocabulary a reader was just handed is the
+      // vocabulary they write back.
+      'Keep them apart so that one journey cannot collect a quorum',
+      'The balance here is small and the machine is air gapped',
+      'One drill a year, in no hurry, with the paper copy only',
+      'Treat the distance as protection against fire and not against law',
     ]
     for (const note of notes) {
       const result = inspect(note)

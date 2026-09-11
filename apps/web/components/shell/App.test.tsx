@@ -121,6 +121,33 @@ describe('the input guard, in the interface', () => {
     expect(plan()?.locations[0].label).toBe('Site A')
   })
 
+  it('shows the warnings it does not refuse', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(await screen.findByText('One signer, one backup'))
+    goto('#/design/locations')
+
+    const label = await screen.findByLabelText('Label')
+    await user.clear(label)
+    await user.type(label, 'The safe at 42 Oakfield Road')
+
+    // A street address in a plan about a program whose first rule is that
+    // locations are roles. It is stored, because refusing it would take away
+    // the field the user is typing in, and it is said out loud. Committing the
+    // value used to clear the hits in the same render that allowed them, so
+    // every warning in the program painted for no frames at all: this one, the
+    // one about coordinates, and the one about a person's name.
+    expect(await screen.findByText(/looks like a street address/i)).toBeInTheDocument()
+    expect(screen.getByText(/Locations are roles here/i)).toBeInTheDocument()
+    // Stored, unlike a refusal.
+    await user.tab()
+    expect((label as HTMLInputElement).value).toBe('The safe at 42 Oakfield Road')
+    // And still said, because the file still holds it.
+    expect(screen.getByText(/looks like a street address/i)).toBeInTheDocument()
+  })
+
   it('accepts ordinary prose about a backup', async () => {
     reset()
     const user = userEvent.setup()
