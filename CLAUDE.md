@@ -177,10 +177,15 @@ When adding a rule, ask what it says about the case just inside its condition.
 **And a remediation can create another rule's finding.** X001 advised a
 timelocked path as "the only route to the balance", which is exactly what S020
 warns against. The examples exercise 26 of the 65 rules, so most remediations
-had never been read beside each other. `self-check.test.ts` runs every sentence
-of 18 plan shapes through the guard and through a pluralisation check, which is
-what caught "at least 1 keys" and two sentences this program's own guard
-refused.
+had never been read beside each other.
+
+**Every rule has to have had its sentence read.** `self-check.test.ts` keeps a
+list of plan shapes, each the smallest mutation that makes a family of rules
+speak, and asserts that between them and the examples every rule fires. Every
+sentence they produce goes through the guard and through a pluralisation check.
+That found five sentences this program's own guard refused and three that
+disagreed with their own number, all of them in rules no example exercises. Add
+a rule, add a shape: the assertion will tell you.
 
 **Findings never carry a score.** No grade, no percentage, no progress bar to
 secure. A number is read as a target and gets optimised. What the user's stated

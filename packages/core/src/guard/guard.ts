@@ -289,6 +289,7 @@ const STAMPED_RUN = 4
  * Every entry is verified against the wordlist by the test suite.
  */
 const AMBIENT_VOCABULARY: ReadonlySet<string> = new Set([
+  'abandon',
   'about',
   'above',
   'absorb',
@@ -296,6 +297,7 @@ const AMBIENT_VOCABULARY: ReadonlySet<string> = new Set([
   'acquire',
   'across',
   'act',
+  'add',
   'address',
   'again',
   'airport',
@@ -515,6 +517,7 @@ const AMBIENT_VOCABULARY: ReadonlySet<string> = new Set([
   'make',
   'man',
   'market',
+  'match',
   'material',
   'mean',
   'memory',

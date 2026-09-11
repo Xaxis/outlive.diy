@@ -90,7 +90,10 @@ describe('seed words', () => {
   })
 
   it('still refuses as soon as one word is outside that vocabulary', () => {
-    expect(accepts('steel plate safe abandon')).toBe(false)
+    // "avocado" rather than "abandon", which is ordinary English and is now on
+    // the ambient list because this program's own prose says "a route people
+    // abandon". The example has to be a word no custody note contains.
+    expect(accepts('steel plate safe avocado')).toBe(false)
   })
 
   it('refuses every one of ten thousand generated mnemonics', () => {
