@@ -125,3 +125,76 @@ describe('the successor letter', () => {
     )
   })
 })
+
+describe('one letter per successor', () => {
+  /** A spouse who can open the door today and an executor who waits for probate. */
+  function twoHeirs(): Plan {
+    const plan = structuredClone(exampleById('two-of-three')!)
+    plan.people = [
+      {
+        ...plan.people[0],
+        id: 'per_spouse',
+        label: 'My spouse',
+        role: 'successor',
+        availability: 'immediate',
+        technicalSkill: 'basic',
+        knowsPlanExists: true,
+        knowsWhereInstructionsAre: true,
+      },
+      {
+        ...plan.people[0],
+        id: 'per_child',
+        label: 'My child',
+        role: 'executor',
+        availability: 'days',
+        technicalSkill: 'competent',
+        knowsPlanExists: true,
+        knowsWhereInstructionsAre: true,
+      },
+    ]
+    plan.locations = plan.locations.map((location) => ({
+      ...location,
+      custodianId: null,
+      access: [
+        { personId: 'per_spouse', condition: 'always' as const, delayDays: 0 },
+        { personId: 'per_child', condition: 'after-death' as const, delayDays: 90 },
+      ],
+    }))
+    return plan
+  }
+
+  it('warns about probate only in the letter to the person who waits for it', () => {
+    const ctx = createContext(twoHeirs(), { today: '2026-03-01' })
+    const letters = lettersFor(ctx)
+    expect(letters).toHaveLength(2)
+
+    const headings = (to: string) =>
+      letters.find((letter) => letter.to === to)!.sections.map((section) => section.heading)
+
+    // The spouse can open the door today. Telling them to expect a wait they
+    // will never have, on a document they read once on the worst day, teaches
+    // them to distrust the rest of it.
+    expect(headings('My spouse')).not.toContain('Some of this takes time to open')
+    expect(headings('My child')).toContain('Some of this takes time to open')
+  })
+
+  it('gives the delay that reader faces, not the longest in the plan', () => {
+    const plan = twoHeirs()
+    // Somebody else waits far longer. It is not this reader's wait.
+    plan.locations[0].access.push({
+      personId: 'per_spouse',
+      condition: 'after-death',
+      delayDays: 400,
+    })
+    plan.locations[1].access = plan.locations[1].access.map((access) =>
+      access.personId === 'per_child' ? { ...access, delayDays: 30 } : access
+    )
+    const ctx = createContext(plan, { today: '2026-03-01' })
+    const child = lettersFor(ctx).find((letter) => letter.to === 'My child')!
+    const wait = child.sections.find(
+      (section) => section.heading === 'Some of this takes time to open'
+    )!
+    expect(wait.paragraphs[0]).toContain('90 days')
+    expect(wait.paragraphs[0]).not.toContain('400')
+  })
+})

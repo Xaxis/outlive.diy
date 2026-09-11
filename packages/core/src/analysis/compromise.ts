@@ -122,8 +122,18 @@ export function analyseCompromise(ctx: AnalysisContext): CompromiseResult {
         rule: 'C003',
         key: vendorKey,
         title: `A failure at ${vendorName} alone is enough to spend ${names(hit.map((w) => w.label))}`,
-        detail: `${keyIds.size} of the keys in this plan were generated on ${vendorName} hardware, which is a threshold on ${names(hit.map((w) => w.label))}. A backdoor, a weak random number generator, or an interception in that one supply line takes the wallet regardless of where anything is stored.`,
-        remediation: `Replace enough of the ${vendorName} keys with a different vendor that no single maker covers a threshold.`,
+        detail: `${
+          keyIds.size === 1
+            ? `The one key behind ${names(hit.map((w) => w.label))} was generated on ${vendorName} hardware`
+            : `${keyIds.size} of the keys in this plan were generated on ${vendorName} hardware, which is a threshold on ${names(hit.map((w) => w.label))}`
+        }. A backdoor, a weak random number generator, or an interception in that one supply line takes the wallet regardless of where anything is stored.`,
+        remediation:
+          keyIds.size === 1
+            ? // With one key there is nothing to rebalance: a single maker
+              // covers the threshold by definition, and the only way out is a
+              // second key from somebody else.
+              `With one key there is no mix to change. Either accept that ${vendorName} is a single point of failure and say so deliberately, or add a second key from a different maker and a threshold that needs both.`
+            : `Replace enough of the ${vendorName} keys with a different vendor that no single maker covers a threshold.`,
         subjects: [
           ...devices.map((device) => ({ type: 'device' as const, id: device.id })),
           ...hit.map((wallet) => ({ type: 'wallet' as const, id: wallet.id })),

@@ -37,8 +37,19 @@ export function successorLetter(ctx: AnalysisContext, person: Person): Successor
   const skill = requiredSkill(plan)
   const multisig = plan.wallets.some((wallet) => isMultisig(wallet))
   const passphrase = plan.keys.some((key) => key.passphrase.enabled)
+  // The delay this reader will hit, not the longest one in the plan.
+  //
+  // One letter goes to a spouse who can open the door today and another to an
+  // executor who waits ninety days for the estate. They were getting the same
+  // paragraph, which for the spouse is a warning about a wait they will never
+  // have, on a document they read once, on the worst day. A letter that tells
+  // somebody to expect a delay they do not face teaches them to distrust the
+  // rest of it.
   const delayed = plan.locations.filter((location) =>
-    location.access.some((access) => access.condition === 'after-death' && access.delayDays > 0)
+    location.access.some(
+      (access) =>
+        access.personId === person.id && access.condition === 'after-death' && access.delayDays > 0
+    )
   )
 
   const sections: LetterSection[] = [
@@ -100,7 +111,7 @@ export function successorLetter(ctx: AnalysisContext, person: Person): Successor
     const worst = Math.max(
       ...delayed.flatMap((location) =>
         location.access
-          .filter((access) => access.condition === 'after-death')
+          .filter((access) => access.personId === person.id && access.condition === 'after-death')
           .map((access) => access.delayDays)
       )
     )

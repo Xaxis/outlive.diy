@@ -208,6 +208,25 @@ describe('compromise', () => {
     expect(rules(plan)).toContain('C003')
   })
 
+  it('does not say "1 of the keys were" when there is only one key', () => {
+    const plan = twoOfTwo()
+    plan.devices = [plan.devices[0]]
+    plan.keys = [plan.keys[0]]
+    plan.wallets = [
+      {
+        ...plan.wallets[0],
+        paths: [createSpendPath({ id: 'p', threshold: 1, keyIds: ['k1'] })],
+      },
+    ]
+    const finding = findingFor(plan, 'C003')
+    // A single-sig plan reaches this rule too, and the sentence written for
+    // "3 of the keys" reads as a template leaking when the number is one. The
+    // remediation matters more: there is no mix to rebalance with one key.
+    expect(finding?.detail).toContain('The one key behind Vault')
+    expect(finding?.detail).not.toMatch(/1 of the keys/)
+    expect(finding?.remediation).toContain('no mix to change')
+  })
+
   it('reports a person who can already spend', () => {
     const plan = twoOfTwo({
       people: [createPerson({ id: 'p', label: 'Helper 1', role: 'aware' })],
