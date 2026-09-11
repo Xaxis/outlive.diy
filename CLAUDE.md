@@ -76,6 +76,17 @@ gates every multisig spend. This is the most common way a well-built setup turns
 out to be unrecoverable, and removing that gate would make the tool cheerful and
 wrong.
 
+**A key somebody else holds signs because they cooperate.** Collaborative
+custody is a company holding one key of a quorum: they sign with their own key,
+on their own device, behind their own door, and none of that is in the plan or
+should be. `heldBy` with no recorded device or backup is a third route,
+`'holder'`, and not a key with nothing behind it. Treating it as the latter made
+a working 2-of-3 read as unspendable today. The rules about what a key exists as
+stay quiet for a held key too: "write Key C down on a durable medium" is advice
+the customer cannot follow and that would defeat the arrangement if they could.
+`S025` says the thing that is true instead, which is that the redundancy behind
+it is invisible from here.
+
 **A passphrase gates both routes, device and backup.** Memorised, it does not
 survive the user. Written beside the seed, it changes nothing. Both are rules.
 

@@ -123,7 +123,17 @@ export function backupAvailable(world: World, backup: Backup): boolean {
  * worse than no picture.
  */
 
-export type KeyRoute = 'device' | 'backup'
+/**
+ * How a signature gets produced.
+ *
+ * "holder" is a key somebody else has. Collaborative custody works exactly
+ * this way: the provider signs with their own key, on their own device, behind
+ * their own door, and none of that is in this plan or should be. Treating a
+ * recorded holder with no recorded material as a key that cannot sign made a
+ * working 2-of-3 read as unspendable today, which is the opposite of what the
+ * arrangement does.
+ */
+export type KeyRoute = 'device' | 'backup' | 'holder'
 
 export interface KeyAvailability {
   keyId: Id
@@ -202,6 +212,12 @@ export function evaluateKey(plan: Plan, key: Key, world: World): KeyAvailability
   }
 
   const routes: KeyRoute[] = []
+  // Their cooperation is the route. The holder check above has already refused
+  // this key in any world where they are unavailable, so reaching here means
+  // they are helping whoever is asking, which in an adversary world is exactly
+  // the thing worth modelling: a compromised co-signer signs.
+  if (key.heldBy !== null) routes.push('holder')
+
   const viaDevice = deviceRoute(plan, key, world)
   if (viaDevice.ok) routes.push('device')
   else if (viaDevice.blocker) blockers.push(viaDevice.blocker)

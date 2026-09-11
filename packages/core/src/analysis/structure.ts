@@ -190,7 +190,28 @@ export function analyseStructure(ctx: AnalysisContext): Finding[] {
     const wallets = walletsUsingKey(plan, key.id)
     const weight = wallets.length ? Math.max(...wallets.map(walletWeight)) : 0
 
-    if (!key.deviceId && key.backups.length === 0) {
+    // A key somebody else holds is a different subject from here on.
+    //
+    // The rules below reason about the objects behind a key, and for a held key
+    // those objects are not the user's: they are the holder's, they are not in
+    // this plan, and they are not the user's to record. Telling somebody in
+    // collaborative custody to "write Key C down on a durable medium" is advice
+    // they cannot follow and would defeat the arrangement if they could. What
+    // is true, and is said instead, is that the redundancy behind that key is
+    // invisible from here.
+    if (key.heldBy !== null) {
+      const holder = index.people.get(key.heldBy)
+      add(
+        makeFinding(plan, {
+          rule: 'S025',
+          key: key.id,
+          title: `${key.label} is held by ${holder?.label ?? 'somebody else'}`,
+          detail: `Whatever stands behind ${key.label} belongs to ${holder?.label ?? 'them'}: their device, their backup regime, their premises. None of it is in this plan, so every conclusion here about losing or reaching ${key.label} rests on their arrangements rather than on anything recorded.`,
+          remediation: `Satisfy yourself that ${holder?.label ?? 'the holder'} can actually reproduce ${key.label} if their copy fails, and keep a way to spend that does not need them at all.`,
+          subjects: [{ type: 'key', id: key.id }],
+        })
+      )
+    } else if (!key.deviceId && key.backups.length === 0) {
       add(
         makeFinding(plan, {
           rule: 'S005',
@@ -284,7 +305,12 @@ export function analyseStructure(ctx: AnalysisContext): Finding[] {
       }
     }
 
-    if (key.deviceId && key.deviceLocationId === null) {
+    // Not for a key somebody else holds: where their device sits is not the
+    // user's to record, and `heldBy` already makes the key unusable whenever
+    // the holder is unavailable, so the analysis is not blind here. A finding
+    // whose remediation is "go and find out where a company keeps its server"
+    // is a finding nobody can act on.
+    if (key.deviceId && key.deviceLocationId === null && key.heldBy === null) {
       add(
         makeFinding(plan, {
           rule: 'S009',
@@ -370,7 +396,7 @@ export function analyseStructure(ctx: AnalysisContext): Finding[] {
         rule: 'S023',
         key: key.id,
         title: `${key.label} spends both ${list(hot.map((w) => w.label))} and ${list(cold.map((w) => w.label))}`,
-        detail: `${key.label} is used by a hot wallet and by a vault. A hot key lives on a machine that opens email, so ${list(cold.map((w) => w.label))} has quietly inherited that machine's exposure for one of its keys, and whoever takes the easy one is then a single key from the hard one.`,
+        detail: `${key.label} is used by a hot wallet and by a vault. A hot key lives on a machine that opens email, so ${list(cold.map((w) => w.label))} ${cold.length === 1 ? 'has' : 'have'} quietly inherited that machine's exposure for one of its keys, and whoever takes the easy one is then a single key from the hard one.`,
         remediation: `Give ${list(hot.map((w) => w.label))} its own key, generated separately, and remove ${key.label} from it.`,
         subjects: [
           { type: 'key', id: key.id },
@@ -431,9 +457,9 @@ export function analyseStructure(ctx: AnalysisContext): Finding[] {
         makeFinding(plan, {
           rule: 'S022',
           key: 'horizon-counterparty',
-          title: `${list(dependent.map((key) => key.label))} depends on a company for ${plan.profile.horizonYears} years`,
+          title: `${list(dependent.map((key) => key.label))} ${dependent.length === 1 ? 'depends' : 'depend'} on a company for ${plan.profile.horizonYears} years`,
           detail: `A business is not a durable object on that timescale. It is acquired, changes its terms, is compelled by somebody else, or stops answering, and none of those arrive with notice.`,
-          remediation: `Make sure ${list(dependent.map((key) => key.label))} is replaceable: a spend path that works without it, or a documented route to withdraw before the arrangement ends.`,
+          remediation: `Make sure ${list(dependent.map((key) => key.label))} ${dependent.length === 1 ? 'is' : 'are'} replaceable: a spend path that works without ${dependent.length === 1 ? 'it' : 'them'}, or a documented route to withdraw before the arrangement ends.`,
           subjects: dependent.map((key) => ({ type: 'key' as const, id: key.id })),
         })
       )

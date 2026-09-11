@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { analyze } from './analyze.ts'
+import { baseWorld, evaluateWallet } from './availability.ts'
 import {
   createBackup,
   createConfigBackup,
@@ -872,5 +873,71 @@ describe('one device signing for more than one key', () => {
     expect(found[0].severity).toBe('high')
     expect(found[0].detail).toContain('2 independent decisions')
     expect(found[0].detail).not.toContain('costume')
+  })
+})
+
+describe('a key somebody else holds', () => {
+  const collaborative = () => {
+    const plan = structuredClone(exampleById('two-of-three')!)
+    plan.people[0] = {
+      ...plan.people[0],
+      id: 'per_provider',
+      label: 'The provider',
+      role: 'key-agent',
+    }
+    plan.locations = plan.locations.map((location) => ({
+      ...location,
+      access: [],
+      custodianId: null,
+    }))
+    plan.keys[2] = {
+      ...plan.keys[2],
+      heldBy: 'per_provider',
+      deviceId: null,
+      deviceLocationId: null,
+      backups: [],
+    }
+    return plan
+  }
+
+  it("is never told to write the holder's key down", () => {
+    const findings = analyze(collaborative(), { today: '2026-03-01' }).findings
+    const about = findings.filter((f) => f.subjects.some((s) => s.id === 'key_c'))
+    // S005 and S006 reason about the objects behind a key. For a held key those
+    // objects are the holder's, and "write Key C down on a durable medium" is
+    // advice the customer cannot follow and that would defeat the arrangement.
+    expect(about.map((f) => f.rule)).not.toContain('S005')
+    expect(about.map((f) => f.rule)).not.toContain('S006')
+    for (const finding of findings) {
+      expect(finding.remediation).not.toMatch(/write key c down/i)
+    }
+  })
+
+  it('says instead that the redundancy behind it cannot be seen from here', () => {
+    const findings = analyze(collaborative(), { today: '2026-03-01' }).findings
+    const held = findings.find((f) => f.rule === 'S025')
+    expect(held).toBeDefined()
+    expect(held?.title).toBe('Key C is held by The provider')
+    expect(held?.detail).toMatch(/their backup regime/i)
+    // And the way out is a path that does not need them, not a copy of theirs.
+    expect(held?.remediation).toMatch(/does not need them/i)
+  })
+
+  it('signs with it today, and stops when the holder will not', () => {
+    const plan = collaborative()
+    // The customer holds one of three and the provider holds two, so the
+    // wallet works today and nothing moves without them.
+    plan.keys[1] = { ...plan.keys[1], heldBy: 'per_provider', deviceId: null, backups: [] }
+
+    // It used to read as unspendable today, because a key with a holder and no
+    // recorded device or backup had no route at all. That is the opposite of
+    // what the arrangement does: the provider signs with their own key, behind
+    // their own door, and none of that belongs in this plan.
+    const today = evaluateWallet(plan, plan.wallets[0], baseWorld(plan))
+    expect(today.spendable).toBe(true)
+    expect(today.margin).toBe(1)
+
+    // And the dependency is reported as what it is.
+    expect(analyze(plan, { today: '2026-03-01' }).findings.map((f) => f.rule)).toContain('L006')
   })
 })

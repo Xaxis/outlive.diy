@@ -114,6 +114,7 @@ export type RuleId =
   | 'S022'
   | 'S023'
   | 'S024'
+  | 'S025'
   // loss
   | 'L001'
   | 'L002'
@@ -353,6 +354,13 @@ export const RULES: Record<RuleId, Rule> = Object.fromEntries(
         'medium',
         'A key no spend path uses',
         'A key nothing can spend with is either a key that was forgotten half way through being attached, or a key this plan does not actually cover. Either way every conclusion in here is silent about it, and silence from this program reads as approval.'
+      ),
+      rule(
+        'S025',
+        'structure',
+        'low',
+        'A key somebody else holds',
+        "Whatever stands behind that key is the holder's and is not in this plan: their device, their backup regime, their premises. The rules about what a key exists as cannot speak, and saying nothing would leave the reader thinking they had been checked."
       ),
       rule(
         'L001',

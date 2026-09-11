@@ -409,6 +409,23 @@ export const SHAPE_MUTATIONS: [string, (plan: Plan) => void][] = [
       })
     },
   ],
+  [
+    // Collaborative custody: a company holds one key of the quorum. What
+    // stands behind that key is theirs, so the rules about what a key exists
+    // as have to stay quiet rather than advise writing it down.
+    'a key a company holds',
+    (p) => {
+      if (!p.keys[2] || !p.people[0]) return
+      p.people[0] = { ...p.people[0], role: 'key-agent' }
+      p.keys[2] = {
+        ...p.keys[2],
+        heldBy: p.people[0].id,
+        deviceId: null,
+        deviceLocationId: null,
+        backups: [],
+      }
+    },
+  ],
 ]
 
 function base(): Plan {

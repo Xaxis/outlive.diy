@@ -197,7 +197,13 @@ export function analyseCorrelation(ctx: AnalysisContext, input: CorrelationInput
   if (devices.length >= 2) {
     const routes = new Set(devices.map((device) => device.supplyChain))
     const route = [...routes][0]
-    if (routes.size === 1 && route !== 'direct-from-vendor') {
+    // Not "unknown", which is the default and is what most plans leave it at.
+    // Nobody having recorded a route is not everybody sharing one, and saying
+    // "every device came through the same route (unknown)" both reads as a
+    // template leaking and advises buying direct on the strength of a field
+    // nobody filled in. This file does not invent a fact to have an opinion
+    // about it.
+    if (routes.size === 1 && route !== 'direct-from-vendor' && route !== 'unknown') {
       findings.push(
         makeFinding(plan, {
           rule: 'R005',
