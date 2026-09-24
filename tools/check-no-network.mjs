@@ -69,6 +69,10 @@ const ALLOWED_HOSTS = new Set([
   'github.com',
   'www.w3.org', // SVG and XHTML namespaces, which are identifiers rather than addresses
   'openapi.vercel.sh', // JSON schema reference in config, never fetched by the app
+  // The one host asking Claude reaches, named where the app says so. Allowing
+  // it here only lets the source mention it; the SDK rule and the policy
+  // check below are what keep any other file from reaching it.
+  'api.anthropic.com',
 ])
 
 const problems = []
