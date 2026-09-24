@@ -1,5 +1,8 @@
 'use client'
 
+import { Briefcase, Eye, Gavel, HeartHandshake, KeyRound, PenTool } from 'lucide-react'
+import { cn } from '@/lib/cn.ts'
+
 import type { Availability, Person, PersonRole, TechnicalSkill } from '@outlive/core'
 import { Field, GuardedInput, Select, Toggle } from '@/components/ui/Field.tsx'
 import { Callout } from '@/components/ui/Surface.tsx'
@@ -14,6 +17,15 @@ const AVAILABILITY: { value: Availability; label: string }[] = [
   { value: 'weeks', label: 'Within weeks' },
   { value: 'unknown', label: 'Not sure' },
 ]
+
+const ROLE_ICON: Record<PersonRole, typeof KeyRound> = {
+  cosigner: PenTool,
+  successor: HeartHandshake,
+  executor: Gavel,
+  'key-agent': KeyRound,
+  aware: Eye,
+  professional: Briefcase,
+}
 
 export function PersonInspector({ person }: { person: Person }) {
   const update = useEntityUpdater('person')
@@ -30,11 +42,33 @@ export function PersonInspector({ person }: { person: Person }) {
       </Field>
 
       <Field label="Role">
-        <Select
-          value={person.role}
-          onChange={(role) => set({ role: (role ?? 'aware') as PersonRole })}
-          options={ROLES.map((role) => ({ value: role, label: PERSON_ROLE[role] }))}
-        />
+        <div role="radiogroup" className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+          {ROLES.map((role) => {
+            const Icon = ROLE_ICON[role]
+            const on = person.role === role
+            return (
+              <button
+                key={role}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => set({ role })}
+                className={cn(
+                  'flex items-center gap-2 rounded-[var(--radius-control)] border px-2.5 py-2 text-left text-xs leading-tight transition-colors',
+                  on
+                    ? 'border-accent bg-accent/10 font-medium text-strong'
+                    : 'border-line text-muted hover:border-line-strong hover:text-strong'
+                )}
+              >
+                <Icon
+                  className={cn('size-4 flex-none', on ? 'text-accent' : 'text-faint')}
+                  aria-hidden
+                />
+                {PERSON_ROLE[role]}
+              </button>
+            )
+          })}
+        </div>
       </Field>
 
       <Field
