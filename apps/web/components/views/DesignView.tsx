@@ -1,5 +1,6 @@
 'use client'
 
+import { useDeferredValue } from 'react'
 import { ArrowLeft, ArrowRight, Check, Circle, Plus } from 'lucide-react'
 import { MEASURE, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Button } from '@/components/ui/Button.tsx'
@@ -8,6 +9,7 @@ import { EntityWorkbench } from '@/components/plan/EntityWorkbench.tsx'
 import { StepEffect } from '@/components/plan/StepEffect.tsx'
 import { LiveDrawing } from '@/components/plan/LiveDrawing.tsx'
 import { PlacementGrid } from '@/components/plan/PlacementGrid.tsx'
+import { DeviceShelf } from '@/components/plan/DeviceShelf.tsx'
 import { entitiesOf, useActivePlan, useStore } from '@/lib/store.ts'
 import { useReport } from '@/lib/analysis.ts'
 import { useRoute } from '@/lib/router.ts'
@@ -34,6 +36,11 @@ import { cn } from '@/lib/cn.ts'
 export function DesignView() {
   const plan = useActivePlan()
   const report = useReport(plan)
+  // The pictures follow the typing rather than holding it up. A field commits
+  // on every keystroke, and redrawing the whole plan before the next letter
+  // can land is a field that lags on a slow phone.
+  const settled = useDeferredValue(plan)
+  const settledReport = useReport(settled)
   const select = useStore((state) => state.select)
   const addEntity = useStore((state) => state.addEntity)
   const [route, navigate] = useRoute()
@@ -138,20 +145,25 @@ export function DesignView() {
           {/* Where things are, as a grid you click, beside the picture it
               changes. Side by side where there is room, so a click and its
               consequence are in view together. */}
-          <div className="mb-4 grid items-start gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] [&>*]:mb-0">
-            {section.kind === 'verification' || section.kind === 'device' ? null : (
-              <PlacementGrid plan={plan} />
-            )}
-            <LiveDrawing plan={plan} />
-          </div>
+          {section.kind === 'device' ? (
+            // Devices are about who made them more than where they are, so
+            // this step gets the shelf and the maker count instead.
+            <DeviceShelf plan={settled ?? plan} report={settledReport ?? report} />
+          ) : (
+            <div className="mb-4 grid items-start gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] [&>*]:mb-0">
+              {section.kind === 'verification' ? null : <PlacementGrid plan={settled ?? plan} />}
+              <LiveDrawing plan={settled ?? plan} />
+            </div>
+          )}
           <EntityWorkbench
             plan={plan}
             report={report}
             kind={section.kind}
             singular={section.singular}
             plural={section.label}
+            listed={section.kind !== 'device'}
           />
-          <StepEffect plan={plan} report={report} kind={section.kind} />
+          <StepEffect plan={settled ?? plan} report={settledReport ?? report} kind={section.kind} />
         </>
       )}
 

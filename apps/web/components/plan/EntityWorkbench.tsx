@@ -17,6 +17,7 @@ import {
   type Wallet,
 } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
+import { cn } from '@/lib/cn.ts'
 import { Card, EmptyState, Panel } from '@/components/ui/Surface.tsx'
 import { SeverityDot } from '@/components/ui/Severity.tsx'
 import { LocationInspector } from './LocationInspector.tsx'
@@ -52,12 +53,15 @@ export function EntityWorkbench({
   kind,
   singular,
   plural,
+  listed = true,
 }: {
   plan: Plan
   report: AnalysisReport | null
   kind: EntityKind
   singular: string
   plural: string
+  /** False where something above already lists them to pick from. */
+  listed?: boolean
 }) {
   const selection = useStore((state) => state.selection)
   const select = useStore((state) => state.select)
@@ -100,8 +104,13 @@ export function EntityWorkbench({
     // A text field one thousand pixels wide is a text field nobody can scan.
     // The inspector column stops at a readable measure and the row is left
     // aligned, rather than the form stretching to whatever the window is.
-    <div className="grid items-start gap-4 lg:grid-cols-[minmax(13rem,18rem)_minmax(0,42rem)]">
-      <div className="space-y-2">
+    <div
+      className={cn(
+        'grid items-start gap-4',
+        listed ? 'lg:grid-cols-[minmax(13rem,18rem)_minmax(0,42rem)]' : 'max-w-[48rem]'
+      )}
+    >
+      <div className={cn('space-y-2', !listed && 'hidden')}>
         {/* On a phone this list sits above the form. Left uncapped, switching
             between keys means scrolling back past the whole of one. */}
         <ul

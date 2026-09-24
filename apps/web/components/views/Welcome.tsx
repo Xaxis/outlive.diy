@@ -29,6 +29,9 @@ import { OpenFileButton } from '@/components/file/OpenFileButton.tsx'
  */
 export function Welcome() {
   const startPlan = useStore((state) => state.startPlan)
+  const plans = useStore((state) => state.plans)
+  const activeId = useStore((state) => state.activeId)
+  const setActive = useStore((state) => state.setActive)
   const openExample = useStore((state) => state.openExample)
 
   // One worked example, drawn. A page about a tool whose main output is a
@@ -77,6 +80,39 @@ export function Welcome() {
         Pick the shape of your setup. See what a fire, a burglary or your death does to it, and fix
         what breaks in a click.
       </p>
+
+      {plans.length > 0 ? (
+        <section className="mt-8 rounded-[var(--radius-card)] border border-accent/30 bg-accent/[0.05] p-4">
+          <h2 className="text-sm font-semibold text-strong">Your plans</h2>
+          <ul className="mt-2 divide-y divide-line">
+            {plans.map((entry) => (
+              <li key={entry.id} className="flex items-center gap-3 py-2">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-strong">
+                    {entry.name}
+                  </span>
+                  <span className="text-xs text-faint">
+                    {entry.kind === 'draft' ? 'Draft' : 'Current'} · changed {entry.updatedAt} ·{' '}
+                    {entry.keys.length} {entry.keys.length === 1 ? 'key' : 'keys'},{' '}
+                    {entry.locations.length} {entry.locations.length === 1 ? 'place' : 'places'}
+                  </span>
+                </span>
+                <Button
+                  size="sm"
+                  variant={entry.id === activeId ? 'primary' : 'default'}
+                  icon={<ArrowRight className="size-3.5" aria-hidden />}
+                  onClick={() => {
+                    setActive(entry.id)
+                    window.location.hash = href('overview').slice(1)
+                  }}
+                >
+                  Continue
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <Button

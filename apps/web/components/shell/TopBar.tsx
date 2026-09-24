@@ -142,7 +142,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
           <Menu className="size-4" aria-hidden />
         </Button>
 
-        <a href={href('overview')} className="no-underline" aria-label="outlive.diy, home">
+        <a href={href('home')} className="no-underline" aria-label="outlive.diy, home">
           <Wordmark />
         </a>
 

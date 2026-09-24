@@ -23,6 +23,11 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./test/setup.ts'],
+    // Every test mounts the whole application and runs the real engine,
+    // including the fix search, which tries hundreds of plans. Five seconds
+    // is enough on an idle machine and not on a loaded one, and a timeout is
+    // not a finding about the interface.
+    testTimeout: 20_000,
     include: ['**/*.test.tsx', 'lib/**/*.test.ts'],
     exclude: ['node_modules/**', '.next/**', '.next-dev/**', 'out/**'],
   },

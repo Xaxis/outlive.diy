@@ -83,7 +83,9 @@ export function App() {
   // Local storage cannot be read during render, so the prerendered document is
   // the landing page. That is also the right thing to serve: it is what a first
   // visitor sees, and it is the only part of this application worth indexing.
-  if (!ready || !hasPlans || !plan) {
+  // The landing page is somewhere to go back to, not only somewhere to start:
+  // the logo leads here, and with plans open it leads with them.
+  if (!ready || !hasPlans || !plan || route.view === 'home') {
     return (
       <>
         <TopBar onToggleSidebar={() => setDrawerOpen((value) => !value)} />

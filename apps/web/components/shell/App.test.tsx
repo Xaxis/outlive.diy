@@ -308,6 +308,65 @@ describe('building a plan by its shape', () => {
   })
 })
 
+describe('the way home', () => {
+  it('goes back to the landing page from inside a plan, and back into the plan', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+    await screen.findByRole('heading', { name: 'Findings' })
+
+    await user.click(screen.getByRole('link', { name: /outlive\.diy, home/i }))
+    expect(
+      await screen.findByRole('heading', { name: /design a bitcoin custody plan/i })
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /continue/i }))
+    expect(
+      await screen.findByRole('heading', { name: 'Two of three, three sites' })
+    ).toBeInTheDocument()
+  })
+})
+
+describe('a device, picked rather than typed', () => {
+  it('offers makers and their models, and fills in what a model is', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/design/devices')
+    const maker = await screen.findByRole('combobox', { name: 'Maker' })
+    const model = screen.getByRole('combobox', { name: 'Model' })
+    await user.clear(maker)
+    await user.type(maker, 'found')
+    await user.click(screen.getByRole('option', { name: /^Foundation/ }))
+    await user.click(model)
+    await user.click(screen.getByRole('option', { name: /^Passport Prime/ }))
+
+    const device = useStore.getState().plans[0].devices.find((entry) => entry.label === 'Signer A')!
+    expect(device.vendor).toBe('Foundation')
+    expect(device.model).toBe('Passport Prime')
+    // An air-gap-only model is air-gapped: it cannot be anything else.
+    expect(device.airGapped).toBe(true)
+    expect(device.kind).toBe('air-gapped-signer')
+  })
+
+  it('keeps whatever is typed that is not on the list', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/design/devices')
+    const maker = await screen.findByRole('combobox', { name: 'Maker' })
+    await user.clear(maker)
+    await user.type(maker, 'Homebrew')
+    await user.tab()
+    const device = useStore.getState().plans[0].devices.find((entry) => entry.label === 'Signer A')!
+    expect(device.vendor).toBe('Homebrew')
+  })
+})
+
 describe('what goes where', () => {
   it('moves and adds things by clicking a grid, on the real plan', async () => {
     reset()

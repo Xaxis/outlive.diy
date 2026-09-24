@@ -3,6 +3,7 @@
 import {
   BookOpenCheck,
   FileJson,
+  Home,
   GitCompareArrows,
   LayoutGrid,
   LifeBuoy,
@@ -38,6 +39,7 @@ export function navigation(report: AnalysisReport | null, letterCount: number): 
     {
       title: 'Plan',
       items: [
+        { view: 'home', label: 'Home', icon: Home },
         { view: 'overview', label: 'Overview', icon: LayoutGrid },
         { view: 'build', label: 'New by shape', icon: Wand2 },
         { view: 'design', label: 'Design', icon: SlidersHorizontal },
