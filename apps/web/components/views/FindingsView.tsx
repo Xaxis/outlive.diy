@@ -188,6 +188,7 @@ export function FindingsView() {
                   labelOf={labelOf}
                   onOpenSubject={openSubject}
                   defaultOpen={finding.id === route.section}
+                  plan={plan}
                 />
               ))}
             </div>

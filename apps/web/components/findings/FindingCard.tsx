@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { ChevronRight, Network, Wrench } from 'lucide-react'
-import { CATEGORY_LABEL, RULES, type Finding, type Ref } from '@outlive/core'
+import { CATEGORY_LABEL, RULES, type Finding, type Plan, type Ref } from '@outlive/core'
+import { FindingPicture } from '@/components/findings/FindingPicture.tsx'
 import { SeverityDot, SEVERITY_LABEL } from '@/components/ui/Severity.tsx'
 import { navigateTo } from '@/lib/router.ts'
 import { cn } from '@/lib/cn.ts'
@@ -13,8 +14,11 @@ export function FindingCard({
   labelOf,
   onOpenSubject,
   defaultOpen,
+  plan,
 }: {
   finding: Finding
+  /** For drawing the finding once it is open. */
+  plan?: Plan
   labelOf: (ref: Ref) => string | null
   onOpenSubject: (ref: Ref) => void
   defaultOpen?: boolean
@@ -86,6 +90,8 @@ export function FindingCard({
           <Wrench className="mt-0.5 size-3.5 flex-none text-accent" aria-hidden />
           <p className="text-body">{finding.remediation}</p>
         </div>
+
+        {open && plan ? <FindingPicture plan={plan} finding={finding} /> : null}
 
         {/* A finding names what breaks. The map draws where it breaks, in the
             same world this came out of, and getting between the two should not

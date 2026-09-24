@@ -1113,6 +1113,27 @@ describe('describing a plan', () => {
 })
 
 describe('a finding and its picture', () => {
+  it('draws its own world once opened, with what it is about tagged', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/findings')
+    const title = await screen.findByText(/Losing Site A makes Vault and Daily unspendable/i)
+    const card = title.closest('article')!
+    // Shut, it draws nothing: twenty-four drawings for a list nobody opens.
+    expect(within(card).queryByRole('group', { name: /the plan, drawn/i })).toBeNull()
+
+    await user.click(title)
+    const drawing = within(card).getByRole('group', { name: /the plan, drawn/i })
+    // In the world where Site A is gone, which is where the finding came from.
+    const site = within(drawing).getByRole('button', { name: /^Site A\b/ })
+    expect(site).toHaveAccessibleName(/not available/i)
+    // And tagged as the thing the finding is about.
+    expect(site).toHaveAccessibleName(/\bthis\.$/)
+  })
+
   it('opens the map in the world the finding came out of', async () => {
     reset()
     const user = userEvent.setup()
