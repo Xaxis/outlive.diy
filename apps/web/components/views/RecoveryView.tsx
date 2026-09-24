@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { MapPin, Printer, TriangleAlert } from 'lucide-react'
+import { ArrowUpRight, MapPin, Printer, TriangleAlert } from 'lucide-react'
 import { describeDuration, indexPlan, type RecoveryRoute } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
 import { PrintHeader } from '@/components/shell/PrintHeader.tsx'
 import { Rehearsal } from '@/components/documents/Rehearsal.tsx'
 import { Timeline } from '@/components/documents/Timeline.tsx'
+import { RecoveryChart } from '@/components/documents/RecoveryChart.tsx'
 import { MEASURE, ViewHeader } from '@/components/ui/Surface.tsx'
 import { ItemList } from '@/components/ui/ItemList.tsx'
 import { Segmented } from '@/components/ui/Field.tsx'
@@ -15,6 +16,7 @@ import { useRecovery } from '@/lib/analysis.ts'
 import { planIsStarted } from '@/lib/describe.ts'
 import { NothingYet } from '@/components/shell/NothingYet.tsx'
 import { cn } from '@/lib/cn.ts'
+import { href } from '@/lib/router.ts'
 
 /**
  * One short procedure per way this fails.
@@ -27,6 +29,7 @@ export function RecoveryView() {
   const plan = useActivePlan()
   const routes = useRecovery(plan)
   const [filter, setFilter] = useState<'all' | 'possible' | 'impossible'>('all')
+  const [reveal, setReveal] = useState<{ id: string } | null>(null)
 
   if (!plan) return null
 
@@ -79,6 +82,21 @@ export function RecoveryView() {
         }
       />
 
+      {routes.length > 0 ? (
+        <div className="mb-4">
+          <RecoveryChart
+            routes={routes}
+            toleranceDays={plan.profile.recoveryToleranceDays}
+            onPick={(id) => {
+              // The row may be hidden by the filter, and a click that opens
+              // nothing is a click that looks broken.
+              setFilter('all')
+              setReveal({ id })
+            }}
+          />
+        </div>
+      ) : null}
+
       {visible.length === 0 ? (
         <p className="text-sm text-muted">Nothing in that filter.</p>
       ) : (
@@ -90,6 +108,7 @@ export function RecoveryView() {
         <ItemList
           autoOpenNew={false}
           printOpen
+          reveal={reveal}
           items={visible.map((route) => ({
             id: route.scenarioId,
             title: route.title,
@@ -168,18 +187,30 @@ function Route({
       ) : null}
 
       {route.steps.length > 0 ? (
-        <ol className="mt-4 space-y-3">
+        /* A connected rail rather than a numbered list: these are done in
+           order, one leading to the next, and on the day the thing worth
+           seeing is where you are in it. */
+        <ol className="mt-4">
           {route.steps.map((step, position) => (
-            <li key={`${route.scenarioId}-${position}`} className="flex gap-3">
-              <span className="mono mt-0.5 flex size-5 flex-none items-center justify-center rounded-full border border-line-strong text-[0.6875rem] text-faint">
+            <li
+              key={`${route.scenarioId}-${position}`}
+              className="relative flex gap-3 pb-4 last:pb-0"
+            >
+              {position < route.steps.length - 1 ? (
+                <span
+                  aria-hidden
+                  className="absolute bottom-0 left-[0.6875rem] top-6 w-px bg-line-strong"
+                />
+              ) : null}
+              <span className="mono relative z-[1] mt-0.5 flex size-[1.375rem] flex-none items-center justify-center rounded-full border border-line-strong bg-surface text-[0.6875rem] text-muted">
                 {position + 1}
               </span>
               <div className="min-w-0">
                 <p className="text-[0.875rem] font-medium text-strong">{step.title}</p>
                 <p className="mt-0.5 text-[0.8125rem] leading-relaxed text-muted">{step.detail}</p>
                 {step.locationId ? (
-                  <p className="mt-1 flex items-center gap-1 text-[0.6875rem] text-faint">
-                    <MapPin className="size-3" aria-hidden />
+                  <p className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[0.6875rem] text-muted">
+                    <MapPin className="size-3 text-accent" aria-hidden />
                     {labelFor(step.locationId)}
                   </p>
                 ) : null}
@@ -194,6 +225,16 @@ function Route({
           This route recovers: {route.walletIds.map(walletLabel).join(', ')}.
         </p>
       ) : null}
+
+      <p className="mt-3 no-print">
+        <a
+          href={href('map', route.scenarioId)}
+          className="chip no-underline hover:border-line-strong"
+        >
+          Draw this world on the map
+          <ArrowUpRight className="size-3" aria-hidden />
+        </a>
+      </p>
 
       <Rehearsal route={route} />
     </div>

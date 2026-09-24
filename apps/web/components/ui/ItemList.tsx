@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { ChevronRight, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button.tsx'
 import { cn } from '@/lib/cn.ts'
@@ -53,6 +53,7 @@ export function ItemList({
   className,
   autoOpenNew = true,
   printOpen = false,
+  reveal = null,
 }: {
   items: Item[]
   className?: string
@@ -68,6 +69,12 @@ export function ItemList({
    * is the part inside.
    */
   printOpen?: boolean
+  /**
+   * A row to open and scroll to, for a caller whose picture of the list sits
+   * somewhere else on the page. A new object each time, so asking for the same
+   * row twice still brings it back into view.
+   */
+  reveal?: { id: string } | null
 }) {
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set())
   // Ids this list has already rendered. Anything not in here is new, and a
@@ -80,6 +87,22 @@ export function ItemList({
     setSeen(new Set(ids))
     setOpen(new Set([...open, ...fresh]))
   }
+
+  // Opened during render, the same way a new row is, and scrolled to after.
+  const [revealed, setRevealed] = useState(reveal)
+  if (reveal !== revealed) {
+    setRevealed(reveal)
+    if (reveal) setOpen(new Set([...open, reveal.id]))
+  }
+  useEffect(() => {
+    if (!reveal) return
+    // After the row has opened, so the scroll lands on its final position.
+    requestAnimationFrame(() =>
+      document
+        .getElementById(`item-${reveal.id}`)
+        ?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+    )
+  }, [reveal])
 
   const toggle = (id: string) => {
     const next = new Set(open)
@@ -95,11 +118,12 @@ export function ItemList({
         return (
           <li
             key={item.id}
+            id={`item-${item.id}`}
             // A row that prints open has to stay whole on the page. Without
             // this the header lands at the foot of one page and the body, which
             // avoids breaking on its own, jumps to the next and leaves the rest
             // of the first inside an empty box.
-            className={cn('card overflow-hidden', printOpen && 'print-block')}
+            className={cn('card scroll-mt-20 overflow-hidden', printOpen && 'print-block')}
           >
             <div className="flex items-center gap-1 pr-1.5">
               <button
