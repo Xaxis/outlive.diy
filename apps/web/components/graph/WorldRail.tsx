@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
-import type { Scenario, ScenarioResult, Verdict, Wallet } from '@outlive/core'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import type { Scenario, ScenarioResult, Wallet } from '@outlive/core'
+import { VERDICT } from '@/lib/verdict.ts'
 import { Segmented } from '@/components/ui/Field.tsx'
 import { cn } from '@/lib/cn.ts'
 import { TODAY } from './Lens.tsx'
@@ -20,13 +21,6 @@ import { TODAY } from './Lens.tsx'
  * only thing carrying the news: each row also says in words what breaks, and
  * every square names its wallet and its verdict to a screen reader.
  */
-
-const VERDICT: Record<Verdict, { label: string; tone: string }> = {
-  safe: { label: 'survives', tone: 'bg-ok' },
-  degraded: { label: 'no spare', tone: 'bg-medium' },
-  lost: { label: 'unspendable', tone: 'bg-critical' },
-  exposed: { label: 'they can spend it', tone: 'bg-critical' },
-}
 
 /** How many wallet squares fit on a row before it starts counting instead. */
 const DOT_LIMIT = 6
@@ -113,14 +107,44 @@ export function WorldRail({
   const visible = groups
     .map((group) => ({
       label: group.label,
+      // The world being drawn stays in the list whatever the filter says. A
+      // reader who arrived from a recovery route or a matrix cell is looking at
+      // a world that may break nothing, and a list that hides the row for the
+      // picture beside it reads as the picture having no name.
       scenarios: group.scenarios.filter(
-        (scenario) => filter === 'all' || results.get(scenario.id)?.alarming === true
+        (scenario) =>
+          filter === 'all' ||
+          scenario.id === activeId ||
+          results.get(scenario.id)?.alarming === true
       ),
     }))
     .filter((group) => group.scenarios.length > 0)
 
   const total = groups.reduce((count, group) => count + group.scenarios.length, 0)
-  const shown = visible.reduce((count, group) => count + group.scenarios.length, 0)
+  const shown = visible.reduce(
+    (count, group) =>
+      count +
+      group.scenarios.filter(
+        (scenario) => filter === 'all' || results.get(scenario.id)?.alarming === true
+      ).length,
+    0
+  )
+
+  // Bring the row for the drawn world into the list's own view, without
+  // scrolling the page: arriving on the map from a link should not also move
+  // the window out from under the reader.
+  const list = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const element = list.current
+    const row = element?.querySelector<HTMLElement>('[aria-current="true"]')
+    if (!element || !row) return
+    const top = row.offsetTop
+    if (
+      top < element.scrollTop ||
+      top + row.offsetHeight > element.scrollTop + element.clientHeight
+    )
+      element.scrollTop = top - element.clientHeight / 3
+  }, [activeId])
 
   return (
     <div className={cn('flex flex-col', className)}>
@@ -135,7 +159,7 @@ export function WorldRail({
         />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-2">
+      <div ref={list} className="relative min-h-0 flex-1 overflow-y-auto p-2">
         <Row
           label="As it stands"
           detail="nothing wrong, everything in reach"

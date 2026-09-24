@@ -12,10 +12,11 @@ import {
 import { MEASURE, Card, Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
 import { DiagramOmissions, PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
 import { WalletStanding } from '@/components/graph/WalletStanding.tsx'
+import { FailureMatrix } from '@/components/graph/FailureMatrix.tsx'
 import { SeverityBar, SeverityDot } from '@/components/ui/Severity.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { useActivePlan, useStore } from '@/lib/store.ts'
-import { useReport, useRunbook } from '@/lib/analysis.ts'
+import { useReport, useRunbook, useScenarioResults } from '@/lib/analysis.ts'
 import { href, useRoute } from '@/lib/router.ts'
 import { planIsStarted, plural, VERIFICATION_KIND } from '@/lib/describe.ts'
 import { cn } from '@/lib/cn.ts'
@@ -24,6 +25,7 @@ export function OverviewView() {
   const plan = useActivePlan()
   const report = useReport(plan)
   const runbook = useRunbook(plan)
+  const results = useScenarioResults(plan)
   const forkAsDraft = useStore((state) => state.forkAsDraft)
   const [, navigate] = useRoute()
 
@@ -106,6 +108,20 @@ export function OverviewView() {
               />
             )}
           </Panel>
+
+          {plan.wallets.length > 0 && results.length > 0 ? (
+            <Panel className="p-4">
+              <SectionHeading
+                title="Every way it fails"
+                hint="Each world the engine builds, against each wallet. A column of red is one wallet everything reaches; a row of red is one event that takes everything."
+              />
+              <FailureMatrix
+                results={results}
+                wallets={plan.wallets}
+                onPick={(id) => navigate({ view: 'map', section: id })}
+              />
+            </Panel>
+          ) : null}
 
           <Panel className="p-4">
             <SectionHeading

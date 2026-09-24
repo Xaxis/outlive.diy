@@ -30,7 +30,7 @@ interface Group {
 }
 
 /** Which question each scenario belongs under, in the order they are offered. */
-const GROUPS: { label: string; kinds: ScenarioKind[] }[] = [
+export const WORLD_GROUPS: { label: string; kinds: ScenarioKind[] }[] = [
   {
     label: 'If something is gone',
     kinds: [
@@ -82,7 +82,7 @@ export function useLens(plan: Plan | null, initial?: string | null): Lens {
 
   const groups = useMemo(
     () =>
-      GROUPS.map((group) => ({
+      WORLD_GROUPS.map((group) => ({
         label: group.label,
         scenarios: scenarios.filter((scenario) => group.kinds.includes(scenario.kind)),
       })).filter((group) => group.scenarios.length > 0),
