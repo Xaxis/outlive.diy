@@ -9,9 +9,10 @@ import {
   RULES,
   type FindingCategory,
 } from '@outlive/core'
-import { MEASURE, Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
+import { MEASURE, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { SeverityDot } from '@/components/ui/Severity.tsx'
 import { cn } from '@/lib/cn.ts'
+import { Disclosure } from '@/components/ui/Disclosure.tsx'
 
 /**
  * The rule catalogue, written out.
@@ -32,92 +33,102 @@ export function ReasoningView() {
         question={`Every one of the ${rules.length} rules, and the assumptions underneath them. Disagreeing with a rule is a legitimate outcome of reading it.`}
       />
 
-      <Panel className="mb-5 p-4">
-        <SectionHeading title="One question, asked in different worlds" />
-        <div className="space-y-3 text-[0.875rem] leading-relaxed text-muted">
-          <p>
-            Everything here is the same computation: given who can reach what, can this wallet be
-            spent? Loss subtracts an object. Compromise stands in the attacker&apos;s shoes.
-            Succession removes your memory along with you. Coercion assumes you cooperate, because
-            that is what compulsion means.
-          </p>
-          <p>
-            One evaluator answers all of them, so the results cannot contradict each other. A
-            planner that says a setup survives a fire and also that it does not is worse than one
-            that says nothing.
-          </p>
-          <p>
-            Where a fact is missing, the direction of the guess follows the question. Asking whether{' '}
-            <em className="not-italic text-body">you</em> can recover, an unrecorded location is
-            assumed findable, because you know where your own things are. Asking whether somebody
-            standing in one specific room can spend, it is not.
-          </p>
-        </div>
-      </Panel>
+      {/* The rules are the reference; the reasoning behind them is one
+          click each, rather than four essays before the first rule. */}
+      <Panel className="mb-5 space-y-2 p-4">
+        <p className="eyebrow">The assumptions underneath</p>
+        <Disclosure size="aside" title="One question, asked in different worlds">
+          <div className="mt-2">
+            <div className="space-y-3 text-[0.875rem] leading-relaxed text-muted">
+              <p>
+                Everything here is the same computation: given who can reach what, can this wallet
+                be spent? Loss subtracts an object. Compromise stands in the attacker&apos;s shoes.
+                Succession removes your memory along with you. Coercion assumes you cooperate,
+                because that is what compulsion means.
+              </p>
+              <p>
+                One evaluator answers all of them, so the results cannot contradict each other. A
+                planner that says a setup survives a fire and also that it does not is worse than
+                one that says nothing.
+              </p>
+              <p>
+                Where a fact is missing, the direction of the guess follows the question. Asking
+                whether <em className="not-italic text-body">you</em> can recover, an unrecorded
+                location is assumed findable, because you know where your own things are. Asking
+                whether somebody standing in one specific room can spend, it is not.
+              </p>
+            </div>
+          </div>
+        </Disclosure>
 
-      <Panel className="mb-5 p-4">
-        <SectionHeading title="How long it says a recovery takes" />
-        <div className="space-y-3 text-[0.875rem] leading-relaxed text-muted">
-          <p>
-            Every quantity in that figure is one you recorded. Travel comes from the minutes you
-            gave each place, waiting comes from the timelock on a path and the delay on an access,
-            and a person reachable in weeks rather than hours comes from what you said about them.
-            Nothing is invented.
-          </p>
-          <p>
-            Four arithmetic decisions, stated rather than buried. A trip to a place costs twice its
-            one-way time, because you have to come back with what you went for. Distinct places are
-            counted once however many things are collected there. Waiting and travelling do not add
-            up: probate, a timelock and somebody&apos;s availability all run at the same time as
-            each other, so the wait is the longest of them and the travelling starts once it is
-            over. A day absorbs eight hours of travel.
-          </p>
-          <p>
-            Anything you did not record counts as nothing and is named underneath the figure. That
-            makes every number here a floor rather than an estimate, and it says so. A recovery
-            estimate that quietly fills in its own blanks is worse than no estimate.
-          </p>
-        </div>
-      </Panel>
+        <Disclosure size="aside" title="How long it says a recovery takes">
+          <div className="mt-2">
+            <div className="space-y-3 text-[0.875rem] leading-relaxed text-muted">
+              <p>
+                Every quantity in that figure is one you recorded. Travel comes from the minutes you
+                gave each place, waiting comes from the timelock on a path and the delay on an
+                access, and a person reachable in weeks rather than hours comes from what you said
+                about them. Nothing is invented.
+              </p>
+              <p>
+                Four arithmetic decisions, stated rather than buried. A trip to a place costs twice
+                its one-way time, because you have to come back with what you went for. Distinct
+                places are counted once however many things are collected there. Waiting and
+                travelling do not add up: probate, a timelock and somebody&apos;s availability all
+                run at the same time as each other, so the wait is the longest of them and the
+                travelling starts once it is over. A day absorbs eight hours of travel.
+              </p>
+              <p>
+                Anything you did not record counts as nothing and is named underneath the figure.
+                That makes every number here a floor rather than an estimate, and it says so. A
+                recovery estimate that quietly fills in its own blanks is worse than no estimate.
+              </p>
+            </div>
+          </div>
+        </Disclosure>
 
-      <Panel className="mb-5 p-4">
-        <SectionHeading title="What the colours on the diagram mean" />
-        <div className="space-y-3 text-[0.875rem] leading-relaxed text-muted">
-          <p>
-            The diagram is the same evaluation as the findings, drawn. Every box is judged by the
-            same rules that produced the list, so the two cannot disagree about whether something is
-            in reach.
-          </p>
-          <p>
-            The colouring inverts with who is asking, for the same reason the missing facts do.
-            Asked whether you can recover, a box you cannot reach is the failure. Asked what
-            somebody standing in one room can take, a box they{' '}
-            <em className="not-italic text-body">can</em> reach is the failure, and painting their
-            empty hands red would be telling you that good news is bad.
-          </p>
-        </div>
-      </Panel>
+        <Disclosure size="aside" title="What the colours on the diagram mean">
+          <div className="mt-2">
+            <div className="space-y-3 text-[0.875rem] leading-relaxed text-muted">
+              <p>
+                The diagram is the same evaluation as the findings, drawn. Every box is judged by
+                the same rules that produced the list, so the two cannot disagree about whether
+                something is in reach.
+              </p>
+              <p>
+                The colouring inverts with who is asking, for the same reason the missing facts do.
+                Asked whether you can recover, a box you cannot reach is the failure. Asked what
+                somebody standing in one room can take, a box they{' '}
+                <em className="not-italic text-body">can</em> reach is the failure, and painting
+                their empty hands red would be telling you that good news is bad.
+              </p>
+            </div>
+          </div>
+        </Disclosure>
 
-      <Panel className="mb-5 p-4">
-        <SectionHeading title="What it does not know" />
-        <ul className="list-disc space-y-1.5 pl-5 text-[0.875rem] leading-relaxed text-muted">
-          <li>Your actual adversary, or whether anybody is interested in you at all.</li>
-          <li>
-            Whether anything you typed is true. It cannot see your backups and has no way to check.
-          </li>
-          <li>
-            Anything device-specific, unless you load your own vendor file. Facts about hardware
-            rot, and a stale fact stated confidently is worse than no fact.
-          </li>
-          <li>
-            Fees, transaction construction, address reuse, network privacy, or anything on-chain.
-            Those matter and are a different tool.
-          </li>
-          <li>
-            Law. Probate, marital property and jurisdiction are modelled here only as delays and
-            groupings.
-          </li>
-        </ul>
+        <Disclosure size="aside" title="What it does not know">
+          <div className="mt-2">
+            <ul className="list-disc space-y-1.5 pl-5 text-[0.875rem] leading-relaxed text-muted">
+              <li>Your actual adversary, or whether anybody is interested in you at all.</li>
+              <li>
+                Whether anything you typed is true. It cannot see your backups and has no way to
+                check.
+              </li>
+              <li>
+                Anything device-specific, unless you load your own vendor file. Facts about hardware
+                rot, and a stale fact stated confidently is worse than no fact.
+              </li>
+              <li>
+                Fees, transaction construction, address reuse, network privacy, or anything
+                on-chain. Those matter and are a different tool.
+              </li>
+              <li>
+                Law. Probate, marital property and jurisdiction are modelled here only as delays and
+                groupings.
+              </li>
+            </ul>
+          </div>
+        </Disclosure>
       </Panel>
 
       <div className="space-y-3">
