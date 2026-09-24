@@ -106,7 +106,9 @@ export function EntityWorkbench({
     // aligned, rather than the form stretching to whatever the window is.
     <div
       className={cn(
-        'grid items-start gap-4',
+        // An explicit column below the breakpoint. An implicit one is sized to
+        // its longest line, and a place summary pushed the page off a phone.
+        'grid grid-cols-[minmax(0,1fr)] items-start gap-4',
         listed ? 'lg:grid-cols-[minmax(13rem,18rem)_minmax(0,42rem)]' : 'max-w-[48rem]'
       )}
     >

@@ -127,7 +127,7 @@ export function BuildView() {
       <ViewHeader
         eyebrow="Builder"
         title="Build a plan"
-        question="Click the shape of your setup; the drawing and findings on the right are the real analysis, live. Everything can be refined afterwards in Design."
+        question="Describe or click the shape of your setup. The drawing and findings are the real analysis, redrawn on every click, and everything can be refined afterwards in Design."
         actions={
           <Button
             variant="primary"
