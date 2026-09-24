@@ -345,7 +345,35 @@ describe('fixing a finding', () => {
     expect(compareId).toBe(plans[0].id)
     expect(plans.find((plan) => plan.id === activeId)?.kind).toBe('draft')
     expect(screen.getByText(/^Closes \d+/)).toBeInTheDocument()
+
+    // And adopting it puts the fixes into the original, under its own name.
+    const originalId = plans[0].id
+    const fixed = plans.find((plan) => plan.id === activeId)!
+    await user.click(screen.getByRole('button', { name: /use this version/i }))
+    const after = useStore.getState()
+    expect(after.plans).toHaveLength(1)
+    expect(after.plans[0].id).toBe(originalId)
+    expect(after.plans[0].name).toBe('Two of three, three sites')
+    expect(after.plans[0].locations).toHaveLength(fixed.locations.length)
   }, 20000)
+
+  it('records a whole runbook phase and an overdue check in one click each', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/runbook')
+    await user.click((await screen.findAllByRole('button', { name: /mark phase done/i }))[0])
+    const rail = screen.getByRole('navigation', { name: /phases/i })
+    expect(within(rail).getByRole('button', { name: /prepare: 3 of 3 done/i })).toBeInTheDocument()
+
+    goto('#/overview')
+    const done = await screen.findAllByRole('button', { name: /done today/i })
+    const count = done.length
+    await user.click(done[0])
+    expect(screen.queryAllByRole('button', { name: /done today/i }).length).toBeLessThan(count)
+  })
 })
 
 describe('stepping through worlds', () => {

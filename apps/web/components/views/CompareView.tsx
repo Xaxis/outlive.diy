@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { ArrowRight, GitFork, Minus, Plus } from 'lucide-react'
+import { ArrowRight, Check, GitFork, Minus, Plus } from 'lucide-react'
 import {
   analyze,
   baseWorld,
@@ -33,6 +33,7 @@ export function CompareView() {
   const plans = useStore((state) => state.plans)
   const setCompare = useStore((state) => state.setCompare)
   const forkAsDraft = useStore((state) => state.forkAsDraft)
+  const adoptDraft = useStore((state) => state.adoptDraft)
 
   const delta = useMemo(() => {
     if (!plan || !other) return null
@@ -92,12 +93,25 @@ export function CompareView() {
         title="Compare plans"
         question="Which findings a change closes, and which it opens. That trade is the decision; the individual findings are not."
         actions={
-          <Button
-            icon={<GitFork className="size-3.5" aria-hidden />}
-            onClick={() => forkAsDraft(plan.id)}
-          >
-            Fork this as a draft
-          </Button>
+          <>
+            <Button
+              icon={<GitFork className="size-3.5" aria-hidden />}
+              onClick={() => forkAsDraft(plan.id)}
+            >
+              Fork this as a draft
+            </Button>
+            {/* The end of the loop: a draft that is better becomes the plan,
+                in one click, rather than by retyping it into the original. */}
+            {other && plan.kind === 'draft' ? (
+              <Button
+                variant="primary"
+                icon={<Check className="size-3.5" aria-hidden />}
+                onClick={() => adoptDraft(plan.id, other.id)}
+              >
+                Use this version
+              </Button>
+            ) : null}
+          </>
         }
       />
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ArrowRight, FileUp } from 'lucide-react'
+import { ArrowRight, FileUp, ShieldCheck, WifiOff } from 'lucide-react'
 import {
   baseWorld,
   buildGraph,
@@ -74,10 +74,8 @@ export function Welcome() {
       </h1>
 
       <p className="mt-5 max-w-2xl text-[1.02rem] leading-relaxed text-muted">
-        Describe the <em className="not-italic text-body">shape</em> of your setup: how many keys,
-        what threshold, which backups sit where, who can reach them. This works out what happens
-        when one of those is gone, or in the wrong hands, or when you are, and writes the runbook to
-        build it and the recovery route for each way it fails.
+        Pick the shape of your setup. See what a fire, a burglary or your death does to it, and fix
+        what breaks in a click.
       </p>
 
       <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -104,35 +102,30 @@ export function Welcome() {
         </OpenFileButton>
       </div>
 
-      {/* The two promises, before anything is typed. */}
-      <dl className="mt-12 space-y-4 border-t border-line pt-7 text-[0.9375rem] leading-relaxed">
-        <div>
-          <dt className="font-medium text-strong">It refuses key material.</dt>
-          <dd className="text-muted">
-            No field anywhere for a seed word, key, descriptor, address or balance, and every text
-            box checks what you type and will not store one. Places and people are roles:{' '}
-            <span className="text-body">Site B</span>,{' '}
-            <span className="text-body">Successor 1</span>.
-          </dd>
-        </div>
-        <div>
-          <dt className="font-medium text-strong">It makes no network calls.</dt>
-          <dd className="text-muted">
-            No fonts from a content network, no analytics, no telemetry. One static page whose
-            security policy forbids connecting anywhere at all.{' '}
+      {/* The two promises, before anything is typed. One line each: they are
+          the reason to trust the page, and a reason nobody reads protects
+          nobody. The detail is one click away. */}
+      <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
+        <li className="flex items-center gap-2">
+          <ShieldCheck className="size-4 flex-none text-ok" aria-hidden />
+          <span>
+            <span className="font-medium text-strong">It refuses key material.</span> Every field
+            refuses a pasted seed, key or address.
+          </span>
+        </li>
+        <li className="flex items-center gap-2">
+          <WifiOff className="size-4 flex-none text-ok" aria-hidden />
+          <span>
+            <span className="font-medium text-strong">It makes no network calls.</span>{' '}
             <a href={href('file')} className="link">
-              What is stored, and how to erase it
+              What is stored
             </a>
-            .
-          </dd>
-        </div>
-      </dl>
+          </span>
+        </li>
+      </ul>
 
       <section className="mt-12 border-t border-line pt-7">
-        <h2 className="text-sm font-semibold text-strong">Start from a worked example</h2>
-        <p className="mt-1 text-sm text-muted">
-          Each is a plan somebody plausibly has. Open two and compare them.
-        </p>
+        <h2 className="text-sm font-semibold text-strong">Or start from a worked example</h2>
 
         {preview && example ? (
           <figure className="mt-5">
@@ -192,7 +185,7 @@ export function Welcome() {
                   .
                 </>
               ) : (
-                'The second example, drawn: two of three keys spend it, each key exists as a device and a steel plate, and every one of those sits in a place. Take one of them away above and the picture answers.'
+                'Two of three keys, each a device and a steel plate, each in a place. Pick something to take away.'
               )}
             </figcaption>
           </figure>
@@ -226,9 +219,8 @@ export function Welcome() {
 
       <footer className="mt-12 border-t border-line pt-7 text-xs leading-relaxed text-faint">
         <p className="max-w-2xl">
-          It models structure. It does not know your real threat, cannot verify anything you tell
-          it, and is not advice. A plan with no findings here is a plan this program could not find
-          a problem with, which is a much smaller claim than it sounds like.
+          Structure, not advice. No findings means nothing this program has a rule for, not that a
+          plan is safe.
         </p>
         <p className="mt-3">
           <a href={href('reasoning')} className="link">

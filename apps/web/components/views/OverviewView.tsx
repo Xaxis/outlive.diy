@@ -8,6 +8,7 @@ import {
   createContext,
   indexPlan,
   overdueVerifications,
+  today,
 } from '@outlive/core'
 import { MEASURE, Card, Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
 import { DiagramOmissions, PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
@@ -28,6 +29,7 @@ export function OverviewView() {
   const runbook = useRunbook(plan)
   const results = useScenarioResults(plan)
   const forkAsDraft = useStore((state) => state.forkAsDraft)
+  const edit = useStore((state) => state.edit)
   const [, navigate] = useRoute()
 
   const overdue = useMemo(() => (plan ? overdueVerifications(createContext(plan)) : []), [plan])
@@ -179,7 +181,7 @@ export function OverviewView() {
                 {overdue.slice(0, 5).map((entry) => (
                   <li key={entry.verification.id} className="flex items-start gap-2.5">
                     <TriangleAlert className="mt-0.5 size-3.5 flex-none text-medium" aria-hidden />
-                    <span className="text-sm leading-snug text-body">
+                    <span className="min-w-0 flex-1 text-sm leading-snug text-body">
                       {VERIFICATION_KIND[entry.verification.kind]}
                       <span className="block text-xs text-faint">
                         {entry.lastVerifiedAt === null
@@ -187,6 +189,23 @@ export function OverviewView() {
                           : `${entry.overdueDays} days overdue`}
                       </span>
                     </span>
+                    {/* The record, where the reminder is. Going to the checks
+                        step to find the same row and type today's date was the
+                        whole of the chore. */}
+                    <Button
+                      size="sm"
+                      aria-label={`${VERIFICATION_KIND[entry.verification.kind]}: done today`}
+                      onClick={() =>
+                        edit((draft) => {
+                          const target = draft.verifications.find(
+                            (check) => check.id === entry.verification.id
+                          )
+                          if (target) target.lastVerifiedAt = today()
+                        })
+                      }
+                    >
+                      Done today
+                    </Button>
                   </li>
                 ))}
               </ul>

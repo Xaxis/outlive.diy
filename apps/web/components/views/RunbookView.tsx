@@ -131,10 +131,30 @@ export function RunbookView() {
       <div className="space-y-8">
         {runbook.phases.map((group, phaseIndex) => (
           <section key={group.phase} id={phaseAnchor(group.phase)} className="scroll-mt-44">
-            <header className="mb-3 break-inside-avoid break-after-avoid border-b border-line pb-2">
-              <p className="eyebrow">Phase {phaseIndex + 1}</p>
-              <h2 className="text-base font-semibold text-strong">{PHASE_TITLE[group.phase]}</h2>
-              <p className="mt-0.5 text-sm text-muted">{PHASE_PURPOSE[group.phase]}</p>
+            <header className="mb-3 flex break-inside-avoid break-after-avoid items-end justify-between gap-3 border-b border-line pb-2">
+              <div>
+                <p className="eyebrow">Phase {phaseIndex + 1}</p>
+                <h2 className="text-base font-semibold text-strong">{PHASE_TITLE[group.phase]}</h2>
+                <p className="mt-0.5 text-sm text-muted">{PHASE_PURPOSE[group.phase]}</p>
+              </div>
+              {/* A phase is often done in one sitting, and ticking eight
+                  boxes after it is the kind of chore that stops people
+                  recording progress at all. */}
+              <Button
+                size="sm"
+                className="no-print"
+                onClick={() => {
+                  const all = group.steps.every(done)
+                  edit((draft) => {
+                    for (const step of group.steps) {
+                      if (all) delete draft.progress[step.id]
+                      else if (!draft.progress[step.id]) draft.progress[step.id] = today()
+                    }
+                  })
+                }}
+              >
+                {group.steps.every(done) ? 'Clear phase' : 'Mark phase done'}
+              </Button>
             </header>
             <ol className="space-y-2">
               {runsOf(group.steps).map((run) => (

@@ -116,6 +116,11 @@ interface StoreState {
    * undo step, because "that made it worse" is the likeliest next thought.
    */
   applyPlan: (next: Plan) => void
+  /**
+   * Make a draft the plan: its content replaces the baseline's, which keeps
+   * its name and identity, and the draft goes. One undo step.
+   */
+  adoptDraft: (draftId: Id, baselineId: Id) => void
   openExample: (id: string) => void
   forkAsDraft: (id: Id) => void
   renamePlan: (id: Id, name: string) => void
@@ -304,6 +309,29 @@ export const useStore = create<StoreState>()(
         const { id, name, kind, createdAt } = draft
         Object.assign(draft, structuredClone(next), { id, name, kind, createdAt })
       })
+    },
+
+    adoptDraft: (draftId, baselineId) => {
+      set((state) => {
+        const draft = state.plans.find((plan) => plan.id === draftId)
+        const baseline = state.plans.find((plan) => plan.id === baselineId)
+        if (!draft || !baseline) return
+        remember(state as StoreState)
+        const { id, name, kind, createdAt } = baseline
+        Object.assign(baseline, structuredClone(original(draft) ?? draft), {
+          id,
+          name,
+          kind,
+          createdAt,
+          updatedAt: today(),
+        })
+        state.plans = state.plans.filter((plan) => plan.id !== draftId)
+        state.activeId = baselineId
+        state.compareId = null
+        state.selection = null
+        state.dirty = true
+      })
+      persist(get())
     },
 
     openExample: (exampleId) => {
