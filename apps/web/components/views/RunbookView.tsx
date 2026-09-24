@@ -10,6 +10,7 @@ import { useRunbook } from '@/lib/analysis.ts'
 import { planIsStarted } from '@/lib/describe.ts'
 import { NothingYet } from '@/components/shell/NothingYet.tsx'
 import { cn } from '@/lib/cn.ts'
+import { PhaseRail, phaseAnchor, stepAnchor } from '@/components/documents/PhaseRail.tsx'
 
 /**
  * Consecutive steps that say exactly the same thing, grouped so that the thing
@@ -96,12 +97,6 @@ export function RunbookView() {
           </div>
           <div className="mono text-xs text-faint no-print">{plan.name}</div>
         </div>
-        <div className="no-print mt-3 h-1.5 overflow-hidden rounded-full bg-sunken">
-          <div
-            className="h-full rounded-full bg-accent transition-[width]"
-            style={{ width: `${Math.round((completed / runbook.steps.length) * 100)}%` }}
-          />
-        </div>
       </Panel>
 
       {runbook.gates.length > 0 ? (
@@ -131,9 +126,11 @@ export function RunbookView() {
         </Panel>
       ) : null}
 
+      <PhaseRail runbook={runbook} done={done} />
+
       <div className="space-y-8">
         {runbook.phases.map((group, phaseIndex) => (
-          <section key={group.phase}>
+          <section key={group.phase} id={phaseAnchor(group.phase)} className="scroll-mt-44">
             <header className="mb-3 border-b border-line pb-2">
               <p className="eyebrow">Phase {phaseIndex + 1}</p>
               <h2 className="text-base font-semibold text-strong">{PHASE_TITLE[group.phase]}</h2>
@@ -153,7 +150,7 @@ export function RunbookView() {
                   ) : null}
                   <ol className="space-y-2">
                     {run.map((step) => (
-                      <li key={step.id}>
+                      <li key={step.id} id={stepAnchor(step)} className="scroll-mt-44">
                         <div
                           className={cn(
                             'card flex gap-3 p-3.5 print-block',

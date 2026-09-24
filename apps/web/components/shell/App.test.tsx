@@ -1333,6 +1333,27 @@ describe('what a page shows at rest', () => {
     ).toBeInTheDocument()
   })
 
+  it('says, by phase, how far the build has got and what is next', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/runbook')
+    const rail = await screen.findByRole('navigation', { name: /phases/i })
+    expect(
+      within(rail).getByRole('button', { name: /phase 1, prepare: 0 of 3 done/i })
+    ).toBeInTheDocument()
+    expect(within(rail).getByText(/^Acquire 3 signing devices$/)).toBeInTheDocument()
+
+    // Tick the first step and the rail moves on with it.
+    await user.click(screen.getAllByRole('button', { name: 'Mark done' })[0])
+    expect(
+      within(rail).getByRole('button', { name: /phase 1, prepare: 1 of 3 done/i })
+    ).toBeInTheDocument()
+    expect(within(rail).getByText(/^Verify firmware on every device/)).toBeInTheDocument()
+  })
+
   it('says a phase-wide instruction once rather than once per key', async () => {
     reset()
     const user = userEvent.setup()
