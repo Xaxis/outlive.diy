@@ -308,6 +308,25 @@ describe('building a plan by its shape', () => {
   })
 })
 
+describe('what goes where', () => {
+  it('moves and adds things by clicking a grid, on the real plan', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/design/keys')
+    const grid = await screen.findByRole('table', { name: /what goes where/i })
+    await user.click(within(grid).getByRole('button', { name: 'Key A device at Site C' }))
+    const key = () => useStore.getState().plans[0].keys.find((entry) => entry.label === 'Key A')!
+    expect(key().deviceLocationId).toBe('loc_family')
+    await user.click(within(grid).getByRole('button', { name: 'Key A backup at Site B' }))
+    expect(key().backups.map((backup) => backup.locationId)).toContain('loc_bank')
+    await user.click(within(grid).getByRole('button', { name: 'Key A backup at Site B' }))
+    expect(key().backups.map((backup) => backup.locationId)).not.toContain('loc_bank')
+  })
+})
+
 describe('fixing a finding', () => {
   it('finds the change, applies it, and undoes it', async () => {
     reset()

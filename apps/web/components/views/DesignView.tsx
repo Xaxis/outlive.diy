@@ -7,6 +7,7 @@ import { ProfileEditor } from '@/components/plan/ProfileEditor.tsx'
 import { EntityWorkbench } from '@/components/plan/EntityWorkbench.tsx'
 import { StepEffect } from '@/components/plan/StepEffect.tsx'
 import { LiveDrawing } from '@/components/plan/LiveDrawing.tsx'
+import { PlacementGrid } from '@/components/plan/PlacementGrid.tsx'
 import { entitiesOf, useActivePlan, useStore } from '@/lib/store.ts'
 import { useReport } from '@/lib/analysis.ts'
 import { useRoute } from '@/lib/router.ts'
@@ -134,7 +135,15 @@ export function DesignView() {
         <ProfileEditor plan={plan} />
       ) : (
         <>
-          <LiveDrawing plan={plan} />
+          {/* Where things are, as a grid you click, beside the picture it
+              changes. Side by side where there is room, so a click and its
+              consequence are in view together. */}
+          <div className="mb-4 grid items-start gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] [&>*]:mb-0">
+            {section.kind === 'verification' || section.kind === 'device' ? null : (
+              <PlacementGrid plan={plan} />
+            )}
+            <LiveDrawing plan={plan} />
+          </div>
           <EntityWorkbench
             plan={plan}
             report={report}
