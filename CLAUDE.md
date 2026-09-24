@@ -155,6 +155,24 @@ an arrow key both do it. The arrangement lives in the component and not in the
 plan file: where a box sits on a screen is not a fact about custody, and a plan
 handed to somebody else should arrive in the order the layout argues for.
 
+**A verdict is painted from one table.** The overview's matrix, the rail
+beside the map, the compare diff and the landing page all show survives, no
+spare, unspendable or theirs to spend, and all of them take the word, the
+glyph and the colour from `apps/web/lib/verdict.ts`. The matrix is an index
+into the map and not a second answer: every cell is a scenario the engine
+enumerated, and clicking one draws it. A summary that computed its own
+verdicts would be the second evaluator the engine exists to prevent.
+
+**Motion on the diagram is news, not decoration.** A box pulses once when a
+new world flips its answer, and a traced chain flows towards the wallet only
+along dependencies that hold. Nothing else moves. Reduced motion removes the
+movement and leaves the colour and dashes, which carry the same news.
+
+**Every recovery is measured against what the purpose page was told.** The
+chart on the recovery page draws each route on one scale with the stated
+tolerance through all of them. A route with no recovery gets no bar, because a
+bar of any length says it ends, and a floor is marked as one.
+
 **There is one place a plan is described, and it is guided.** `lib/sections.ts`
 holds the seven steps with one purpose sentence and one done rule each, and
 `views/DesignView.tsx` is the only screen that renders them. There used to be a
