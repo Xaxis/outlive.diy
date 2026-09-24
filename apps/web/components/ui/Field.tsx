@@ -4,6 +4,7 @@ import { createContext, useContext, useId, useRef, useState, type ReactNode } fr
 import { inspect, type GuardHit } from '@outlive/core'
 import { AlertTriangle, ShieldAlert } from 'lucide-react'
 import { cn } from '@/lib/cn.ts'
+import { Info } from '@/components/ui/Surface.tsx'
 
 /**
  * The id of the label a field is wrapping, so that whatever control ends up
@@ -35,11 +36,14 @@ export function Field({
   return (
     <FieldLabelContext value={labelId}>
       <div className={cn('space-y-1.5', className)}>
-        <span className="label" id={labelId}>
-          {label}
-        </span>
+        <div>
+          <span className="label inline" id={labelId}>
+            {label}
+          </span>
+          {/* Outside the label, so the control's name stays the label alone. */}
+          {help ? <Info>{help}</Info> : null}
+        </div>
         {children}
-        {help ? <p className="text-xs leading-snug text-faint">{help}</p> : null}
       </div>
     </FieldLabelContext>
   )
@@ -415,8 +419,13 @@ export function ChoiceGroup<T extends string | number>({
         return (
           <label
             key={String(option.value)}
+            // Only the chosen option says what it commits you to. Five
+            // consequences at once is a paragraph to read before a click; one
+            // is the answer to the click, and the rest are a hover away.
+            title={checked ? undefined : option.consequence}
             className={cn(
-              'flex cursor-pointer items-start gap-2.5 rounded-[var(--radius-control)] border p-2.5 transition-colors',
+              'flex cursor-pointer items-start gap-2.5 rounded-[var(--radius-control)] border px-2.5 transition-colors',
+              checked ? 'py-2.5' : 'py-1.5',
               checked
                 ? 'border-accent bg-accent/[0.07]'
                 : 'border-line hover:border-line-strong hover:bg-[rgb(var(--tint)/0.02)]'
@@ -445,7 +454,12 @@ export function ChoiceGroup<T extends string | number>({
               >
                 {option.label}
               </span>
-              <span className="mt-0.5 block text-xs leading-snug text-muted">
+              <span
+                className={cn(
+                  'mt-0.5 block text-xs leading-snug text-muted',
+                  !checked && 'sr-only'
+                )}
+              >
                 {option.consequence}
               </span>
             </span>

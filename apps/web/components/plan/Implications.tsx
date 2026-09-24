@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import { Check, CircleAlert, Minus } from 'lucide-react'
 import { profileImplications, type Plan } from '@outlive/core'
-import { Panel } from '@/components/ui/Surface.tsx'
+import { Info, Panel } from '@/components/ui/Surface.tsx'
 import { cn } from '@/lib/cn.ts'
 
 /**
@@ -18,17 +18,22 @@ import { cn } from '@/lib/cn.ts'
  * There is no score and no total. A count of ticks would be read as a target
  * and optimised, which is the failure this whole program is built to avoid.
  */
+/** One or two words for each question, so an answer reads without it. */
+const TOPIC: Record<string, string> = {
+  concerns: 'Threats',
+  tolerance: 'Downtime',
+  horizon: 'Lifespan',
+  jurisdiction: 'Legal systems',
+  travel: 'Away often',
+}
+
 export function Implications({ plan, className }: { plan: Plan; className?: string }) {
   const implications = useMemo(() => profileImplications(plan), [plan])
 
   return (
     <Panel className={cn('p-4', className)}>
-      <p className="eyebrow mb-1">What you said, against what you built</p>
-      <p className="mb-4 text-xs leading-relaxed text-faint">
-        Each answer above governs a real part of the analysis. This is what the plan underneath it
-        currently does about it.
-      </p>
-      <ul className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
+      <p className="eyebrow mb-3">What you said, against what you built</p>
+      <ul className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
         {implications.map((implication) => {
           const Icon = implication.meets === null ? Minus : implication.meets ? Check : CircleAlert
           return (
@@ -45,23 +50,29 @@ export function Implications({ plan, className }: { plan: Plan; className?: stri
                 aria-hidden
               />
               <div className="min-w-0">
-                <p className="text-[0.8125rem] leading-snug text-strong">
-                  {implication.question}
-                  {/* The answer is repeated here rather than only sitting in the
-                      control, because the panel has to read on its own when it
-                      is beside a step that is not the purpose step. */}
-                  <span className="block font-medium text-body">
-                    You said: {implication.said}.
-                    <span className="sr-only">
-                      {implication.meets === null
-                        ? ' Nothing measured against this yet.'
-                        : implication.meets
-                          ? ' The plan meets this.'
-                          : ' The plan does not meet this.'}
-                    </span>
+                {/* The answer, then the measurement only where it fails. A
+                    measurement that agrees is behind the info mark; one that
+                    does not is the reason this panel exists. */}
+                <p className="text-[0.8125rem] leading-snug text-body">
+                  <span className="sr-only">{implication.question} </span>
+                  <span className="font-medium text-strong">
+                    {TOPIC[implication.id] ?? implication.question}
+                  </span>{' '}
+                  {implication.said}
+                  <span className="sr-only">
+                    {implication.meets === null
+                      ? ' Nothing measured against this yet.'
+                      : implication.meets
+                        ? ' The plan meets this.'
+                        : ' The plan does not meet this.'}
                   </span>
+                  {implication.meets === false ? null : (
+                    <Info label={implication.question}>{implication.measured}</Info>
+                  )}
                 </p>
-                <p className="mt-1 text-xs leading-relaxed text-muted">{implication.measured}</p>
+                {implication.meets === false ? (
+                  <p className="mt-0.5 text-xs leading-relaxed text-high">{implication.measured}</p>
+                ) : null}
               </div>
             </li>
           )

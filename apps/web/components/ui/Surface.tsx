@@ -1,7 +1,50 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { Info as InfoIcon } from 'lucide-react'
 import { cn } from '@/lib/cn.ts'
+
+/**
+ * The first sentence of a piece of copy, and whatever is left over.
+ *
+ * Every screen used to open with a paragraph, and every panel with another.
+ * The reasoning in them is real and some readers want it, but most want the
+ * screen. So the first sentence stays and the rest is one click away.
+ */
+export function splitSentence(text: string): [string, string] {
+  const match = /^(.+?[.?!])\s+(.+)$/s.exec(text.trim())
+  return match ? [match[1], match[2]] : [text, '']
+}
+
+/** A small "why" that opens in place. Text on demand, not on the page. */
+export function Info({ children, label = 'Why' }: { children: ReactNode; label?: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <span className="no-print">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-label={label}
+        title={label}
+        onClick={() => setOpen((value) => !value)}
+        className={cn(
+          'ml-1.5 inline-flex size-4 translate-y-[-1px] items-center justify-center rounded-full align-middle transition-colors',
+          open ? 'text-accent' : 'text-faint hover:text-muted'
+        )}
+      >
+        <InfoIcon className="size-3.5" aria-hidden />
+      </button>
+      {open ? (
+        <span
+          role="note"
+          className="mt-1.5 block max-w-2xl rounded-[var(--radius-control)] border border-line bg-sunken px-3 py-2 text-xs font-normal leading-relaxed text-muted"
+        >
+          {children}
+        </span>
+      ) : null}
+    </span>
+  )
+}
 
 /**
  * How wide a view is allowed to be.
@@ -87,10 +130,20 @@ export function ViewHeader({
       <div className="min-w-0">
         {eyebrow ? <p className="eyebrow no-print mb-1">{eyebrow}</p> : null}
         <h1 className="text-[1.35rem] font-semibold tracking-[-0.01em] text-strong">{title}</h1>
-        {question ? <p className="no-print mt-1 max-w-2xl text-sm text-muted">{question}</p> : null}
+        {question ? <Lede text={question} /> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2 no-print">{actions}</div> : null}
     </header>
+  )
+}
+
+function Lede({ text }: { text: string }) {
+  const [first, rest] = splitSentence(text)
+  return (
+    <div className="no-print mt-1 max-w-2xl text-sm text-muted">
+      {first}
+      {rest ? <Info>{rest}</Info> : null}
+    </div>
   )
 }
 
@@ -106,8 +159,10 @@ export function SectionHeading({
   return (
     <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
       <div>
-        <h2 className="text-[0.95rem] font-semibold text-strong">{title}</h2>
-        {hint ? <p className="mt-0.5 text-xs text-faint">{hint}</p> : null}
+        <h2 className="text-[0.95rem] font-semibold text-strong">
+          {title}
+          {hint ? <Info label={`About ${title.toLowerCase()}`}>{hint}</Info> : null}
+        </h2>
       </div>
       {actions ? <div className="flex items-center gap-2 no-print">{actions}</div> : null}
     </div>
