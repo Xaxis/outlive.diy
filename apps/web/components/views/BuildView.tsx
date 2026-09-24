@@ -124,8 +124,8 @@ export function BuildView() {
   return (
     <div className={MEASURE.wide}>
       <ViewHeader
-        eyebrow="New plan"
-        title="Build it by shape"
+        eyebrow="Builder"
+        title="Build a plan"
         question="Click the shape of your setup; the drawing and findings on the right are the real analysis, live. Everything can be refined afterwards in Design."
         actions={
           <Button

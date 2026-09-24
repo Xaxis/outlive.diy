@@ -1,6 +1,7 @@
 'use client'
 
 import { useDeferredValue } from 'react'
+import type { PresetStep } from '@outlive/core'
 import { ArrowLeft, ArrowRight, Check, Circle, Plus } from 'lucide-react'
 import { MEASURE, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Button } from '@/components/ui/Button.tsx'
@@ -10,6 +11,7 @@ import { StepEffect } from '@/components/plan/StepEffect.tsx'
 import { LiveDrawing } from '@/components/plan/LiveDrawing.tsx'
 import { PlacementGrid } from '@/components/plan/PlacementGrid.tsx'
 import { DeviceShelf } from '@/components/plan/DeviceShelf.tsx'
+import { StepPresets } from '@/components/plan/StepPresets.tsx'
 import { entitiesOf, useActivePlan, useStore } from '@/lib/store.ts'
 import { useReport } from '@/lib/analysis.ts'
 import { useRoute } from '@/lib/router.ts'
@@ -33,6 +35,17 @@ import { cn } from '@/lib/cn.ts'
  * teaches nothing, and the person walking it has no way to tell a good answer
  * from a careless one until the very end.
  */
+/** Which presets belong to which step. */
+const STEP_OF: Record<string, PresetStep> = {
+  profile: 'profile',
+  locations: 'locations',
+  people: 'people',
+  devices: 'devices',
+  keys: 'keys',
+  wallets: 'wallets',
+  checks: 'checks',
+}
+
 export function DesignView() {
   const plan = useActivePlan()
   const report = useReport(plan)
@@ -137,6 +150,8 @@ export function DesignView() {
           </Button>
         ) : null}
       </div>
+
+      <StepPresets plan={plan} step={STEP_OF[section.id]} />
 
       {section.kind === null ? (
         <ProfileEditor plan={plan} />

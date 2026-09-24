@@ -81,7 +81,7 @@ function PlanSwitcher({ plans, activeId }: { plans: Plan[]; activeId: string }) 
                 className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2 py-1.5 text-left text-xs text-body no-underline transition-colors hover:bg-[rgb(var(--tint)/0.06)]"
               >
                 <Plus className="size-3.5 flex-none text-accent" aria-hidden />
-                New plan by shape
+                Build a new plan
               </a>
             </li>
           </ul>

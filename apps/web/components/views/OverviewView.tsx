@@ -69,6 +69,24 @@ export function OverviewView() {
     )
   }
 
+  // Which key, wallet or person a check is about. Three rows that all say
+  // "restore a backup" are three rows nobody can act on.
+  const subjectLabel = (subject: { type: string; id: string }): string | null => {
+    const found =
+      subject.type === 'key'
+        ? index.keys.get(subject.id)
+        : subject.type === 'wallet'
+          ? index.wallets.get(subject.id)
+          : subject.type === 'device'
+            ? index.devices.get(subject.id)
+            : subject.type === 'person'
+              ? index.people.get(subject.id)
+              : subject.type === 'location'
+                ? index.locations.get(subject.id)
+                : null
+    return found?.label ?? null
+  }
+
   const top = report.findings.slice(0, 4)
   const gates = runbook?.gates.length ?? 0
 
@@ -180,6 +198,12 @@ export function OverviewView() {
                     <TriangleAlert className="mt-0.5 size-3.5 flex-none text-medium" aria-hidden />
                     <span className="min-w-0 flex-1 text-sm leading-snug text-body">
                       {VERIFICATION_KIND[entry.verification.kind]}
+                      {subjectLabel(entry.verification.subject) ? (
+                        <span className="text-muted">
+                          {' '}
+                          · {subjectLabel(entry.verification.subject)}
+                        </span>
+                      ) : null}
                       <span className="block text-xs text-faint">
                         {entry.lastVerifiedAt === null
                           ? 'never done'

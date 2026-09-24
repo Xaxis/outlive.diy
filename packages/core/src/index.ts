@@ -13,6 +13,7 @@ export * from './model/schema.ts'
 export * from './model/selectors.ts'
 export * from './model/examples.ts'
 export * from './model/shape.ts'
+export * from './model/presets.ts'
 
 export * from './guard/guard.ts'
 

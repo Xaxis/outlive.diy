@@ -288,7 +288,7 @@ describe('building a plan by its shape', () => {
     render(<App />)
 
     await user.click(await screen.findByRole('button', { name: /build a plan/i }))
-    expect(await screen.findByRole('heading', { name: /build it by shape/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /^build a plan$/i })).toBeInTheDocument()
 
     // One key is one click, and the analysis answers straight away.
     await user.click(screen.getByRole('button', { name: /^one key$/i }))
@@ -364,6 +364,28 @@ describe('a device, picked rather than typed', () => {
     await user.tab()
     const device = useStore.getState().plans[0].devices.find((entry) => entry.label === 'Signer A')!
     expect(device.vendor).toBe('Homebrew')
+  })
+})
+
+describe('starting a step from a template', () => {
+  it('fills a step in one click, says what it did, and undoes in one', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByRole('button', { name: /describe one by hand/i }))
+
+    goto('#/design/locations')
+    const start = await screen.findByRole('group', { name: /start from/i })
+    await user.click(within(start).getByRole('button', { name: 'Home, a relative, a second home' }))
+    expect(useStore.getState().plans[0].locations).toHaveLength(3)
+
+    // A template that needs something first says so instead of half working.
+    goto('#/design/wallets')
+    const wallets = await screen.findByRole('group', { name: /start from/i })
+    expect(within(wallets).getByRole('button', { name: /two of three vault/i })).toBeDisabled()
+
+    await user.keyboard('{Control>}z{/Control}')
+    expect(useStore.getState().plans[0].locations).toHaveLength(0)
   })
 })
 
