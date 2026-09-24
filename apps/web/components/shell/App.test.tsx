@@ -43,6 +43,24 @@ describe('the application', () => {
     expect(screen.getByText(/it makes no network calls/i)).toBeInTheDocument()
   })
 
+  it('lets the landing picture be asked a question before anything is stored', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+
+    const whatIf = await screen.findByRole('group', { name: /what if/i })
+    await user.click(within(whatIf).getByRole('button', { name: 'Site A gone' }))
+    expect(within(whatIf).getByRole('button', { name: 'Site A gone' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    )
+    // The engine's answer, in words, under the redrawn picture.
+    expect(screen.getByText(/Site A is destroyed or emptied\./)).toBeInTheDocument()
+    expect(screen.getAllByText('unspendable').length).toBeGreaterThan(0)
+    // And nothing was stored by asking.
+    expect(useStore.getState().plans).toHaveLength(0)
+  })
+
   it('opens a worked example and reports findings about it', async () => {
     reset()
     const user = userEvent.setup()

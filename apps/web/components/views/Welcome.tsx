@@ -1,8 +1,18 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { ArrowRight, FileUp } from 'lucide-react'
-import { baseWorld, buildGraph, EXAMPLES, exampleById } from '@outlive/core'
+import {
+  baseWorld,
+  buildGraph,
+  createContext,
+  enumerateScenarios,
+  EXAMPLES,
+  exampleById,
+  runScenario,
+} from '@outlive/core'
+import { VERDICT } from '@/lib/verdict.ts'
+import { cn } from '@/lib/cn.ts'
 import { Button } from '@/components/ui/Button.tsx'
 import { PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
 import { useStore } from '@/lib/store.ts'
@@ -24,10 +34,38 @@ export function Welcome() {
   // One worked example, drawn. A page about a tool whose main output is a
   // picture should show the picture, and this is the only place on the site
   // where there is no plan of the reader's own to draw instead.
-  const preview = useMemo(() => {
-    const plan = exampleById('two-of-three')
-    return plan ? buildGraph(plan, baseWorld(plan), { includePeople: false }) : null
-  }, [])
+  //
+  // And a few things to take away from it. The caption used to say "take any
+  // of them away and the picture answers" beside a picture that could not be
+  // touched; now it can, which demonstrates what this is faster than any
+  // sentence about it. Each is a world the engine enumerates, not one made up
+  // for the landing page.
+  const example = useMemo(() => exampleById('two-of-three'), [])
+  const worlds = useMemo(() => {
+    if (!example) return []
+    const ctx = createContext(example)
+    const all = enumerateScenarios(ctx)
+    // Every place, one device and one break-in: the three kinds of news the
+    // drawing can give, which are a place gone, a thing gone, and a room
+    // somebody else is standing in.
+    const picked = [
+      ...all.filter((scenario) => scenario.kind === 'location-lost'),
+      ...all.filter((scenario) => scenario.kind === 'device-lost').slice(0, 1),
+      ...all.filter((scenario) => scenario.kind === 'location-compromised').slice(0, 1),
+    ]
+    return picked.map((scenario) => runScenario(ctx, scenario))
+  }, [example])
+  const [worldId, setWorldId] = useState<string | null>(null)
+  const current = worlds.find((result) => result.scenario.id === worldId) ?? null
+  const preview = useMemo(
+    () =>
+      example
+        ? buildGraph(example, current?.scenario.world ?? baseWorld(example), {
+            includePeople: false,
+          })
+        : null,
+    [example, current]
+  )
 
   return (
     <main id="main" className="mx-auto w-full max-w-3xl px-5 py-14 lg:py-20">
@@ -88,13 +126,66 @@ export function Welcome() {
           Each is a plan somebody plausibly has. Open two and compare them.
         </p>
 
-        {preview ? (
+        {preview && example ? (
           <figure className="mt-5">
+            <div
+              role="group"
+              aria-label="What if"
+              className="mb-2 flex flex-wrap items-center gap-1.5"
+            >
+              <span className="mr-1 text-xs text-faint">What if:</span>
+              {[null, ...worlds].map((result) => {
+                const id = result?.scenario.id ?? null
+                const active = worldId === id
+                return (
+                  <button
+                    key={id ?? 'nothing'}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setWorldId(id)}
+                    className={cn(
+                      'chip transition-colors',
+                      active
+                        ? 'border-accent bg-accent/10 text-strong'
+                        : 'hover:border-line-strong hover:text-strong'
+                    )}
+                  >
+                    {result ? result.scenario.world.label : 'Nothing wrong'}
+                  </button>
+                )
+              })}
+            </div>
             <PlanDiagram graph={preview} />
-            <figcaption className="mt-2 text-xs leading-relaxed text-faint">
-              The second example, drawn: two of three keys spend it, each key exists as a device and
-              a steel plate, and every one of those sits in a place. Take any of them away and the
-              picture answers.
+            <figcaption className="mt-2 text-xs leading-relaxed text-faint" aria-live="polite">
+              {current ? (
+                <>
+                  <span className="text-body">{current.scenario.label}.</span>{' '}
+                  {current.wallets.map((outcome, position) => {
+                    const wallet = example.wallets.find((entry) => entry.id === outcome.walletId)
+                    return (
+                      <span key={outcome.walletId}>
+                        {position > 0 ? ', ' : ''}
+                        {wallet?.label ?? 'A wallet'}:{' '}
+                        <span
+                          className={cn(
+                            'font-medium',
+                            outcome.verdict === 'safe'
+                              ? 'text-ok'
+                              : outcome.verdict === 'degraded'
+                                ? 'text-medium'
+                                : 'text-critical'
+                          )}
+                        >
+                          {VERDICT[outcome.verdict].label}
+                        </span>
+                      </span>
+                    )
+                  })}
+                  .
+                </>
+              ) : (
+                'The second example, drawn: two of three keys spend it, each key exists as a device and a steel plate, and every one of those sits in a place. Take one of them away above and the picture answers.'
+              )}
             </figcaption>
           </figure>
         ) : null}
