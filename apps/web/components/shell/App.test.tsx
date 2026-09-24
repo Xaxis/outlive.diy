@@ -431,6 +431,31 @@ describe('starting a step from a template', () => {
   })
 })
 
+describe('the year ahead', () => {
+  it('puts every check on the calendar and records an overdue one from it', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/design/checks')
+    const late = await screen.findByRole('button', {
+      name: /restore a backup and check it matches for key a: done today/i,
+    })
+    await user.click(late)
+    const check = useStore
+      .getState()
+      .plans[0].verifications.find((entry) => entry.id === 'ver_restore_a')
+    expect(check?.lastVerifiedAt).toBe(new Date().toISOString().slice(0, 10))
+    // Done, it is no longer due now, so its button is gone.
+    expect(
+      screen.queryByRole('button', {
+        name: /restore a backup and check it matches for key a: done today/i,
+      })
+    ).toBeNull()
+  })
+})
+
 describe('the next move', () => {
   it('names one change, makes it in one click, and undoes it in one', async () => {
     reset()
@@ -1096,7 +1121,7 @@ describe('keeping a plan current', () => {
     goto('#/design/checks')
     const [check] = await screen.findAllByText(/restore a backup and check it matches/i)
     await user.click(check)
-    await user.click(await screen.findByRole('button', { name: /done today/i }))
+    await user.click(await screen.findByRole('button', { name: /^done today$/i }))
 
     const plan = useStore.getState().plans[0]
     const done = plan.verifications.find((entry) => entry.id === 'ver_restore_a')

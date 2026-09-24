@@ -9,6 +9,7 @@ import { ProfileEditor } from '@/components/plan/ProfileEditor.tsx'
 import { EntityWorkbench } from '@/components/plan/EntityWorkbench.tsx'
 import { StepEffect } from '@/components/plan/StepEffect.tsx'
 import { StepVisual } from '@/components/plan/StepVisual.tsx'
+import { CheckCalendar } from '@/components/plan/CheckCalendar.tsx'
 import { DeviceShelf } from '@/components/plan/DeviceShelf.tsx'
 import { StepPresets } from '@/components/plan/StepPresets.tsx'
 import { entitiesOf, useActivePlan, useStore } from '@/lib/store.ts'
@@ -159,15 +160,18 @@ export function DesignView() {
           {/* Where things are, as a grid you click, beside the picture it
               changes. Side by side where there is room, so a click and its
               consequence are in view together. */}
-          {section.kind === 'device' ? (
+          {section.kind === 'verification' ? (
+            // Checks are about when, not where: the year ahead, not the plan
+            // drawn.
+            <div className="mb-4">
+              <CheckCalendar plan={settled ?? plan} />
+            </div>
+          ) : section.kind === 'device' ? (
             // Devices are about who made them more than where they are, so
             // this step gets the shelf and the maker count instead.
             <DeviceShelf plan={settled ?? plan} report={settledReport ?? report} />
           ) : (
-            <StepVisual
-              plan={settled ?? plan}
-              preferDrawing={section.kind === 'wallet' || section.kind === 'verification'}
-            />
+            <StepVisual plan={settled ?? plan} preferDrawing={section.kind === 'wallet'} />
           )}
           <EntityWorkbench
             plan={plan}
