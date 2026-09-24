@@ -277,9 +277,13 @@ export function PlanDiagram({
       1
     )
     moved.current = false
+    // Centred when it fits. When it does not, it starts at the wallets: the
+    // drawing reads left to right, from what you own to what it rests on, and
+    // opening a phone onto its middle column shows keys belonging to nothing.
+    const spare = width - layout.width * scale
     setView({
       scale,
-      x: (width - layout.width * scale) / 2,
+      x: spare >= 0 ? spare / 2 : FIT_PADDING,
       y: (height - layout.height * scale) / 2,
     })
   }, [layout.width, layout.height, available])

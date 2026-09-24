@@ -136,14 +136,16 @@ take, a reachable box is the failure, and painting their empty hands red tells
 the reader that good news is bad. Same rule as `World.unknownPlacementReachable`,
 applied to paint.
 
-**The map is the diagnosis, not a picture of it.** The list of worlds is the
-control for the drawing, so it sits beside the drawing;
-`components/graph/WorldRail.tsx` and the composer both feed one `World` into one
-`PlanDiagram`, and the panel underneath answers about whatever box is selected
-in that world. There used to be a stress test page listing every world without
-drawing any of them, and a map that drew one world at a time and made you find
-it in a dropdown. Two pages asking one question, and the one with the answer in
-it was the one you had to go looking for.
+**The map is the diagnosis, not a picture of it.** A click on a box takes it
+away and a second click puts it back; several can be gone at once, and every
+wallet's verdict sits on the drawing so the answer is where the click was. The
+worlds the engine enumerates are a strip above the drawing, which leaves the
+drawing the full width it needs to be read, and knockouts compose on top of
+the chosen world through `without`, never through a second evaluator. There
+used to be a stress test page listing every world without drawing any of them,
+then a list beside a drawing too narrow to read, where taking a thing away
+meant finding its world in the list. The composer's `onChange` runs from an
+effect: pass it something stable, or every render wipes the knockouts.
 
 **A box moves up and down its column and never out of it.** The column a box
 sits in is information: wallets, what they need, keys, the material a key exists

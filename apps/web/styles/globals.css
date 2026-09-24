@@ -140,6 +140,11 @@
 
 html {
   background: var(--c-canvas);
+  /* Room for the scrollbar whether or not there is one, so that the page
+     width does not change when content grows past the fold. A drawing that
+     fits itself to its width otherwise changes height, which toggles the
+     scrollbar, which changes the width again. */
+  scrollbar-gutter: stable;
 }
 
 body {

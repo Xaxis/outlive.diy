@@ -1,9 +1,19 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { buildGraph, type Ref, type World } from '@outlive/core'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Eraser, Maximize2, Minimize2, MousePointerClick, RotateCcw, X } from 'lucide-react'
+import {
+  buildGraph,
+  evaluateWallet,
+  verdictFor,
+  without,
+  type GraphNode,
+  type Ref,
+  type World,
+} from '@outlive/core'
 import { MEASURE, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Disclosure } from '@/components/ui/Disclosure.tsx'
+import { Segmented } from '@/components/ui/Field.tsx'
 import {
   DiagramLegend,
   DiagramOmissions,
@@ -11,7 +21,6 @@ import {
   PlanDiagram,
 } from '@/components/graph/PlanDiagram.tsx'
 import { TODAY, useLens } from '@/components/graph/Lens.tsx'
-import { WorldRail } from '@/components/graph/WorldRail.tsx'
 import { NodeDetail } from '@/components/graph/NodeDetail.tsx'
 import { WalletStanding } from '@/components/graph/WalletStanding.tsx'
 import { CustomScenario } from '@/components/scenarios/CustomScenario.tsx'
@@ -21,77 +30,109 @@ import { useReport, useScenarioResults } from '@/lib/analysis.ts'
 import { NothingYet } from '@/components/shell/NothingYet.tsx'
 import { navigateTo, useRoute } from '@/lib/router.ts'
 import { SECTION_FOR } from '@/lib/sections.ts'
+import { VERDICT } from '@/lib/verdict.ts'
+import { cn } from '@/lib/cn.ts'
 
 /**
- * The map, which is now where the diagnosis happens rather than a picture of
- * it.
+ * The map, as an instrument.
  *
- * There were two pages asking one question. The stress test listed every world
- * the engine can build and gave each a verdict; the map drew one world at a
- * time and made you find it in a dropdown. The list is the control for the
- * drawing, so it is beside the drawing, and the page that had the list without
- * the picture is gone.
+ * It said "take one thing away and watch what stops working", and taking a
+ * thing away meant finding its world in a list of twenty, or selecting its box
+ * and then finding a button under the drawing. Now a click on a box takes it
+ * away, a second click puts it back, and several can be gone at once. The
+ * verdict for every wallet sits on the drawing itself, so the answer to a
+ * click is where the click was, on a phone as much as on a desk.
  *
- * The loop this page runs is the point of it: pick a world on the left, read
- * the picture, click the box that surprised you, and the panel underneath says
- * what the engine knows about that box in that world. From there, take the
- * thing away and the picture is redrawn again.
- *
- * Everything here shares one selection and one world. Clicking a node used to
- * navigate away to a form, which threw away the world in order to show a field.
- * Editing is a deliberate action inside the panel rather than the consequence
- * of looking at something.
+ * The enumerated worlds are a strip above the drawing rather than a column
+ * beside it, which gives the drawing the whole width: beside a column it was
+ * shrunk to three quarters and unreadable. Knockouts compose on top of the
+ * world chosen in the strip through the same `without` every scenario uses, so
+ * nothing here is a second evaluator. In a world where somebody else is
+ * inside, a knockout starts again from today, because "they broke in, and
+ * also the flat burned down" is not a question one set of colours can answer.
  */
 
-/**
- * How tall the working area is: most of the screen, with room for the panel
- * underneath to show its top edge, and bounded so that a very tall window does
- * not leave the drawing floating in the middle of nothing.
- */
-const CANVAS_HEIGHT = 'clamp(22rem, calc(100dvh - 22rem), 40rem)'
+const CANVAS = 'clamp(22rem, calc(100dvh - 19rem), 44rem)'
+
+type Removal = { kind: 'locations' | 'objects' | 'people'; id: string }
+type Knockout = Removal & { label: string }
+
+/** What a click on a box removes, or null for a box that is not a thing. */
+function removal(node: GraphNode): Removal | null {
+  if (node.kind === 'place' && node.ref) return { kind: 'locations', id: node.ref.id }
+  if (node.kind === 'person' && node.ref) return { kind: 'people', id: node.ref.id }
+  if ((node.kind === 'device' || node.kind === 'backup' || node.kind === 'key') && node.ref)
+    return { kind: 'objects', id: node.ref.id }
+  if (node.kind === 'config') {
+    const id = node.id.slice(node.id.indexOf(':') + 1)
+    return id.endsWith('-none') ? null : { kind: 'objects', id }
+  }
+  return null
+}
 
 export function MapView() {
   const plan = useActivePlan()
   const report = useReport(plan)
   const results = useScenarioResults(plan)
   const select = useStore((state) => state.select)
-  // The fragment can name a scenario, which is how a finding sends a reader
-  // here to see the world it came out of.
   const [route] = useRoute()
   const lens = useLens(plan, route.section)
   const [composed, setComposed] = useState<World | null>(null)
-  // The height the drawing needs, so that the list beside it stops where it
-  // stops. Two columns of different heights beside each other read as one of
-  // them having failed to fill.
-  const [drawingHeight, setDrawingHeight] = useState<number | null>(null)
   const [walletId, setWalletId] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [mode, setMode] = useState<'remove' | 'inspect'>('remove')
+  const [knocked, setKnocked] = useState<Knockout[]>([])
+  const [full, setFull] = useState(false)
+  const [filter, setFilter] = useState<'bad' | 'all'>('bad')
 
-  const world = composed ?? lens.world
-  const byScenario = useMemo(
-    () => new Map(results.map((result) => [result.scenario.id, result])),
-    [results]
-  )
+  // Stable, because the composer reports from an effect that depends on it,
+  // and it only clears the knockouts when there were some. An inline arrow
+  // here re-ran that effect on every render and wiped every click.
+  const onComposed = useCallback((next: World | null) => {
+    setKnocked((current) => (current.length === 0 ? current : []))
+    setComposed(next)
+  }, [])
+
+  const start = composed ?? lens.world
+  const world = useMemo(() => {
+    if (!start || knocked.length === 0 || start.actor === 'adversary') return start
+    const of = (kind: Removal['kind']) =>
+      knocked.filter((entry) => entry.kind === kind).map((entry) => entry.id)
+    return {
+      ...without(start, {
+        locations: of('locations'),
+        objects: of('objects'),
+        people: of('people'),
+      }),
+      label: `Without ${knocked.map((entry) => entry.label).join(', ')}`,
+    }
+  }, [start, knocked])
 
   const graph = useMemo(
     () => (plan && world ? buildGraph(plan, world, { walletId }) : null),
     [plan, world, walletId]
   )
-
   const selected = graph?.nodes.find((node) => node.id === selectedId) ?? null
-
-  // [ and ] step through every world in the rail's order. The page's loop is
-  // "take one thing away and watch what stops working", and flipping through
-  // them with the drawing held still, each change pulsing where it lands, is
-  // the fastest way to see which of them matter. Not while typing: a bracket
-  // in a field is a bracket.
+  const byScenario = useMemo(
+    () => new Map(results.map((result) => [result.scenario.id, result])),
+    [results]
+  )
   const order = useMemo(
     () => [TODAY, ...lens.groups.flatMap((group) => group.scenarios.map((entry) => entry.id))],
     [lens.groups]
   )
+
   const { id: lensId, set: setLens } = lens
+  const pickWorld = (id: string) => {
+    setComposed(null)
+    setKnocked([])
+    setLens(id)
+  }
+
+  // [ and ] step through the worlds. Escape leaves full screen.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setFull(false)
       if (event.key !== '[' && event.key !== ']') return
       if (event.metaKey || event.ctrlKey || event.altKey) return
       const target = event.target as HTMLElement | null
@@ -100,11 +141,37 @@ export function MapView() {
       const at = composed ? 0 : Math.max(0, order.indexOf(lensId))
       const next = (at + (event.key === ']' ? 1 : -1) + order.length) % order.length
       setComposed(null)
+      setKnocked([])
       setLens(order[next])
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [order, lensId, setLens, composed])
+
+  // Full screen owns the page: nothing behind it should scroll.
+  useEffect(() => {
+    if (!full) return
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
+  }, [full])
+
+  // The chosen world's chip stays in view as the strip scrolls sideways,
+  // without scrolling the page.
+  const strip = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const element = strip.current
+    const chip = element?.querySelector<HTMLElement>('[aria-pressed="true"]')
+    if (!element || !chip) return
+    const left = chip.offsetLeft - element.offsetLeft
+    if (
+      left < element.scrollLeft ||
+      left + chip.offsetWidth > element.scrollLeft + element.clientWidth
+    )
+      element.scrollLeft = left - 24
+  }, [lensId])
 
   if (!plan || !report) return null
 
@@ -118,137 +185,278 @@ export function MapView() {
   }
 
   const edit = (ref: Ref) => {
-    // A backup and a path are edited inside the thing that owns them, so the
-    // selection has to point at an owner rather than at the part.
     if (ref.type !== 'backup' && ref.type !== 'path') select(ref)
     navigateTo('design', SECTION_FOR[ref.type])
   }
+
+  const onNode = (id: string) => {
+    const node = graph?.nodes.find((entry) => entry.id === id)
+    if (!node) return
+    const gone = removal(node)
+    if (mode === 'inspect' || !gone) {
+      setMode('inspect')
+      setSelectedId(id === selectedId ? null : id)
+      return
+    }
+    if (start?.actor === 'adversary') {
+      setComposed(null)
+      setLens(TODAY)
+    }
+    setSelectedId(null)
+    setKnocked((current) =>
+      current.some((entry) => entry.id === gone.id)
+        ? current.filter((entry) => entry.id !== gone.id)
+        : [...current, { ...gone, label: node.label }]
+    )
+  }
+
+  const adversary = world?.actor === 'adversary'
+  const verdicts = world
+    ? plan.wallets.map((wallet) => {
+        const availability = evaluateWallet(plan, wallet, world)
+        return {
+          wallet,
+          availability,
+          verdict: verdictFor(adversary ? 'adversary' : 'availability', availability),
+        }
+      })
+    : []
+  const caption = composed
+    ? 'A situation you composed by hand.'
+    : knocked.length > 0
+      ? `${lens.scenario ? `${lens.scenario.label}, and without ` : 'Without '}${knocked
+          .map((entry) => entry.label)
+          .join(', ')}.`
+      : lens.caption
+
+  const worlds = lens.groups.flatMap((group) =>
+    group.scenarios.filter(
+      (scenario) =>
+        filter === 'all' || scenario.id === lensId || byScenario.get(scenario.id)?.alarming === true
+    )
+  )
 
   return (
     <div className={MEASURE.wide}>
       <ViewHeader
         eyebrow="Diagnosis"
         title="Map"
-        question="Everything this plan rests on, drawn. Take one thing away and watch what stops working."
+        question="Click anything to take it away and watch what stops working. Click it again to put it back."
       />
 
-      <div
-        // Two columns only where the drawing still has room to be read in the
-        // second one. At the width the sidebar appears, a list beside it leaves
-        // four hundred pixels for a drawing eleven hundred wide, so below that
-        // the list sits above it instead.
-        className="grid gap-4 xl:grid-cols-[17rem_minmax(0,1fr)]"
-        style={
-          {
-            // Never taller than the drawing needs, and never so short that the
-            // list beside it shows three worlds out of twenty two.
-            '--canvas-h': drawingHeight
-              ? `min(${CANVAS_HEIGHT}, max(26rem, ${drawingHeight}px))`
-              : CANVAS_HEIGHT,
-          } as React.CSSProperties
-        }
-      >
-        <Panel className="flex h-[20rem] flex-col overflow-hidden xl:h-[var(--canvas-h)] no-print">
-          <WorldRail
-            groups={lens.groups}
-            results={byScenario}
-            wallets={plan.wallets}
-            activeId={composed ? null : lens.id}
-            onPick={(id) => {
-              // Choosing an enumerated world puts the composed one down. The
-              // composer keeps its switches, and says nothing again until one
-              // of them moves.
-              setComposed(null)
-              lens.set(id)
-            }}
-          >
-            <Disclosure
-              size="aside"
-              title="Compose a world of your own"
-              hint="Nothing goes wrong one thing at a time."
-            >
-              <CustomScenario plan={plan} onChange={setComposed} />
-            </Disclosure>
-          </WorldRail>
-        </Panel>
-
-        <div className="min-w-0">
-          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 no-print">
-            <p className="min-w-[16rem] flex-1 text-xs leading-relaxed text-muted">
-              {composed
-                ? 'A world you composed. Everything switched off in the composer is gone from this drawing.'
-                : lens.caption}
-            </p>
-            <label className="flex flex-none items-center gap-2 whitespace-nowrap text-xs text-faint">
-              Narrowed to
-              <select
-                className="select max-w-[12rem] py-1 text-xs"
-                value={walletId ?? ''}
-                onChange={(event) => setWalletId(event.target.value || null)}
-              >
-                <option value="">Every wallet</option>
-                {plan.wallets.map((wallet) => (
-                  <option key={wallet.id} value={wallet.id}>
-                    {wallet.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          {graph ? (
-            <PlanDiagram
-              graph={graph}
-              height="var(--canvas-h)"
-              minHeight="var(--canvas-h)"
-              onHeight={setDrawingHeight}
-              selectedId={selectedId}
-              onSelectNode={(id) => setSelectedId(id === selectedId ? null : id)}
-              className="print-block"
+      <div className="mb-3 flex items-center gap-2 no-print">
+        <Segmented
+          value={filter}
+          onChange={setFilter}
+          className="flex-none"
+          options={[
+            { value: 'bad', label: 'What breaks' },
+            { value: 'all', label: `All ${order.length - 1}` },
+          ]}
+        />
+        <div
+          ref={strip}
+          role="group"
+          aria-label="Worlds"
+          className="relative flex min-w-0 flex-1 gap-1.5 overflow-x-auto pb-1"
+        >
+          <WorldChip
+            label="As it stands"
+            active={!composed && knocked.length === 0 && lensId === TODAY}
+            onClick={() => pickWorld(TODAY)}
+          />
+          {worlds.map((scenario) => (
+            <WorldChip
+              key={scenario.id}
+              label={scenario.label}
+              active={!composed && lensId === scenario.id}
+              verdicts={byScenario.get(scenario.id)?.wallets.map((outcome) => ({
+                verdict: outcome.verdict,
+                wallet:
+                  plan.wallets.find((wallet) => wallet.id === outcome.walletId)?.label ??
+                  'A wallet',
+              }))}
+              onClick={() => pickWorld(scenario.id)}
             />
-          ) : null}
+          ))}
         </div>
       </div>
 
-      {graph ? (
-        <Panel className="mt-4 p-4">
+      <div
+        className={cn(
+          full ? 'fixed inset-0 z-50 flex flex-col overflow-hidden bg-canvas p-3' : 'relative'
+        )}
+      >
+        <div className="mb-2 flex flex-wrap items-center gap-2 no-print">
+          <p className="min-w-[12rem] flex-1 text-sm text-body">{caption}</p>
+          <Segmented
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: 'remove', label: 'Click removes' },
+              { value: 'inspect', label: 'Click explains' },
+            ]}
+          />
+          <select
+            aria-label="Narrow to one wallet"
+            className="select w-auto max-w-[10rem] py-1 text-xs"
+            value={walletId ?? ''}
+            onChange={(event) => setWalletId(event.target.value || null)}
+          >
+            <option value="">Every wallet</option>
+            {plan.wallets.map((wallet) => (
+              <option key={wallet.id} value={wallet.id}>
+                {wallet.label}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => setFull((value) => !value)}
+            aria-label={full ? 'Leave full screen' : 'Full screen'}
+            title={full ? 'Leave full screen (Esc)' : 'Full screen'}
+            className="flex size-8 items-center justify-center rounded-[var(--radius-control)] border border-line text-muted hover:border-line-strong hover:text-strong"
+          >
+            {full ? (
+              <Minimize2 className="size-4" aria-hidden />
+            ) : (
+              <Maximize2 className="size-4" aria-hidden />
+            )}
+          </button>
+        </div>
+
+        {/* The answer to every click, where the click was. */}
+        <ul
+          className="mb-2 flex flex-wrap gap-1.5"
+          aria-live="polite"
+          aria-label="What happens to each wallet"
+        >
+          {verdicts.map(({ wallet, availability, verdict }) => {
+            const style = VERDICT[verdict]
+            const Icon = style.icon
+            const path =
+              availability.paths.find((entry) => entry.pathId === availability.viaPathId) ??
+              availability.paths[0]
+            return (
+              <li
+                key={wallet.id}
+                className={cn(
+                  'flex items-center gap-2 rounded-[var(--radius-control)] border px-2.5 py-1.5 text-sm transition-colors duration-300',
+                  style.cell
+                )}
+              >
+                <Icon className="size-4" strokeWidth={2.5} aria-hidden />
+                <span className="font-medium text-strong">{wallet.label}</span>
+                <span className="font-medium">{style.label}</span>
+                {path ? (
+                  <span
+                    className="mono text-[0.6875rem] text-muted"
+                    title="keys reachable / keys needed"
+                  >
+                    {path.availableKeyIds.length}/{path.threshold}
+                  </span>
+                ) : null}
+              </li>
+            )
+          })}
+        </ul>
+
+        {knocked.length > 0 ? (
+          <div className="mb-2 flex flex-wrap items-center gap-1.5 no-print">
+            <span className="text-xs text-faint">Taken away:</span>
+            {knocked.map((entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                onClick={() =>
+                  setKnocked((current) => current.filter((item) => item.id !== entry.id))
+                }
+                className="chip gap-1 border-critical/50 text-body hover:border-critical"
+                aria-label={`Put ${entry.label} back`}
+              >
+                {entry.label}
+                <X className="size-3" aria-hidden />
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setKnocked([])}
+              className="chip gap-1 hover:border-line-strong"
+            >
+              <RotateCcw className="size-3" aria-hidden />
+              Put everything back
+            </button>
+          </div>
+        ) : null}
+
+        {graph ? (
+          <div className={cn(full && 'min-h-0 flex-1')}>
+            <PlanDiagram
+              graph={graph}
+              // Never taller than the drawing needs, so a phone is not a
+              // screen of empty grey. Safe because the page reserves its
+              // scrollbar gutter: a height that follows the width, beside a
+              // scrollbar that came and went with the height, was a loop.
+              height={full ? 'calc(100dvh - 11rem)' : CANVAS}
+              minHeight={full ? 'calc(100dvh - 11rem)' : '16rem'}
+              selectedId={mode === 'inspect' ? selectedId : null}
+              onSelectNode={onNode}
+              marked={{ ids: new Set(knocked.map((entry) => entry.id)), label: 'removed' }}
+              className="print-block"
+            />
+          </div>
+        ) : null}
+
+        <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[0.6875rem] text-faint no-print">
+          <span className="flex items-center gap-1">
+            {mode === 'remove' ? (
+              <Eraser className="size-3" aria-hidden />
+            ) : (
+              <MousePointerClick className="size-3" aria-hidden />
+            )}
+            {mode === 'remove'
+              ? 'Click a place, device, backup, key or person to take it away. Wallets and paths explain themselves.'
+              : 'Click a box to see what it needs and what this world does to it.'}
+          </span>
+          <span>Drag to move, scroll or pinch to zoom.</span>
+          <span className="max-md:hidden">[ and ] step through worlds.</span>
+        </p>
+      </div>
+
+      <Panel className="mt-4 p-4">
+        {selected && mode === 'inspect' && graph ? (
+          <NodeDetail
+            plan={plan}
+            graph={graph}
+            report={report}
+            node={selected}
+            lens={lens}
+            onEdit={edit}
+            onClear={() => setSelectedId(null)}
+          />
+        ) : world ? (
           <WalletStanding
             plan={plan}
             world={world}
-            className="mb-4"
-            onSelect={(id) => setSelectedId(`wallet:${id}` === selectedId ? null : `wallet:${id}`)}
+            onSelect={(id) => {
+              setMode('inspect')
+              setSelectedId(`wallet:${id}`)
+            }}
           />
-
-          {/* One slot under the picture. With nothing chosen it says what this
-              world did to the plan; with a box chosen it answers about that
-              box. The same question at two resolutions, and never both. */}
-          <div className="border-t border-line pt-3">
-            {selected ? (
-              <NodeDetail
-                plan={plan}
-                graph={graph}
-                report={report}
-                node={selected}
-                lens={lens}
-                onEdit={edit}
-                onClear={() => setSelectedId(null)}
-              />
-            ) : (
-              <>
-                <DiagramSummary graph={graph} />
-                <DiagramOmissions graph={graph} narrowed={walletId !== null} />
-                <Disclosure
-                  size="aside"
-                  title="What the drawing means"
-                  className="mt-3 border-t border-line pt-3"
-                >
-                  <DiagramLegend graph={graph} />
-                </Disclosure>
-              </>
-            )}
+        ) : null}
+        {graph ? (
+          <div className="mt-3 space-y-2 border-t border-line pt-3">
+            <DiagramSummary graph={graph} />
+            <DiagramOmissions graph={graph} narrowed={walletId !== null} />
+            <Disclosure size="aside" title="What the drawing means">
+              <DiagramLegend graph={graph} />
+            </Disclosure>
+            <Disclosure size="aside" title="Compose a situation by hand">
+              <CustomScenario plan={plan} onChange={onComposed} />
+            </Disclosure>
           </div>
-        </Panel>
-      ) : null}
+        ) : null}
+      </Panel>
 
       <Disclosure
         className="mt-4"
@@ -258,5 +466,56 @@ export function MapView() {
         <QuorumTable plan={plan} />
       </Disclosure>
     </div>
+  )
+}
+
+function WorldChip({
+  label,
+  active,
+  verdicts,
+  onClick,
+}: {
+  label: string
+  active: boolean
+  verdicts?: { verdict: keyof typeof VERDICT; wallet: string }[]
+  onClick: () => void
+}) {
+  const lost = verdicts?.filter((entry) => entry.verdict === 'lost').length ?? 0
+  const taken = verdicts?.filter((entry) => entry.verdict === 'exposed').length ?? 0
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      title={verdicts
+        ?.map((entry) => `${entry.wallet}: ${VERDICT[entry.verdict].label}`)
+        .join(', ')}
+      className={cn(
+        'flex flex-none items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs transition-colors',
+        active
+          ? 'border-accent bg-accent/10 font-medium text-strong'
+          : 'border-line text-body hover:border-line-strong'
+      )}
+    >
+      {verdicts ? (
+        <span className="flex gap-[2px]" aria-hidden>
+          {verdicts.slice(0, 5).map((entry, index) => (
+            <span
+              key={index}
+              className={cn('size-1.5 rounded-[2px]', VERDICT[entry.verdict].tone)}
+            />
+          ))}
+        </span>
+      ) : null}
+      {label}
+      {/* The dots in words, for a reader who cannot see them. */}
+      {verdicts ? (
+        <span className="sr-only">
+          {lost > 0 ? ` ${lost} unspendable.` : ''}
+          {taken > 0 ? ` ${taken} theirs to spend.` : ''}
+          {verdicts.map((entry) => ` ${entry.wallet}: ${VERDICT[entry.verdict].label}.`).join('')}
+        </span>
+      ) : null}
+    </button>
   )
 }
