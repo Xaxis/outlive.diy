@@ -54,8 +54,8 @@ export interface Shape {
   placement: KeyPlacement[]
   /** Places holding a copy of the wallet configuration. Multisig only. */
   configPlaces: number[]
-  /** A successor, and the place they can open after your death, or null. */
-  successorPlace: number | null
+  /** Places a successor can open after your death. Empty for no successor. */
+  successorPlaces: number[]
   /** A small single-key wallet on a phone, for spending. */
   hotWallet: boolean
 }
@@ -80,10 +80,15 @@ export const placeLabel = (index: number) => `Site ${LETTERS[index] ?? index + 1
 export const keyLabel = (index: number) => `Key ${LETTERS[index] ?? index + 1}`
 
 /**
- * A placement that spreads things out: each key's device and its backup in
- * different places, and consecutive keys starting in different places. Not
- * optimal for every plan, which is what the analysis is for, but never the
- * obvious mistake of a key and its only backup in one room.
+ * A placement that spreads things out.
+ *
+ * With spare keys, each key's device and backup share a place and each key
+ * has a place of its own: losing a place loses one key and leaves the rest,
+ * and standing in one place holds one key, never a quorum. Splitting a key's
+ * device from its backup looks tidier and is worse, because it leaves two
+ * keys' material in every place, which in a two of three is the whole wallet
+ * in one room. With a single key there is nothing to spare, so its device and
+ * its backup go to different places instead.
  */
 export function spreadPlacement(
   keys: number,
@@ -93,17 +98,19 @@ export function spreadPlacement(
   return Array.from({ length: keys }, (_, index) => {
     if (collaborative && index === keys - 1) return { device: null, backup: null }
     if (places === 0) return { device: null, backup: null }
-    const device = index % places
-    const backup = places > 1 ? (index + 1) % places : device
-    return { device, backup }
+    if (keys === 1) return { device: 0, backup: places > 1 ? 1 : 0 }
+    const at = index % places
+    return { device: at, backup: at }
   })
 }
 
 export function defaultShape(): Shape {
+  // Three regions, because two of three keys in one region is one flood
+  // from losing the wallet and one court order from handing it over.
   const places: ShapePlace[] = [
     { kind: 'home', ...PLACE_DEFAULTS.home },
-    { kind: 'bank-vault', ...PLACE_DEFAULTS['bank-vault'] },
     { kind: 'trusted-person', ...PLACE_DEFAULTS['trusted-person'] },
+    { kind: 'second-home', ...PLACE_DEFAULTS['second-home'] },
   ]
   return {
     name: 'My plan',
@@ -113,7 +120,8 @@ export function defaultShape(): Shape {
     places,
     placement: spreadPlacement(3, places.length, false),
     configPlaces: [0, 1, 2],
-    successorPlace: 2,
+    // Enough places to reach a quorum after you, and not the one you live in.
+    successorPlaces: [1, 2],
     hotWallet: false,
   }
 }
@@ -144,7 +152,8 @@ export function planFromShape(shape: Shape): Plan {
     })
     people.push(service)
   }
-  if (shape.successorPlace !== null && places[shape.successorPlace]) {
+  const opens = shape.successorPlaces.filter((index) => places[index])
+  if (opens.length > 0) {
     const successor = createPerson({
       label: 'Successor 1',
       role: 'successor',
@@ -153,9 +162,10 @@ export function planFromShape(shape: Shape): Plan {
       availability: 'days',
     })
     people.push(successor)
-    const place = places[shape.successorPlace]
-    place.access = [{ personId: successor.id, condition: 'after-death', delayDays: 0 }]
-    if (place.kind === 'trusted-person') place.custodianId = successor.id
+    for (const index of opens) {
+      const place = places[index]
+      place.access = [{ personId: successor.id, condition: 'after-death', delayDays: 0 }]
+    }
   }
 
   const devices: Plan['devices'] = []

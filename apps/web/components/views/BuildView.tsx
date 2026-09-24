@@ -102,7 +102,7 @@ export function BuildView() {
         backup: keep(entry.backup),
       })),
       configPlaces: shape.configPlaces.filter((index) => index < places.length),
-      successorPlace: keep(shape.successorPlace),
+      successorPlaces: shape.successorPlaces.filter((index) => index < places.length),
     })
   }
 
@@ -219,7 +219,7 @@ export function BuildView() {
                   </span>
                   <select
                     aria-label={`${placeLabel(index)}: what it is`}
-                    className="select min-w-0 flex-1 py-1 text-xs"
+                    className="select min-w-0 flex-1 py-1 text-xs max-sm:basis-[calc(100%-4rem)]"
                     value={entry.kind}
                     onChange={(event) => {
                       const kind = event.target.value as LocationKind
@@ -409,10 +409,14 @@ export function BuildView() {
                       <td key={at} className="px-1 py-1.5">
                         <span className="flex justify-center">
                           <Toggle
-                            on={shape.successorPlace === at}
+                            on={shape.successorPlaces.includes(at)}
                             label={`Successor can open ${placeLabel(at)} after you`}
                             onClick={() =>
-                              update({ successorPlace: shape.successorPlace === at ? null : at })
+                              update({
+                                successorPlaces: shape.successorPlaces.includes(at)
+                                  ? shape.successorPlaces.filter((index) => index !== at)
+                                  : [...shape.successorPlaces, at].sort(),
+                              })
                             }
                           >
                             <User className="size-3.5" aria-hidden />

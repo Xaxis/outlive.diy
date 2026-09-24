@@ -25,7 +25,7 @@ const shapes: Record<string, Shape> = {
     places: [defaultShape().places[0]],
     placement: spreadPlacement(3, 1, false),
     configPlaces: [0],
-    successorPlace: 0,
+    successorPlaces: [0],
   },
 }
 
@@ -52,14 +52,28 @@ describe('a plan from its shape', () => {
     })
   }
 
-  it('never puts a key and its only backup in one place when there is another', () => {
-    for (let keys = 1; keys <= 7; keys++) {
-      for (let places = 2; places <= 5; places++) {
-        for (const placement of spreadPlacement(keys, places, false)) {
-          expect(placement.device).not.toBe(placement.backup)
-        }
+  it('never leaves a quorum in one place when there are places enough', () => {
+    for (let keys = 2; keys <= 7; keys++) {
+      const placement = spreadPlacement(keys, keys, false)
+      // One key's material per place.
+      for (let place = 0; place < keys; place++) {
+        const here = placement.filter((entry) => entry.device === place || entry.backup === place)
+        expect(here).toHaveLength(1)
       }
     }
+    // A single key keeps its device and backup apart.
+    const [single] = spreadPlacement(1, 2, false)
+    expect(single.device).not.toBe(single.backup)
+  })
+
+  it('starts from a plan nothing can take away, and nobody can take alone', () => {
+    // The one critical left is coercion: two keys within a day's drive is
+    // true of any plan without a timelock, and saying otherwise would be the
+    // builder hiding a finding to look good.
+    const critical = analyze(planFromShape(defaultShape())).findings.filter(
+      (finding) => finding.severity === 'critical'
+    )
+    expect(critical.map((finding) => finding.rule)).toEqual(['X001'])
   })
 
   it('gives a held key nothing of its own to lose', () => {
