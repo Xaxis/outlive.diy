@@ -148,11 +148,8 @@ export function OverviewView() {
                       className="flex w-full items-start gap-2.5 text-left"
                     >
                       <SeverityDot severity={finding.severity} className="mt-[0.45rem]" />
-                      <span className="min-w-0">
-                        <span className="block text-sm leading-snug text-body">
-                          {finding.title}
-                        </span>
-                        <span className="mono text-[0.6875rem] text-faint">{finding.rule}</span>
+                      <span className="min-w-0 text-sm leading-snug text-body">
+                        {finding.title}
                       </span>
                     </button>
                   </li>

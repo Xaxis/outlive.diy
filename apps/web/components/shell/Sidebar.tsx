@@ -12,6 +12,7 @@ import {
   Shapes,
   SlidersHorizontal,
   TableProperties,
+  Wand2,
 } from 'lucide-react'
 import type { AnalysisReport } from '@outlive/core'
 import { href, type Route, type ViewId } from '@/lib/router.ts'
@@ -38,6 +39,7 @@ export function navigation(report: AnalysisReport | null, letterCount: number): 
       title: 'Plan',
       items: [
         { view: 'overview', label: 'Overview', icon: LayoutGrid },
+        { view: 'build', label: 'New by shape', icon: Wand2 },
         { view: 'design', label: 'Design', icon: SlidersHorizontal },
       ],
     },

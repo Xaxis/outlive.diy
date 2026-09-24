@@ -863,15 +863,18 @@ export function DiagramSummary({ graph }: { graph: PlanGraph }) {
   }
   return (
     <div className="text-xs text-muted">
-      <p className="mb-1">{adversary ? 'What they can reach:' : 'Out of reach here:'}</p>
-      <ul className="grid gap-0.5">
+      <p className="mb-1.5">{adversary ? 'What they can reach:' : 'Out of reach here:'}</p>
+      {/* Chips rather than a sentence per box: this is a list to scan, and
+          the reason each one is gone is in its tooltip and on the box. */}
+      <ul className="flex flex-wrap gap-1">
         {blocked.slice(0, LIST_LIMIT).map((node) => (
-          <li key={node.id}>
-            <span className="text-body">{node.label}</span>
-            <span className="text-faint"> ({KIND_NOUN[node.kind]})</span>
-            {!adversary && node.blocker ? (
-              <span className="text-faint"> {node.blocker}</span>
-            ) : null}
+          <li
+            key={node.id}
+            title={!adversary && node.blocker ? node.blocker : KIND_NOUN[node.kind]}
+            className="chip border-critical/40 text-body"
+          >
+            {node.label}
+            <span className="text-faint"> {KIND_NOUN[node.kind]}</span>
           </li>
         ))}
       </ul>

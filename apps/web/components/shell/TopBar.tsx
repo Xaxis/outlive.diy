@@ -8,6 +8,7 @@ import {
   Menu,
   MonitorCog,
   Moon,
+  Plus,
   Redo2,
   Save,
   Search,
@@ -73,6 +74,16 @@ function PlanSwitcher({ plans, activeId }: { plans: Plan[]; activeId: string }) 
                 </button>
               </li>
             ))}
+            <li className="mt-1 border-t border-line pt-1">
+              <a
+                href={href('build')}
+                onClick={() => setOpen(false)}
+                className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2 py-1.5 text-left text-xs text-body no-underline transition-colors hover:bg-[rgb(var(--tint)/0.06)]"
+              >
+                <Plus className="size-3.5 flex-none text-accent" aria-hidden />
+                New plan by shape
+              </a>
+            </li>
           </ul>
         </>
       ) : null}

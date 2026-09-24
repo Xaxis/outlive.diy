@@ -237,10 +237,6 @@ export function MapView() {
               <>
                 <DiagramSummary graph={graph} />
                 <DiagramOmissions graph={graph} narrowed={walletId !== null} />
-                <p className="mt-2 text-xs text-faint">
-                  Click any box for what this world does to it, and for the two ways of taking it
-                  away.
-                </p>
                 <Disclosure
                   size="aside"
                   title="What the drawing means"
