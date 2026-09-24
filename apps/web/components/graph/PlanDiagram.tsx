@@ -179,6 +179,7 @@ export function PlanDiagram({
   height = '26rem',
   minHeight,
   onHeight,
+  marked,
 }: {
   graph: PlanGraph
   /** Clicking a box hands back what it stands for. For jumping somewhere. */
@@ -209,6 +210,12 @@ export function PlanDiagram({
    * that whatever sits beside the surface can be the same height as it.
    */
   onHeight?: (px: number) => void
+  /**
+   * Plan ids to tag on the drawing, and the word to tag them with. Comparing
+   * two plans is looking for what moved, and two drawings of forty boxes each
+   * are a spot-the-difference puzzle without it.
+   */
+  marked?: { ids: ReadonlySet<string>; label: string }
 }) {
   // Row order for any column the reader has rearranged by hand. Held here and
   // not in the plan file: where a box sits on a screen is not a fact about
@@ -480,6 +487,33 @@ export function PlanDiagram({
     event.preventDefault()
   }
 
+  // What changed between the last world drawn and this one. The page's whole
+  // loop is "take one thing away and watch what stops working", and a redraw
+  // that swaps forty boxes at once leaves the reader to diff two pictures in
+  // their head. So each box whose answer flipped says so once, briefly.
+  const previous = useRef<Map<string, boolean> | null>(null)
+  const [flipped, setFlipped] = useState<ReadonlySet<string>>(() => new Set())
+  useEffect(() => {
+    const before = previous.current
+    previous.current = new Map(graph.nodes.map((node) => [node.id, node.available]))
+    if (!before) return
+    const changed = new Set(
+      graph.nodes
+        .filter((node) => before.has(node.id) && before.get(node.id) !== node.available)
+        .map((node) => node.id)
+    )
+    if (changed.size === 0) return
+    // Cleared first and set on the next frame, so a box that flips twice in a
+    // row plays the second time as well rather than keeping a class it has.
+    setFlipped(new Set())
+    const frame = requestAnimationFrame(() => setFlipped(changed))
+    const done = window.setTimeout(() => setFlipped(new Set()), 1400)
+    return () => {
+      cancelAnimationFrame(frame)
+      window.clearTimeout(done)
+    }
+  }, [graph])
+
   // Hovering traces a chain; a selection holds one. Without the second, moving
   // the mouse away from a box you just clicked unlights the very thing the
   // panel underneath is describing.
@@ -547,19 +581,40 @@ export function PlanDiagram({
           >
             {layout.edges.map((edge) => {
               const dim = lit !== null && !(lit.has(edge.from) && lit.has(edge.to))
+              const good = edge.live !== adversary
+              // A traced chain shows which way it runs: what a box rests on
+              // travels towards the thing that needs it, right to left. Only
+              // where the dependency holds, because a flow along a broken line
+              // would be drawing the very thing that is not happening.
+              const flowing = lit !== null && !dim && edge.live
               return (
-                <g key={edge.id} opacity={dim ? dimmed * 0.5 : 1}>
+                <g
+                  key={edge.id}
+                  opacity={dim ? dimmed * 0.5 : 1}
+                  style={{ transition: 'opacity 200ms' }}
+                >
                   <path
                     d={edge.path}
                     fill="none"
                     // Live-and-yours is neutral; anything else is the failure.
                     // The two halves of that swap with the actor, exactly as
                     // the boxes do.
-                    stroke={edge.live !== adversary ? 'var(--c-line-strong)' : 'var(--c-critical)'}
+                    stroke={good ? 'var(--c-line-strong)' : 'var(--c-critical)'}
                     strokeWidth={edge.live ? 1.25 : 1}
                     strokeDasharray={edge.live ? undefined : '3 3'}
                     opacity={edge.live ? 0.85 : 0.45}
+                    style={{ transition: 'stroke 300ms, opacity 300ms' }}
                   />
+                  {flowing ? (
+                    <path
+                      d={edge.path}
+                      fill="none"
+                      className="edge-flow"
+                      stroke={good ? 'var(--c-accent)' : 'var(--c-critical)'}
+                      strokeWidth={1.5}
+                      strokeLinecap="round"
+                    />
+                  ) : null}
                 </g>
               )
             })}
@@ -662,18 +717,27 @@ export function PlanDiagram({
                   'disabled:cursor-default',
                   // Not while it is being moved: a box animating its opacity
                   // under a finger that is dragging it lags behind the finger.
-                  moving ? 'z-10 shadow-[0_8px_24px_-8px_rgb(0_0_0/0.7)]' : 'transition-opacity',
+                  moving
+                    ? 'z-10 shadow-[0_8px_24px_-8px_rgb(0_0_0/0.7)]'
+                    : 'transition-[opacity,background-color,border-color] duration-300',
+                  flipped.has(node.id) && 'node-flip',
                   interactive && 'cursor-grab active:cursor-grabbing hover:border-accent',
                   TONE_BOX[tone],
                   selectedId === node.id && 'border-accent ring-1 ring-accent'
                 )}
-                style={{
-                  left: node.x,
-                  top: node.y,
-                  width: NODE_WIDTH,
-                  height: NODE_HEIGHT,
-                  opacity: dim ? dimmed : 1,
-                }}
+                style={
+                  {
+                    left: node.x,
+                    top: node.y,
+                    width: NODE_WIDTH,
+                    height: NODE_HEIGHT,
+                    opacity: dim ? dimmed : 1,
+                    // The pulse is the colour of the news: red for a box this
+                    // world took away or handed over, green for one it gave back.
+                    '--flip':
+                      tone === 'normal' || tone === 'idle' ? 'var(--c-ok)' : 'var(--c-critical)',
+                  } as React.CSSProperties
+                }
               >
                 <span className="flex items-center gap-1.5">
                   <Icon className={cn('size-3.5 flex-none', TONE_ICON[tone])} aria-hidden />
@@ -695,7 +759,16 @@ export function PlanDiagram({
                 </span>
                 <span className="sr-only">
                   {KIND_NOUN[node.kind]}. {state}
+                  {marked && node.ref && marked.ids.has(node.ref.id) ? ` ${marked.label}.` : ''}
                 </span>
+                {marked && node.ref && marked.ids.has(node.ref.id) ? (
+                  <span
+                    aria-hidden
+                    className="absolute -right-1.5 -top-2 rounded-full border border-accent bg-canvas px-1.5 text-[0.5625rem] font-medium leading-[1.1rem] text-accent"
+                  >
+                    {marked.label}
+                  </span>
+                ) : null}
               </button>
             )
           })}

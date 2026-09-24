@@ -17,6 +17,8 @@ import { Field, Select } from '@/components/ui/Field.tsx'
 import { SeverityDot } from '@/components/ui/Severity.tsx'
 import { PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
 import { useActivePlan, useComparePlan, useStore } from '@/lib/store.ts'
+import { useScenarioResults } from '@/lib/analysis.ts'
+import { WorldDiff } from '@/components/graph/WorldDiff.tsx'
 
 /**
  * Comparing two plans.
@@ -38,6 +40,14 @@ export function CompareView() {
       analyze(other, { includeScenarios: false }),
       analyze(plan, { includeScenarios: false })
     )
+  }, [plan, other])
+
+  const worldsBefore = useScenarioResults(other)
+  const worldsAfter = useScenarioResults(plan)
+  const wallets = useMemo(() => {
+    if (!plan || !other) return []
+    const seen = new Set(plan.wallets.map((wallet) => wallet.id))
+    return [...plan.wallets, ...other.wallets.filter((wallet) => !seen.has(wallet.id))]
   }, [plan, other])
 
   const changes = useMemo(() => (plan && other ? comparePlans(other, plan) : []), [plan, other])
@@ -141,6 +151,16 @@ export function CompareView() {
             </div>
           </Panel>
 
+          {wallets.length > 0 ? (
+            <Panel className="p-4">
+              <SectionHeading
+                title="What survives what, before and after"
+                hint="Every world either plan has, for every wallet. A green outline is a wallet this change saved in that world; a red one is a wallet it lost."
+              />
+              <WorldDiff before={worldsBefore} after={worldsAfter} wallets={wallets} />
+            </Panel>
+          ) : null}
+
           {/* Stacked rather than side by side, and that is the better
               comparison as well as the only legible one. Half a column is not
               enough width to draw a plan at a readable size, and stacking puts
@@ -155,7 +175,10 @@ export function CompareView() {
               </Panel>
               <Panel className="p-4">
                 <SectionHeading title={plan.name} hint="This plan, as it stands." />
-                <PlanDiagram graph={shapes.after} />
+                <PlanDiagram
+                  graph={shapes.after}
+                  marked={{ ids: new Set(changes.map((change) => change.id)), label: 'changed' }}
+                />
               </Panel>
             </div>
           ) : null}

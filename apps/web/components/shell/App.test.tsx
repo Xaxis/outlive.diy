@@ -258,6 +258,8 @@ describe('drafts', () => {
     goto('#/compare')
     // Nothing has been changed yet, so the two runs must be identical.
     expect(await screen.findByText(/the findings are identical/i)).toBeInTheDocument()
+    // And so is every world, wallet by wallet.
+    expect(screen.getByText(/no world gives a different answer/i)).toBeInTheDocument()
   })
 })
 
@@ -1251,7 +1253,10 @@ describe('what a page shows at rest', () => {
     goto('#/recovery')
 
     // Fourteen routes, each one line: the verdict and how long it takes.
-    const row = await screen.findByRole('button', { name: /^Site B is destroyed or emptied/ })
+    // The chart above the list names its bars the same way, so the row is the
+    // one of the two that opens.
+    const named = await screen.findAllByRole('button', { name: /^Site B is destroyed or emptied/ })
+    const row = named.find((button) => button.hasAttribute('aria-expanded')) as HTMLElement
     expect(row).toHaveAttribute('aria-expanded', 'false')
     expect(row).toHaveTextContent(/same day, no travel/)
 
@@ -1262,6 +1267,45 @@ describe('what a page shows at rest', () => {
     const body = within(row.closest('li') as HTMLElement)
     expect(body.getByText(/get the wallet configuration first/i)).toBeInTheDocument()
     expect(body.getByText(/collect from site a/i)).toBeInTheDocument()
+  })
+
+  it('opens a route from its bar on the chart', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/recovery')
+
+    // Shut until asked for, and asked for from the picture rather than the list.
+    const named = await screen.findAllByRole('button', { name: /^Signer B is lost or destroyed/ })
+    const row = named.find((button) => button.hasAttribute('aria-expanded')) as HTMLElement
+    const bar = named.find((button) => !button.hasAttribute('aria-expanded')) as HTMLElement
+    expect(row).toHaveAttribute('aria-expanded', 'false')
+    // The bar says how long, in words, not only in length.
+    expect(bar).toHaveAccessibleName(/about a day/)
+    await user.click(bar)
+    expect(row).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('draws the world a cell of the failure matrix names', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/overview')
+    const table = await screen.findByRole('table', { name: /what each world does/i })
+    // One cell per wallet per world, each naming its wallet and its verdict.
+    const row = within(table).getByRole('row', { name: /^Site A is destroyed or emptied/ })
+    const cell = within(row).getByRole('button', { name: /^Vault: unspendable/ })
+    await user.click(cell)
+
+    expect(window.location.hash).toBe('#/map/location-lost%3Aloc_home')
+    // And the map is drawing that world, not today.
+    expect(
+      await screen.findByText(/Site A is destroyed or emptied\. Can you still spend\?/)
+    ).toBeInTheDocument()
   })
 
   it('says a phase-wide instruction once rather than once per key', async () => {
