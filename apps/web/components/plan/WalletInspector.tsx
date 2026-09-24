@@ -29,6 +29,7 @@ import { Callout, SectionHeading } from '@/components/ui/Surface.tsx'
 import { useEntityUpdater, usePlanEdit } from '@/lib/edit.ts'
 import { BACKUP_MEDIUM, PATH_KIND, STAKE, TIER, TIER_NOTE } from '@/lib/describe.ts'
 import { PolicyTimeline } from './PolicyTimeline.tsx'
+import { QuorumCard } from './QuorumCard.tsx'
 
 const TIERS = Object.keys(TIER) as WalletTier[]
 const STAKES = Object.keys(STAKE) as Stake[]
@@ -231,26 +232,35 @@ export function WalletInspector({ plan, wallet }: { plan: Plan; wallet: Wallet }
             that could move its coins.
           </Callout>
         ) : (
-          <ItemList
-            items={wallet.paths.map((path, position) => ({
-              id: path.id,
-              title: path.label,
-              summary: describePath(path),
-              removeLabel: `Remove ${path.label}`,
-              // The last way to spend cannot go: a wallet with none is a
-              // description of coins nobody can move, and the editor should
-              // not be the thing that makes one.
-              onRemove:
-                wallet.paths.length > 1
-                  ? () =>
-                      edit((draft) => {
-                        const target = draft.wallets.find((entry) => entry.id === wallet.id)
-                        target?.paths.splice(position, 1)
-                      })
-                  : undefined,
-              body: <PathEditor plan={plan} walletId={wallet.id} path={path} position={position} />,
-            }))}
-          />
+          <>
+            <div className="mb-2 space-y-2">
+              {wallet.paths.map((path) => (
+                <QuorumCard key={path.id} plan={plan} walletId={wallet.id} path={path} />
+              ))}
+            </div>
+            <ItemList
+              items={wallet.paths.map((path, position) => ({
+                id: path.id,
+                title: path.label,
+                summary: describePath(path),
+                removeLabel: `Remove ${path.label}`,
+                // The last way to spend cannot go: a wallet with none is a
+                // description of coins nobody can move, and the editor should
+                // not be the thing that makes one.
+                onRemove:
+                  wallet.paths.length > 1
+                    ? () =>
+                        edit((draft) => {
+                          const target = draft.wallets.find((entry) => entry.id === wallet.id)
+                          target?.paths.splice(position, 1)
+                        })
+                    : undefined,
+                body: (
+                  <PathEditor plan={plan} walletId={wallet.id} path={path} position={position} />
+                ),
+              }))}
+            />
+          </>
         )}
       </div>
 

@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/Button.tsx'
 import { ProfileEditor } from '@/components/plan/ProfileEditor.tsx'
 import { EntityWorkbench } from '@/components/plan/EntityWorkbench.tsx'
 import { StepEffect } from '@/components/plan/StepEffect.tsx'
-import { LiveDrawing } from '@/components/plan/LiveDrawing.tsx'
-import { PlacementGrid } from '@/components/plan/PlacementGrid.tsx'
+import { StepVisual } from '@/components/plan/StepVisual.tsx'
 import { DeviceShelf } from '@/components/plan/DeviceShelf.tsx'
 import { StepPresets } from '@/components/plan/StepPresets.tsx'
 import { entitiesOf, useActivePlan, useStore } from '@/lib/store.ts'
@@ -165,10 +164,10 @@ export function DesignView() {
             // this step gets the shelf and the maker count instead.
             <DeviceShelf plan={settled ?? plan} report={settledReport ?? report} />
           ) : (
-            <div className="mb-4 grid items-start gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] [&>*]:mb-0">
-              {section.kind === 'verification' ? null : <PlacementGrid plan={settled ?? plan} />}
-              <LiveDrawing plan={settled ?? plan} />
-            </div>
+            <StepVisual
+              plan={settled ?? plan}
+              preferDrawing={section.kind === 'wallet' || section.kind === 'verification'}
+            />
           )}
           <EntityWorkbench
             plan={plan}

@@ -213,7 +213,9 @@ function RelatedFindings({
     <div className="mt-6 border-t border-line pt-4">
       <p className="eyebrow mb-2">What the analysis says about this</p>
       <ul className="space-y-1.5">
-        {found.map((finding) => (
+        {/* The worst few. Eleven lines under a form is a second findings page
+            nobody asked for; the whole list is one click away. */}
+        {found.slice(0, 4).map((finding) => (
           <li key={finding.id}>
             <button
               type="button"
@@ -228,6 +230,15 @@ function RelatedFindings({
           </li>
         ))}
       </ul>
+      {found.length > 4 ? (
+        <button
+          type="button"
+          onClick={() => navigate({ view: 'findings', section: null })}
+          className="mt-1.5 text-xs text-accent underline underline-offset-2"
+        >
+          and {found.length - 4} more
+        </button>
+      ) : null}
     </div>
   )
 }

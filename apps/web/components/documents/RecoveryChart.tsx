@@ -136,7 +136,6 @@ export function RecoveryChart({
 
         {rows.map((row) => {
           const lit = hover === row.route.scenarioId
-          const dim = hover !== null && !lit
           return (
             <button
               key={row.route.scenarioId}
@@ -148,8 +147,9 @@ export function RecoveryChart({
               onBlur={() => setHover(null)}
               className={cn(
                 'col-span-2 grid grid-cols-subgrid items-center rounded-[6px] py-[3px] text-left transition-[background-color,opacity]',
-                lit && 'bg-[rgb(var(--tint)/0.05)]',
-                dim && 'opacity-60'
+                // The hovered row lights up and the rest stay as they are:
+                // fading them took their labels under 4.5:1.
+                lit && 'bg-[rgb(var(--tint)/0.07)]'
               )}
               aria-label={`${row.route.title}: ${label(row)}`}
             >

@@ -431,6 +431,28 @@ describe('starting a step from a template', () => {
   })
 })
 
+describe('a way to spend', () => {
+  it('is its keys and how many, edited in place', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/design/wallets')
+    const keys = await screen.findByRole('group', { name: /everyday: keys in it/i })
+    const path = () => useStore.getState().plans[0].wallets[0].paths[0]
+    expect(path().threshold).toBe(2)
+
+    await user.click(screen.getByRole('button', { name: /more keys needed/i }))
+    expect(path().threshold).toBe(3)
+
+    // Taking a key out can never leave more needed than there are.
+    await user.click(within(keys).getByRole('button', { name: /key c/i, pressed: true }))
+    expect(path().keyIds).toHaveLength(2)
+    expect(path().threshold).toBe(2)
+  })
+})
+
 describe('what goes where', () => {
   it('moves and adds things by clicking a grid, on the real plan', async () => {
     reset()
@@ -1409,6 +1431,8 @@ describe('describing a plan', () => {
     await user.click(await screen.findByText('Two of three, three sites'))
 
     goto('#/design/keys')
+    // The grid leads on this step; the drawing is one tab away.
+    await user.click(await screen.findByRole('button', { name: /^drawing$/i }))
     const drawing = await screen.findByRole('group', { name: /the plan, drawn/i })
 
     // A place, from the keys step: it opens on its own step, selected.

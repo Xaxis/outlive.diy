@@ -2,17 +2,9 @@
 
 import { useMemo } from 'react'
 import { ArrowRight, Check } from 'lucide-react'
-import {
-  buildGraph,
-  baseWorld,
-  disasterGroups,
-  type AnalysisReport,
-  type Finding,
-  type Plan,
-} from '@outlive/core'
+import { disasterGroups, type AnalysisReport, type Finding, type Plan } from '@outlive/core'
 import { Panel } from '@/components/ui/Surface.tsx'
 import { SeverityDot } from '@/components/ui/Severity.tsx'
-import { PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
 import { navigateTo } from '@/lib/router.ts'
 import { useStore, type EntityKind } from '@/lib/store.ts'
 
@@ -144,25 +136,12 @@ export function StepEffect({
   )
   const shape = shapeOf(plan, kind)
 
-  // The wallets step is where the whole structure first exists, so it is the
-  // one place a picture says more than a sentence.
-  const graph = useMemo(
-    () => (kind === 'wallet' && plan.wallets.length > 0 ? buildGraph(plan, baseWorld(plan)) : null),
-    [kind, plan]
-  )
-
   if (!shape && mine.length === 0) return null
 
   return (
     <Panel className="mt-4 p-4">
       <p className="eyebrow mb-2">What this told the analysis</p>
       {shape ? <p className="text-sm leading-relaxed text-body">{shape}</p> : null}
-
-      {graph ? (
-        <div className="mt-4">
-          <PlanDiagram graph={graph} height="32rem" />
-        </div>
-      ) : null}
 
       {mine.length === 0 ? (
         <p className="mt-3 flex items-center gap-2 border-t border-line pt-3 text-sm text-muted">

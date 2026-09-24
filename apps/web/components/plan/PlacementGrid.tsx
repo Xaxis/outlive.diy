@@ -30,7 +30,7 @@ export function PlacementGrid({ plan }: { plan: Plan }) {
   )
 
   return (
-    <div className="card mb-4 p-4 no-print">
+    <div className="card p-4 no-print">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-semibold text-strong">What goes where</h2>
         {/* The consequence of a click, beside the click. */}

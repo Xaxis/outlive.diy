@@ -11,27 +11,31 @@ import type { Verdict } from '@outlive/core'
  */
 export const VERDICT: Record<
   Verdict,
-  { label: string; tone: string; cell: string; icon: typeof Check }
+  { label: string; tone: string; cell: string; ink: string; icon: typeof Check }
 > = {
   safe: {
+    ink: 'text-ok',
     label: 'survives',
     tone: 'bg-ok',
     cell: 'border-ok/30 bg-ok/10 text-ok',
     icon: Check,
   },
   degraded: {
+    ink: 'text-medium',
     label: 'no spare',
     tone: 'bg-medium',
     cell: 'border-medium/40 bg-medium/12 text-medium',
     icon: Minus,
   },
   lost: {
+    ink: 'text-critical',
     label: 'unspendable',
     tone: 'bg-critical',
     cell: 'border-critical/50 bg-critical/15 text-critical',
     icon: X,
   },
   exposed: {
+    ink: 'text-critical',
     label: 'they can spend it',
     tone: 'bg-critical',
     cell: 'border-critical bg-critical/25 text-critical',

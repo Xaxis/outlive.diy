@@ -210,6 +210,50 @@ export function Select<T extends string>({
   placeholder?: string
 }) {
   const labelledBy = useFieldLabel()
+  // A handful of short answers is a row of buttons, not a dropdown: every
+  // option is visible, the chosen one is obvious at a glance, and it is one
+  // click rather than two. A long list, or one that can be left unanswered,
+  // stays a dropdown.
+  // An unanswered choice gets a button of its own, last, so "not recorded" is
+  // something you can see and pick rather than an empty box.
+  const choices: { value: T | null; label: string }[] =
+    placeholder === undefined ? options : [...options, { value: null, label: placeholder }]
+  const asButtons =
+    choices.length <= 5 &&
+    choices.every((option) => option.label.length <= (choices.length <= 4 ? 26 : 16))
+  if (asButtons) {
+    return (
+      <div
+        id={id}
+        role="radiogroup"
+        aria-labelledby={labelledBy}
+        className="grid gap-1"
+        style={{ gridTemplateColumns: `repeat(${choices.length}, minmax(0, 1fr))` }}
+      >
+        {choices.map((option) => {
+          const on = option.value === value
+          return (
+            <button
+              key={option.value ?? 'none'}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              onClick={() => onChange(option.value)}
+              className={cn(
+                'min-w-0 rounded-[var(--radius-control)] border px-2 py-1.5 text-center text-xs leading-tight transition-colors',
+                on
+                  ? 'border-accent bg-accent/10 font-medium text-strong'
+                  : 'border-line text-muted hover:border-line-strong hover:text-strong',
+                option.value === null && !on && 'border-dashed'
+              )}
+            >
+              {option.label}
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
   return (
     <select
       id={id}

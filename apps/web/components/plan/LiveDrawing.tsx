@@ -77,7 +77,7 @@ export function LiveDrawing({ plan }: { plan: Plan }) {
   }
 
   return (
-    <div className="card mb-4 p-4 no-print">
+    <div className="card p-4 no-print">
       <SectionHeading
         title="Where this sits"
         hint={

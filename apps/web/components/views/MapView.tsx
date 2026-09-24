@@ -340,17 +340,21 @@ export function MapView() {
             return (
               <li
                 key={wallet.id}
+                // The tint and the icon carry the verdict; the words are in
+                // the text ramp, because coloured text on its own tint falls
+                // under 4.5:1 in the light theme.
                 className={cn(
                   'flex items-center gap-2 rounded-[var(--radius-control)] border px-2.5 py-1.5 text-sm transition-colors duration-300',
-                  style.cell
+                  style.cell,
+                  'text-strong'
                 )}
               >
-                <Icon className="size-4" strokeWidth={2.5} aria-hidden />
-                <span className="font-medium text-strong">{wallet.label}</span>
+                <Icon className={cn('size-4', style.ink)} strokeWidth={2.5} aria-hidden />
+                <span className="font-medium">{wallet.label}</span>
                 <span className="font-medium">{style.label}</span>
                 {path ? (
                   <span
-                    className="mono text-[0.6875rem] text-muted"
+                    className="mono text-[0.6875rem] text-body"
                     title="keys reachable / keys needed"
                   >
                     {path.availableKeyIds.length}/{path.threshold}
