@@ -62,17 +62,20 @@ export function FileView() {
         <Panel className="p-4">
           <SectionHeading
             title="What leaves this browser"
-            hint="The short answer is nothing, and here is what that means specifically."
+            hint="The short answer is nothing, unless you ask Claude with your own key, and here is what that means specifically."
           />
           <ul className="space-y-2 text-[0.875rem] leading-relaxed text-muted">
             <li>
-              <strong className="font-medium text-strong">No requests.</strong> The page loads once
-              and then never asks for anything. Its Content-Security-Policy sets{' '}
+              <strong className="font-medium text-strong">
+                One destination, and only if you ask.
+              </strong>{' '}
+              The page loads once and then asks for nothing. The one request it can make is asking
+              Claude, with a key you enter below, to Anthropic. Its Content-Security-Policy sets{' '}
               <code className="mono whitespace-nowrap text-xs text-body">
-                connect-src &apos;none&apos;
+                connect-src https://api.anthropic.com
               </code>
-              , so a request would be refused by the browser even if the code tried. The build fails
-              if any source in the app gains a way to make one.
+              , so a request anywhere else is refused by the browser even if the code tried, and the
+              build fails if any other source gains a way to make one.
             </li>
             <li>
               <strong className="font-medium text-strong">No third parties.</strong> No analytics,

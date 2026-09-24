@@ -6,8 +6,9 @@ const nextConfig: NextConfig = {
    *
    * The whole application is one HTML document with no back end, no API routes
    * and nothing to render on demand. That is not a deployment convenience: it
-   * is what makes "this app cannot send your plan anywhere" a checkable claim
-   * rather than a promise, because there is nowhere for it to be sent to.
+   * is what makes "this app sends your plan nowhere you did not ask" a
+   * checkable claim rather than a promise: there is no server of its own to
+   * send it to, and the only other host the policy allows is Anthropic.
    */
   output: 'export',
   reactStrictMode: true,
