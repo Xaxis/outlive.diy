@@ -8,6 +8,8 @@ import { PrintHeader } from '@/components/shell/PrintHeader.tsx'
 import { Rehearsal } from '@/components/documents/Rehearsal.tsx'
 import { Timeline } from '@/components/documents/Timeline.tsx'
 import { RecoveryChart } from '@/components/documents/RecoveryChart.tsx'
+import { AskClaude } from '@/components/ai/AskClaude.tsx'
+import type { Plan } from '@outlive/core'
 import { MEASURE, ViewHeader } from '@/components/ui/Surface.tsx'
 import { ItemList } from '@/components/ui/ItemList.tsx'
 import { Segmented } from '@/components/ui/Field.tsx'
@@ -125,6 +127,7 @@ export function RecoveryView() {
             ),
             body: (
               <Route
+                plan={plan}
                 route={route}
                 labelFor={(id) => index.locations.get(id)?.label ?? 'a location'}
                 walletLabel={(id) => index.wallets.get(id)?.label ?? 'a wallet'}
@@ -138,10 +141,12 @@ export function RecoveryView() {
 }
 
 function Route({
+  plan,
   route,
   labelFor,
   walletLabel,
 }: {
+  plan: Plan
   route: RecoveryRoute
   labelFor: (id: string) => string
   walletLabel: (id: string) => string
@@ -235,6 +240,13 @@ function Route({
           <ArrowUpRight className="size-3" aria-hidden />
         </a>
       </p>
+
+      <AskClaude
+        plan={plan}
+        className="mt-3"
+        label="Walk me through it"
+        question={`"${route.title}" has happened. Walk me through the recovery route for my plan step by step, as if I am doing it today: what to bring, where to go in what order, what can go wrong at each step, and what to do first in the first hour.`}
+      />
 
       <Rehearsal route={route} />
     </div>

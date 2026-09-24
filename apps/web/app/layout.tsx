@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: 'outlive.diy: design and stress-test a Bitcoin custody plan',
   description:
-    'A local-only tool for designing a Bitcoin self-custody and recovery plan and finding where it breaks. It never accepts seed words, keys or addresses, and it makes no network calls.',
+    'A local-only tool for designing a Bitcoin self-custody and recovery plan and finding where it breaks. It never accepts seed words, keys or addresses, and makes no network calls unless you ask Claude with your own key.',
   applicationName: 'outlive.diy',
   keywords: [
     'bitcoin self custody planning',

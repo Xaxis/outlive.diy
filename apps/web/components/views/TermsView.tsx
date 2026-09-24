@@ -6,7 +6,7 @@ import { href } from '@/lib/router.ts'
  * A tool about custody of money has to say plainly who is responsible for the
  * money, and the answer is the person using it. This says that, and the few
  * other things that follow from how the program is built: it holds nothing,
- * sends nothing, and knows only what it is told.
+ * sends nothing unless asked to, and knows only what it is told.
  */
 export function TermsView() {
   return (
@@ -38,10 +38,13 @@ export function TermsView() {
           kind, express or implied, including fitness for a particular purpose. It may contain
           mistakes. Check what it tells you before you act on it.
         </Term>
-        <Term title="It holds nothing and sends nothing">
+        <Term title="It holds nothing, and sends only what you ask it to">
           It has no field for key material and refuses it where it recognises it. Never enter a
-          seed, key, descriptor, address or passphrase anyway. It makes no network calls; your plan
-          stays in this browser or in files you save, and keeping those safe is up to you.
+          seed, key, descriptor, address or passphrase anyway. It makes no network calls of its own.
+          If you enter your own Anthropic API key and ask Claude, the plan&apos;s structure and
+          findings, without notes, go to Anthropic under your account and Anthropic&apos;s terms;
+          Claude&apos;s answers are not this program&apos;s conclusions and may be wrong. Otherwise
+          your plan stays in this browser or in files you save, and keeping those safe is up to you.
         </Term>
         <Term title="Names of products">
           Device and service names are used only so you can say what you own. No affiliation with,

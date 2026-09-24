@@ -5,6 +5,7 @@ import { ChevronRight, Network, Wrench } from 'lucide-react'
 import { CATEGORY_LABEL, RULES, type Finding, type Plan, type Ref } from '@outlive/core'
 import { FindingPicture } from '@/components/findings/FindingPicture.tsx'
 import { FixList } from '@/components/findings/FixList.tsx'
+import { AskClaude } from '@/components/ai/AskClaude.tsx'
 import { SeverityDot, SEVERITY_LABEL } from '@/components/ui/Severity.tsx'
 import { navigateTo } from '@/lib/router.ts'
 import { cn } from '@/lib/cn.ts'
@@ -93,6 +94,14 @@ export function FindingCard({
         </div>
 
         {open && plan ? <FixList plan={plan} findingId={finding.id} /> : null}
+        {open && plan ? (
+          <AskClaude
+            plan={plan}
+            className="mt-3"
+            label="Ask Claude about this"
+            question={`Explain the finding "${finding.title}" (${finding.id}) for my plan in plain words: what actually goes wrong, how likely that is for someone like me, and the one or two changes that would fix it, with what each trades off.`}
+          />
+        ) : null}
         {open && plan ? <FindingPicture plan={plan} finding={finding} /> : null}
 
         {/* A finding names what breaks. The map draws where it breaks, in the

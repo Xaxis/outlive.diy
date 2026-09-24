@@ -15,13 +15,18 @@ balance or transaction, and there must never be one. Locations and people are
 roles, never names. Every free-text field goes through `packages/core/src/guard`,
 and so does every plan file at the moment it is opened.
 
-**2. It makes no network calls.** No fonts from a content network, no analytics,
-no telemetry, no error reporting, no update check. `make no-network` fails the
-build if any source under `apps/web` or `packages/core/src` gains a way to reach
-the network, and the deployed `Content-Security-Policy` sets
-`connect-src 'none'`. This is why the app is one route with fragment routing:
-Next's client-side navigation between prerendered pages would need
-`connect-src 'self'`, and that would make the claim unenforceable.
+**2. It makes no network calls of its own.** No fonts from a content network,
+no analytics, no telemetry, no error reporting, no update check. The one
+exception is one the reader turns on: asking Claude with their own Anthropic
+key, which sends the plan's structure and findings, notes removed and guarded,
+from their browser to `api.anthropic.com` and nowhere else, only when they press
+a button that says Claude. That request lives in `apps/web/lib/ai/client.ts` and
+nowhere else; `make no-network` fails the build if the SDK is imported by any
+other file, if any other source gains a way to reach the network, or if the
+deployed `Content-Security-Policy` allows any `connect-src` but that one host.
+The key is never part of the plan store, the plan file or undo history. This is
+also why the app is one route with fragment routing: navigation between
+prerendered pages would need `connect-src 'self'`.
 
 If a change would weaken either of these, it is wrong even if the feature is
 good.

@@ -63,7 +63,7 @@ export default function OpengraphImage() {
           Design a Bitcoin custody plan, then find out where it breaks.
         </div>
         <div style={{ display: 'flex', fontSize: 27, color: '#8e96a3', maxWidth: 880 }}>
-          Local only. No network calls. It will not accept a seed word, a key or an address.
+          Local only. It will not accept a seed word, a key or an address.
         </div>
       </div>
 

@@ -24,13 +24,16 @@ Every free-text field runs through an input guard that refuses seed words,
 extended keys, WIF keys, addresses, descriptors and long hex strings, and tells
 you exactly what it recognised and why. The guard is a feature, not a nuisance.
 
-It makes no network calls. No fonts from a CDN, no analytics, no telemetry, no
-update check, no error reporting. The whole application is one static page whose
-Content-Security-Policy forbids connecting anywhere at all, and
-`make no-network` fails the build if any source in it acquires a way to.
+It makes no network calls of its own. No fonts from a CDN, no analytics, no
+telemetry, no update check, no error reporting. The one exception is optional
+and yours: enter your own Anthropic API key and you can ask Claude about your
+plan. Then, and only when you press a button that says Claude, the plan's
+structure and findings, with every note removed and checked by the input guard,
+go from your browser to `api.anthropic.com`. The Content-Security-Policy allows
+that one host and no other, and `make no-network` fails the build if the
+policy widens or any other file gains a way out.
 
-Your plan lives in your browser, and in files you save yourself. Nothing is
-sent anywhere, because there is nowhere for it to be sent.
+Your plan lives in your browser, and in files you save yourself.
 
 ## What the analysis does
 

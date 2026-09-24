@@ -15,6 +15,7 @@ import { DiagramOmissions, PlanDiagram } from '@/components/graph/PlanDiagram.ts
 import { WalletStanding } from '@/components/graph/WalletStanding.tsx'
 import { FailureMatrix } from '@/components/graph/FailureMatrix.tsx'
 import { ImproveButton } from '@/components/findings/ImproveButton.tsx'
+import { AskClaude } from '@/components/ai/AskClaude.tsx'
 import { SeverityBar, SeverityDot } from '@/components/ui/Severity.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { useActivePlan, useStore } from '@/lib/store.ts'
@@ -126,6 +127,22 @@ export function OverviewView() {
                 onSelect={() => navigate({ view: 'map', section: null })}
               />
             )}
+          </Panel>
+
+          <Panel className="p-4">
+            <SectionHeading
+              title="Ask Claude"
+              hint="Optional, with your own Anthropic key. Sends the plan's structure and findings, with notes removed, straight to Anthropic. Nothing is sent until you ask."
+            />
+            <AskClaude
+              plan={plan}
+              freeText
+              suggestions={[
+                'Review my plan',
+                'What should I do first, this week?',
+                'Explain my plan to my successor in plain words',
+              ]}
+            />
           </Panel>
 
           {plan.wallets.length > 0 && results.length > 0 ? (

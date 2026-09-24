@@ -12,7 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'outlive.diy',
     short_name: 'outlive',
     description:
-      'Design a Bitcoin self-custody and recovery plan and find where it breaks. Local only, no network calls, never accepts key material.',
+      'Design a Bitcoin self-custody and recovery plan and find where it breaks. Local only, never accepts key material.',
     start_url: '/',
     display: 'standalone',
     background_color: '#08090b',

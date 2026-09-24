@@ -9,12 +9,21 @@ It runs entirely in the browser tab. It reads and writes one origin's local
 storage, reads files the user picks, and writes files the user saves. That is
 the complete list of its capabilities.
 
-It cannot make a network request. The deployed `Content-Security-Policy` sets
-`connect-src 'none'`, so `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`
-and `sendBeacon` are refused by the browser regardless of what the code asks
-for. `tools/check-no-network.mjs` runs in CI and fails the build if any source
-in `apps/web` or `packages/core/src` acquires a way to make one, or references
-a host that is not on a short allowlist.
+It can make one kind of network request, and only to one host. The deployed
+`Content-Security-Policy` sets `connect-src https://api.anthropic.com`, so every
+request to anywhere else is refused by the browser regardless of what the code
+asks for. The one request the code makes is asking Claude, which happens only
+after the reader has entered their own Anthropic key and pressed a button that
+says Claude; it carries the plan's structure and findings with every `notes`
+field removed, and the whole payload goes through the key-material guard first,
+so a refused string means nothing is sent. `tools/check-no-network.mjs` runs in
+CI and fails the build if the Anthropic SDK is imported anywhere but
+`apps/web/lib/ai/client.ts`, if any other source acquires a way to make a
+request, or if the deployed policy allows any `connect-src` but that host.
+
+The key is held in memory, or in this origin's local storage if the reader ticks
+"remember", and never in the plan store, the plan file or undo history. Erasing
+local data erases it.
 
 The page is a static export with no server component, no API route and no
 runtime environment variables. There is no back end to send anything to.
@@ -24,9 +33,14 @@ worth making:
 
 - `script-src` includes `'unsafe-inline'`. It has to: the framework inlines its
   own bootstrap data into the document, and a static export cannot carry a
-  nonce. What that costs is real but narrow, because the lines that actually
-  prevent data leaving (`connect-src 'none'`, `img-src 'self' data:`,
-  `form-action 'none'`) hold regardless of what script runs.
+  nonce. What that costs is real, and larger since Claude was added: the lines
+  that prevent data leaving (`img-src 'self' data:`, `form-action 'none'`) hold
+  regardless of what script runs, but `connect-src` now allows
+  `api.anthropic.com`, and a script that got into the page could use that host
+  to carry a plan out under an attacker's own key, for instance by uploading it
+  to their account. Nothing in the application loads or evaluates outside
+  script, and the check above keeps it that way, but under the old policy even
+  an injected script had no way out and now it would have one.
 - Content-Security-Policy does not restrict ordinary navigation. It stops a
   request, a form post and a beacon; it does not stop a link. The protection
   here is that there is no code that would follow one, and the repository check

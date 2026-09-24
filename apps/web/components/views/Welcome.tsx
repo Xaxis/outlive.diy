@@ -152,7 +152,8 @@ export function Welcome() {
         <li className="flex items-center gap-2">
           <WifiOff className="size-4 flex-none text-ok" aria-hidden />
           <span>
-            <span className="font-medium text-strong">It makes no network calls.</span>{' '}
+            <span className="font-medium text-strong">It makes no network calls</span> unless you
+            ask Claude with your own key.{' '}
             <a href={href('file')} className="link">
               What is stored
             </a>

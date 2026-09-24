@@ -5,7 +5,7 @@ import { App } from '@/components/shell/App.tsx'
  *
  * Views are fragments rather than pages, so the application never requests
  * anything after it has loaded, which is what lets the security policy forbid
- * connecting anywhere at all.
+ * connecting anywhere but Anthropic, for a reader who asks Claude.
  */
 export default function Page() {
   return <App />

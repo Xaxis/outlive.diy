@@ -37,6 +37,7 @@ import { useStore } from '@/lib/store.ts'
 import { navigateTo } from '@/lib/router.ts'
 import { LOCATION_KIND } from '@/lib/describe.ts'
 import { cn } from '@/lib/cn.ts'
+import { DescribeShape } from '@/components/ai/DescribeShape.tsx'
 
 /**
  * A plan in one screen, by its shape.
@@ -137,6 +138,11 @@ export function BuildView() {
           </Button>
         }
       />
+
+      <Panel className="mb-4 p-4">
+        <h2 className="mb-2 text-sm font-semibold text-strong">Describe it, or click it below</h2>
+        <DescribeShape shape={shape} onShape={setShape} />
+      </Panel>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
         <div className="space-y-4">

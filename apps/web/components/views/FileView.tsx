@@ -14,6 +14,7 @@ import { MEASURE, Callout, Panel, SectionHeading, ViewHeader } from '@/component
 import { Segmented } from '@/components/ui/Field.tsx'
 import { Dialog } from '@/components/ui/Dialog.tsx'
 import { OpenFileButton } from '@/components/file/OpenFileButton.tsx'
+import { ClaudeSettings } from '@/components/ai/ClaudeSettings.tsx'
 import { useStore } from '@/lib/store.ts'
 import {
   readTextFile,
@@ -126,6 +127,8 @@ export function FileView() {
             </Button>
           </div>
         </Panel>
+
+        <ClaudeSettings />
 
         <Panel className="p-4">
           <SectionHeading title="Plans open now" />

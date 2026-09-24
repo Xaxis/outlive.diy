@@ -308,6 +308,33 @@ describe('building a plan by its shape', () => {
   })
 })
 
+describe('asking Claude', () => {
+  it('sends nothing without a key, and asks for one where the question was asked', async () => {
+    reset()
+    const user = userEvent.setup()
+    const calls: unknown[] = []
+    const original = globalThis.fetch
+    globalThis.fetch = ((...args: unknown[]) => {
+      calls.push(args)
+      return Promise.reject(new Error('no network in tests'))
+    }) as typeof fetch
+    try {
+      render(<App />)
+      await user.click(await screen.findByText('Two of three, three sites'))
+      goto('#/overview')
+      await user.click(await screen.findByRole('button', { name: /review my plan/i }))
+
+      expect(await screen.findByText(/use your own anthropic api key/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/anthropic api key/i)).toHaveAttribute('type', 'password')
+      expect(calls).toHaveLength(0)
+      // And the key is nowhere in the plan.
+      expect(JSON.stringify(useStore.getState().plans)).not.toMatch(/sk-ant/)
+    } finally {
+      globalThis.fetch = original
+    }
+  })
+})
+
 describe('the terms', () => {
   it('say who is responsible, and can be read before anything is stored', async () => {
     reset()

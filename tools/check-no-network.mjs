@@ -73,6 +73,22 @@ const ALLOWED_HOSTS = new Set([
 
 const problems = []
 
+/**
+ * The one way out, and the only place it may be.
+ *
+ * Asking Claude sends a request to Anthropic, from the reader's browser, with
+ * the reader's own key, when they press a button that says so. That goes
+ * through the Anthropic SDK, whose request is inside node_modules where the
+ * patterns above cannot see it. So the SDK itself is the thing checked: it may
+ * be imported by exactly one file, and the deployed policy may allow exactly
+ * one host. Anything wider fails here rather than in review.
+ */
+const THE_WAY_OUT = 'apps/web/lib/ai/client.ts'
+const ONLY_HOST = 'https://api.anthropic.com'
+const SDK_IMPORT =
+  /from\s+['"]@anthropic-ai\/sdk(?:\/[^'"]*)?['"]|import\(\s*['"]@anthropic-ai\/sdk/g
+const BROWSER_OPT_IN = /dangerouslyAllowBrowser/g
+
 function walk(dir) {
   for (const entry of readdirSync(dir)) {
     if (SKIP.has(entry)) continue
@@ -98,6 +114,22 @@ function inspect(file) {
     }
   }
 
+  if (where !== THE_WAY_OUT) {
+    for (const [pattern, what] of [
+      [SDK_IMPORT, 'the Anthropic SDK'],
+      [BROWSER_OPT_IN, 'dangerouslyAllowBrowser'],
+    ]) {
+      pattern.lastIndex = 0
+      const match = pattern.exec(source)
+      if (match) {
+        const line = source.slice(0, match.index).split('\n').length
+        problems.push(
+          `${where}:${line}  ${what} outside ${THE_WAY_OUT}, the one file allowed to reach Anthropic`
+        )
+      }
+    }
+  }
+
   const urls = source.match(/https?:\/\/[^\s'"`)<>]+/g) ?? []
   for (const url of urls) {
     let host
@@ -120,6 +152,17 @@ for (const dir of SCANNED) {
   }
 }
 
+// The policy that enforces all of this, read from the file that deploys it.
+const deployed = JSON.parse(readFileSync(join(ROOT, 'vercel.json'), 'utf8'))
+const policy = deployed.headers
+  .flatMap((rule) => rule.headers)
+  .find((header) => header.key === 'Content-Security-Policy')?.value
+const connect = /connect-src\s+([^;]+)/.exec(policy ?? '')?.[1].trim()
+if (connect !== ONLY_HOST)
+  problems.push(
+    `vercel.json  connect-src is "${connect ?? 'missing'}"; it must be exactly ${ONLY_HOST}, the one host asking Claude needs`
+  )
+
 if (problems.length > 0) {
   console.error('no-network: the application must not be able to reach the network.\n')
   for (const problem of problems) console.error(`  ${problem}`)
@@ -129,4 +172,6 @@ if (problems.length > 0) {
   process.exit(1)
 }
 
-console.log('no-network: no way out found in apps/web or packages/core/src')
+console.log(
+  `no-network: one way out, ${THE_WAY_OUT} to ${ONLY_HOST}, and no other in apps/web or packages/core/src`
+)

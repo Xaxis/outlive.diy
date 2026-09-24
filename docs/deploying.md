@@ -62,12 +62,13 @@ than promised:
 ```
 Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline';
   style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';
-  connect-src 'none'; form-action 'none'; frame-ancestors 'none';
+  connect-src https://api.anthropic.com; form-action 'none'; frame-ancestors 'none';
   base-uri 'none'; object-src 'none'; manifest-src 'self'
 ```
 
-`connect-src 'none'` is the line that matters: the browser refuses every
-request the page could make, whatever the code asks for. The caveats are in
+`connect-src https://api.anthropic.com` is the line that matters: the browser
+refuses every request the page could make to anywhere else, whatever the code
+asks for, and the one it allows is the reader asking Claude with their own key. The caveats are in
 `threat-model.md`, stated rather than glossed.
 
 The generated share card and touch icon are emitted without a file extension by

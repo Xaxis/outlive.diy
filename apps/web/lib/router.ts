@@ -5,9 +5,10 @@
  *
  * The whole application is one document, and it stays one document on purpose.
  * Client-side navigation between prerendered routes would make the app request
- * things, which would mean loosening `connect-src 'none'` in the security
- * policy, which is the single line that makes "this app cannot send your plan
- * anywhere" enforceable rather than promised. The fragment costs nothing, keeps
+ * things, which would mean adding `'self'` to `connect-src` in the security
+ * policy, which allows Anthropic and nothing else and is the line that makes
+ * "this app sends your plan nowhere you did not ask" enforceable rather than
+ * promised. The fragment costs nothing, keeps
  * the back button working, and makes every view linkable.
  */
 
