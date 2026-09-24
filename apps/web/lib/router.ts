@@ -15,6 +15,7 @@ import { useCallback, useSyncExternalStore } from 'react'
 
 export type ViewId =
   | 'overview'
+  | 'build'
   | 'design'
   | 'findings'
   | 'map'
@@ -33,6 +34,7 @@ export interface Route {
 
 const VIEWS: ViewId[] = [
   'overview',
+  'build',
   'design',
   'findings',
   'map',

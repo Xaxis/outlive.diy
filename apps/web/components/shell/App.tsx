@@ -10,6 +10,7 @@ import { Toast } from './Toast.tsx'
 import { ScopeNotice } from './ScopeNotice.tsx'
 import { CommandPalette } from './CommandPalette.tsx'
 import { Welcome } from '@/components/views/Welcome.tsx'
+import { BuildView } from '@/components/views/BuildView.tsx'
 import { OverviewView } from '@/components/views/OverviewView.tsx'
 import { DesignView } from '@/components/views/DesignView.tsx'
 import { FindingsView } from '@/components/views/FindingsView.tsx'
@@ -86,7 +87,13 @@ export function App() {
     return (
       <>
         <TopBar onToggleSidebar={() => setDrawerOpen((value) => !value)} />
-        <Welcome />
+        {ready && route.view === 'build' ? (
+          <main id="main" className="mx-auto w-full max-w-[74rem] px-4 py-6 lg:px-8 lg:py-8">
+            <BuildView />
+          </main>
+        ) : (
+          <Welcome />
+        )}
         <Toast />
       </>
     )
@@ -145,6 +152,8 @@ export function App() {
 function View() {
   const [route] = useRoute()
   switch (route.view) {
+    case 'build':
+      return <BuildView />
     case 'design':
       return <DesignView />
     case 'findings':

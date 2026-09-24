@@ -29,8 +29,8 @@ export function FailureMatrix({
 }: {
   results: ScenarioResult[]
   wallets: Wallet[]
-  /** A scenario id. */
-  onPick: (id: string) => void
+  /** A scenario id. Absent where there is no map to draw it on yet. */
+  onPick?: (id: string) => void
   className?: string
 }) {
   const [filter, setFilter] = useState<'bad' | 'all'>('bad')
@@ -62,10 +62,11 @@ export function FailureMatrix({
     if (!hover) return null
     const result = results.find((entry) => entry.scenario.id === hover.row)
     if (!result) return null
-    if (hover.col === null) return `${result.scenario.label}. Click to draw this world.`
+    const click = onPick ? ' Click to draw it.' : ''
+    if (hover.col === null) return `${result.scenario.label}.${click}`
     const outcome = result.wallets.find((entry) => entry.walletId === hover.col)
     if (!outcome) return null
-    return `${result.scenario.label}: ${walletLabel(outcome.walletId)} ${VERDICT[outcome.verdict].label}. Click to draw it.`
+    return `${result.scenario.label}: ${walletLabel(outcome.walletId)} ${VERDICT[outcome.verdict].label}.${click}`
   })()
 
   return (
@@ -150,7 +151,7 @@ export function FailureMatrix({
                       >
                         <button
                           type="button"
-                          onClick={() => onPick(result.scenario.id)}
+                          onClick={() => onPick?.(result.scenario.id)}
                           onMouseEnter={() => setHover({ row: result.scenario.id, col: null })}
                           onFocus={() => setHover({ row: result.scenario.id, col: null })}
                           className={cn(
@@ -178,7 +179,7 @@ export function FailureMatrix({
                           >
                             <button
                               type="button"
-                              onClick={() => onPick(result.scenario.id)}
+                              onClick={() => onPick?.(result.scenario.id)}
                               onMouseEnter={() =>
                                 setHover({ row: result.scenario.id, col: wallet.id })
                               }
@@ -211,7 +212,7 @@ export function FailureMatrix({
       )}
 
       <p className="mt-2 min-h-[1.25rem] text-xs text-faint" aria-live="polite">
-        {readout ?? 'Point at a cell for what it says. Click one to draw that world.'}
+        {readout ?? (onPick ? 'Click a cell to draw that world.' : ' ')}
       </p>
     </div>
   )

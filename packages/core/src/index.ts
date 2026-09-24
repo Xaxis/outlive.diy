@@ -12,6 +12,7 @@ export * from './model/factory.ts'
 export * from './model/schema.ts'
 export * from './model/selectors.ts'
 export * from './model/examples.ts'
+export * from './model/shape.ts'
 
 export * from './guard/guard.ts'
 
@@ -33,3 +34,4 @@ export * from './documents/successor-letter.ts'
 
 export * from './diff/compare.ts'
 export * from './vendors/vendors.ts'
+export * from './fixes/fixes.ts'

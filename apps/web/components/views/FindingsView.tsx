@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/Button.tsx'
 import { PrintHeader } from '@/components/shell/PrintHeader.tsx'
 import { SeverityBar } from '@/components/ui/Severity.tsx'
 import { FindingCard } from '@/components/findings/FindingCard.tsx'
+import { ImproveButton } from '@/components/findings/ImproveButton.tsx'
 import { useActivePlan, useStore } from '@/lib/store.ts'
 import { useReport } from '@/lib/analysis.ts'
 import { useRoute } from '@/lib/router.ts'
@@ -82,13 +83,16 @@ export function FindingsView() {
         title="Findings"
         question="Ranked worst first, each with one thing to do about it. There is no score, because a custody plan that gets a B is not a thing."
         actions={
-          <Button
-            variant="default"
-            onClick={() => window.print()}
-            icon={<Printer className="size-3.5" aria-hidden />}
-          >
-            Print
-          </Button>
+          <>
+            <Button
+              variant="default"
+              onClick={() => window.print()}
+              icon={<Printer className="size-3.5" aria-hidden />}
+            >
+              Print
+            </Button>
+            {report.findings.length > 0 ? <ImproveButton plan={plan} /> : null}
+          </>
         }
       />
 

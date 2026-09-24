@@ -13,6 +13,7 @@ import { MEASURE, Card, Panel, SectionHeading, ViewHeader } from '@/components/u
 import { DiagramOmissions, PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
 import { WalletStanding } from '@/components/graph/WalletStanding.tsx'
 import { FailureMatrix } from '@/components/graph/FailureMatrix.tsx'
+import { ImproveButton } from '@/components/findings/ImproveButton.tsx'
 import { SeverityBar, SeverityDot } from '@/components/ui/Severity.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { useActivePlan, useStore } from '@/lib/store.ts'
@@ -78,9 +79,7 @@ export function OverviewView() {
         actions={
           <>
             <Button onClick={() => forkAsDraft(plan.id)}>Try a change as a draft</Button>
-            <Button variant="primary" onClick={() => navigate({ view: 'findings', section: null })}>
-              Read the findings
-            </Button>
+            {report.findings.length > 0 ? <ImproveButton plan={plan} /> : null}
           </>
         }
       />

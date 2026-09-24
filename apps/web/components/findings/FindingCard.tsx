@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ChevronRight, Network, Wrench } from 'lucide-react'
 import { CATEGORY_LABEL, RULES, type Finding, type Plan, type Ref } from '@outlive/core'
 import { FindingPicture } from '@/components/findings/FindingPicture.tsx'
+import { FixList } from '@/components/findings/FixList.tsx'
 import { SeverityDot, SEVERITY_LABEL } from '@/components/ui/Severity.tsx'
 import { navigateTo } from '@/lib/router.ts'
 import { cn } from '@/lib/cn.ts'
@@ -91,6 +92,7 @@ export function FindingCard({
           <p className="text-body">{finding.remediation}</p>
         </div>
 
+        {open && plan ? <FixList plan={plan} findingId={finding.id} /> : null}
         {open && plan ? <FindingPicture plan={plan} finding={finding} /> : null}
 
         {/* A finding names what breaks. The map draws where it breaks, in the

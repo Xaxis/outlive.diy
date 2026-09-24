@@ -84,12 +84,20 @@ export function Welcome() {
         <Button
           variant="primary"
           onClick={() => {
-            startPlan()
-            window.location.hash = href('design').slice(1)
+            window.location.hash = href('build').slice(1)
           }}
           icon={<ArrowRight className="size-4" aria-hidden />}
         >
-          Start a plan
+          Build a plan
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            startPlan()
+            window.location.hash = href('design').slice(1)
+          }}
+        >
+          Describe one by hand
         </Button>
         <OpenFileButton icon={<FileUp className="size-4" aria-hidden />}>
           Open a plan file

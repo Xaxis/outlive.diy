@@ -109,6 +109,13 @@ interface StoreState {
   select: (ref: Ref | null) => void
 
   startPlan: (name?: string) => void
+  /** A whole plan built elsewhere, such as from a shape, opened as current. */
+  addPlan: (plan: Plan) => void
+  /**
+   * Put a fix's plan in place of the active one, keeping its identity. One
+   * undo step, because "that made it worse" is the likeliest next thought.
+   */
+  applyPlan: (next: Plan) => void
   openExample: (id: string) => void
   forkAsDraft: (id: Id) => void
   renamePlan: (id: Id, name: string) => void
@@ -275,6 +282,28 @@ export const useStore = create<StoreState>()(
         state.dirty = true
       })
       persist(get())
+    },
+
+    addPlan: (plan) => {
+      set((state) => {
+        remember(state as StoreState)
+        state.plans.push(plan)
+        state.activeId = plan.id
+        state.selection = null
+        state.dirty = true
+      })
+      persist(get())
+    },
+
+    applyPlan: (next) => {
+      // Its own undo step, never folded into whatever was typed just before.
+      set((state) => {
+        state.lastEditAt = 0
+      })
+      get().edit((draft) => {
+        const { id, name, kind, createdAt } = draft
+        Object.assign(draft, structuredClone(next), { id, name, kind, createdAt })
+      })
     },
 
     openExample: (exampleId) => {

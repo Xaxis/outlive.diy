@@ -79,7 +79,7 @@ describe('the application', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(await screen.findByRole('button', { name: /start a plan/i }))
+    await user.click(await screen.findByRole('button', { name: /describe one by hand/i }))
     expect(await screen.findByRole('heading', { name: 'Purpose' })).toBeInTheDocument()
   })
 })
@@ -281,6 +281,73 @@ describe('drafts', () => {
   })
 })
 
+describe('building a plan by its shape', () => {
+  it('builds a whole plan in one screen, with the analysis live beside it', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(await screen.findByRole('button', { name: /build a plan/i }))
+    expect(await screen.findByRole('heading', { name: /build it by shape/i })).toBeInTheDocument()
+
+    // One key is one click, and the analysis answers straight away.
+    await user.click(screen.getByRole('button', { name: /^one key$/i }))
+    expect(screen.getByText(/alone is enough to spend/i)).toBeInTheDocument()
+    // Two of three spreads the keys out again.
+    await user.click(screen.getByRole('button', { name: /^2 of 3$/i }))
+    expect(screen.getByRole('button', { name: /Key A device at Site A/ })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    )
+
+    await user.click(screen.getByRole('button', { name: /create this plan/i }))
+    const plan = useStore.getState().plans[0]
+    expect(plan.keys).toHaveLength(3)
+    expect(plan.wallets[0].paths[0].threshold).toBe(2)
+    expect(await screen.findByRole('heading', { name: 'My plan' })).toBeInTheDocument()
+  })
+})
+
+describe('fixing a finding', () => {
+  it('finds the change, applies it, and undoes it', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/findings')
+    const title = await screen.findByText(/Vault has only one copy of its wallet configuration/i)
+    const card = title.closest('article')!
+    await user.click(title)
+    const apply = await within(card).findByRole('button', { name: /^apply$/i }, { timeout: 5000 })
+    const before = useStore.getState().plans[0].wallets[0].configBackups.length
+    await user.click(apply)
+    expect(useStore.getState().plans[0].wallets[0].configBackups.length).toBeGreaterThan(before)
+    // The finding it was for is gone.
+    expect(screen.queryByText(/Vault has only one copy of its wallet configuration/i)).toBeNull()
+
+    await user.keyboard('{Control>}z{/Control}')
+    expect(useStore.getState().plans[0].wallets[0].configBackups.length).toBe(before)
+  })
+
+  it('fixes what can be fixed as a draft, and opens the comparison', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/findings')
+    await user.click(await screen.findByRole('button', { name: /fix what can be fixed/i }))
+    await screen.findByRole('heading', { name: /compare plans/i }, { timeout: 10000 })
+    const { plans, compareId, activeId } = useStore.getState()
+    expect(plans).toHaveLength(2)
+    // The original is untouched and is the baseline.
+    expect(compareId).toBe(plans[0].id)
+    expect(plans.find((plan) => plan.id === activeId)?.kind).toBe('draft')
+    expect(screen.getByText(/^Closes \d+/)).toBeInTheDocument()
+  }, 20000)
+})
+
 describe('stepping through worlds', () => {
   it('moves the map to the next and previous world on the bracket keys', async () => {
     reset()
@@ -349,15 +416,15 @@ describe('the scope statement', () => {
     render(<App />)
     await user.click(await screen.findByText('Two of three, three sites'))
 
-    const notice = await screen.findByText(/before you rely on any of this/i)
+    const notice = await screen.findByText(/structure, not advice/i)
     expect(notice).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /understood/i }))
-    expect(screen.queryByText(/before you rely on any of this/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/structure, not advice/i)).not.toBeInTheDocument()
 
     // And it stays dismissed across a reload.
     goto('#/map')
-    expect(screen.queryByText(/before you rely on any of this/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/structure, not advice/i)).not.toBeInTheDocument()
   })
 })
 
@@ -465,7 +532,7 @@ describe('an empty plan', () => {
       reset()
       const user = userEvent.setup()
       render(<App />)
-      await user.click(await screen.findByRole('button', { name: /start a plan/i }))
+      await user.click(await screen.findByRole('button', { name: /describe one by hand/i }))
 
       goto(hash)
 
@@ -478,7 +545,7 @@ describe('an empty plan', () => {
     reset()
     const user = userEvent.setup()
     render(<App />)
-    await user.click(await screen.findByRole('button', { name: /start a plan/i }))
+    await user.click(await screen.findByRole('button', { name: /describe one by hand/i }))
 
     goto('#/findings')
 
@@ -581,7 +648,7 @@ describe('a plan built from nothing', () => {
     reset()
     const user = userEvent.setup()
     render(<App />)
-    await user.click(await screen.findByRole('button', { name: /start a plan/i }))
+    await user.click(await screen.findByRole('button', { name: /describe one by hand/i }))
 
     // A place and a key and nothing joining them to a wallet yet, which is
     // where the seven steps put you after five of them.
@@ -741,7 +808,7 @@ describe('naming a plan', () => {
     reset()
     const user = userEvent.setup()
     render(<App />)
-    await user.click(await screen.findByRole('button', { name: /start a plan/i }))
+    await user.click(await screen.findByRole('button', { name: /describe one by hand/i }))
 
     goto('#/design/profile')
     const name = await screen.findByLabelText('Name')
@@ -759,7 +826,7 @@ describe('naming a plan', () => {
     reset()
     const user = userEvent.setup()
     render(<App />)
-    await user.click(await screen.findByRole('button', { name: /start a plan/i }))
+    await user.click(await screen.findByRole('button', { name: /describe one by hand/i }))
 
     goto('#/design/profile')
     const name = await screen.findByLabelText('Name')
@@ -1096,6 +1163,10 @@ describe('the purpose questions', () => {
     goto('#/design/profile')
 
     expect(await screen.findByText(/what you said, against what you built/i)).toBeInTheDocument()
+    // Met, so the measurement is one click away rather than on the page.
+    await user.click(
+      screen.getByRole('button', { name: /how long could you go without being able to move/i })
+    )
     // Measured from the plan, not asserted: this is the real slowest route.
     expect(screen.getByText(/the slowest recovery that still works/i)).toBeInTheDocument()
   })
@@ -1108,9 +1179,16 @@ describe('the purpose questions', () => {
 
     goto('#/design/profile')
     // A month is enough for this plan's slowest surviving route.
+    await user.click(
+      await screen.findByRole('button', {
+        name: /how long could you go without being able to move/i,
+      })
+    )
     expect(await screen.findByText(/the slowest recovery that still works/i)).toBeInTheDocument()
 
     await user.click(screen.getByRole('radio', { name: /the same day/i }))
+    // Missed now, so the measurement is on the page without asking.
+    expect(screen.getByText(/the slowest recovery that still works/i)).toBeInTheDocument()
 
     // Same measurement, different verdict, and the finding appears with it.
     goto('#/findings')
@@ -1180,6 +1258,8 @@ describe('describing a plan', () => {
 
     // The step says where it is, why it is being asked, and where it goes next.
     expect(await screen.findByText(/step 2 of 7/i)).toBeInTheDocument()
+    const header = screen.getByRole('heading', { name: /^places$/i }).closest('header')!
+    await user.click(within(header).getByRole('button', { name: /^why$/i }))
     expect(screen.getByText(/two sites in one flood plain are one site/i)).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /^next/i }))
     expect(await screen.findByRole('heading', { name: /^people$/i })).toBeInTheDocument()
