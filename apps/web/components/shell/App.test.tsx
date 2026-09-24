@@ -281,6 +281,28 @@ describe('drafts', () => {
   })
 })
 
+describe('stepping through worlds', () => {
+  it('moves the map to the next and previous world on the bracket keys', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/map')
+    expect(await screen.findByText(/as it stands, with nothing wrong/i)).toBeInTheDocument()
+    await user.keyboard(']')
+    // The first world the engine builds for this plan is losing its first place.
+    expect(
+      await screen.findByText(/Site A is destroyed or emptied\. Can you still spend/)
+    ).toBeInTheDocument()
+    await user.keyboard('[[')
+    expect(await screen.findByText(/as it stands, with nothing wrong/i)).toBeInTheDocument()
+    // And round the other way, to the last one.
+    await user.keyboard('[[')
+    expect(screen.queryByText(/as it stands, with nothing wrong/i)).toBeNull()
+  })
+})
+
 describe('going anywhere by name', () => {
   it('opens on the shortcut and goes to what was typed', async () => {
     reset()

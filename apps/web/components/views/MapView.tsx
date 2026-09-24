@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { buildGraph, type Ref, type World } from '@outlive/core'
 import { MEASURE, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Disclosure } from '@/components/ui/Disclosure.tsx'
@@ -10,7 +10,7 @@ import {
   DiagramSummary,
   PlanDiagram,
 } from '@/components/graph/PlanDiagram.tsx'
-import { useLens } from '@/components/graph/Lens.tsx'
+import { TODAY, useLens } from '@/components/graph/Lens.tsx'
 import { WorldRail } from '@/components/graph/WorldRail.tsx'
 import { NodeDetail } from '@/components/graph/NodeDetail.tsx'
 import { WalletStanding } from '@/components/graph/WalletStanding.tsx'
@@ -79,6 +79,32 @@ export function MapView() {
   )
 
   const selected = graph?.nodes.find((node) => node.id === selectedId) ?? null
+
+  // [ and ] step through every world in the rail's order. The page's loop is
+  // "take one thing away and watch what stops working", and flipping through
+  // them with the drawing held still, each change pulsing where it lands, is
+  // the fastest way to see which of them matter. Not while typing: a bracket
+  // in a field is a bracket.
+  const order = useMemo(
+    () => [TODAY, ...lens.groups.flatMap((group) => group.scenarios.map((entry) => entry.id))],
+    [lens.groups]
+  )
+  const { id: lensId, set: setLens } = lens
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== '[' && event.key !== ']') return
+      if (event.metaKey || event.ctrlKey || event.altKey) return
+      const target = event.target as HTMLElement | null
+      if (target && /^(input|textarea|select)$/i.test(target.tagName)) return
+      event.preventDefault()
+      const at = composed ? 0 : Math.max(0, order.indexOf(lensId))
+      const next = (at + (event.key === ']' ? 1 : -1) + order.length) % order.length
+      setComposed(null)
+      setLens(order[next])
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [order, lensId, setLens, composed])
 
   if (!plan || !report) return null
 

@@ -148,7 +148,7 @@ export function WorldRail({
 
   return (
     <div className={cn('flex flex-col', className)}>
-      <div className="border-b border-line p-2.5 no-print">
+      <div className="flex items-center justify-between gap-2 border-b border-line p-2.5 no-print">
         <Segmented
           value={filter}
           onChange={setFilter}
@@ -157,6 +157,14 @@ export function WorldRail({
             { value: 'all', label: `All ${total}` },
           ]}
         />
+        <span
+          className="hidden items-center gap-1 text-[0.625rem] text-faint xl:flex"
+          title="Press [ and ] to step through every world"
+        >
+          <kbd className="mono rounded border border-line px-1">[</kbd>
+          <kbd className="mono rounded border border-line px-1">]</kbd>
+          step
+        </span>
       </div>
 
       <div ref={list} className="relative min-h-0 flex-1 overflow-y-auto p-2">
