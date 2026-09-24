@@ -16,6 +16,7 @@ import { WalletStanding } from '@/components/graph/WalletStanding.tsx'
 import { FailureMatrix } from '@/components/graph/FailureMatrix.tsx'
 import { ImproveButton } from '@/components/findings/ImproveButton.tsx'
 import { AskClaude } from '@/components/ai/AskClaude.tsx'
+import { NextMove } from '@/components/findings/NextMove.tsx'
 import { SeverityBar, SeverityDot } from '@/components/ui/Severity.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { useActivePlan, useStore } from '@/lib/store.ts'
@@ -128,6 +129,16 @@ export function OverviewView() {
               />
             )}
           </Panel>
+
+          {report.findings.length > 0 ? (
+            <Panel className="border-accent/40 p-4">
+              <SectionHeading
+                title="Your next move"
+                hint="Every change this program knows how to make, tried against the whole analysis. This is the one that closes the most without opening anything critical."
+              />
+              <NextMove plan={plan} />
+            </Panel>
+          ) : null}
 
           <Panel className="p-4">
             <SectionHeading

@@ -431,6 +431,29 @@ describe('starting a step from a template', () => {
   })
 })
 
+describe('the next move', () => {
+  it('names one change, makes it in one click, and undoes it in one', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/overview')
+    const make = await screen.findByRole(
+      'button',
+      { name: /make this change/i },
+      { timeout: 15000 }
+    )
+    const before = analyze(useStore.getState().plans[0]).findings.length
+    await user.click(make)
+    const after = analyze(useStore.getState().plans[0]).findings.length
+    expect(after).toBeLessThan(before)
+
+    await user.keyboard('{Control>}z{/Control}')
+    expect(analyze(useStore.getState().plans[0]).findings.length).toBe(before)
+  }, 30000)
+})
+
 describe('a way to spend', () => {
   it('is its keys and how many, edited in place', async () => {
     reset()
