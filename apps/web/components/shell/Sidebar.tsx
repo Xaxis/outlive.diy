@@ -146,6 +146,13 @@ export function Sidebar({
           <Shapes className="size-3" aria-hidden />
           Read the rules it applies
         </a>
+        <a
+          href={href('terms')}
+          className="mt-1.5 flex items-center gap-1.5 text-[0.6875rem] text-faint no-underline transition-colors hover:text-muted"
+        >
+          <Scale className="size-3" aria-hidden />
+          Terms and disclaimer
+        </a>
       </div>
     </nav>
   )

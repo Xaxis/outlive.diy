@@ -11,6 +11,7 @@ import { ScopeNotice } from './ScopeNotice.tsx'
 import { CommandPalette } from './CommandPalette.tsx'
 import { Welcome } from '@/components/views/Welcome.tsx'
 import { BuildView } from '@/components/views/BuildView.tsx'
+import { TermsView } from '@/components/views/TermsView.tsx'
 import { OverviewView } from '@/components/views/OverviewView.tsx'
 import { DesignView } from '@/components/views/DesignView.tsx'
 import { FindingsView } from '@/components/views/FindingsView.tsx'
@@ -85,11 +86,13 @@ export function App() {
   // visitor sees, and it is the only part of this application worth indexing.
   // The landing page is somewhere to go back to, not only somewhere to start:
   // the logo leads here, and with plans open it leads with them.
-  if (!ready || !hasPlans || !plan || route.view === 'home') {
+  if (!ready || !hasPlans || !plan || route.view === 'home' || route.view === 'terms') {
     return (
       <>
         <TopBar onToggleSidebar={() => setDrawerOpen((value) => !value)} />
-        {ready && route.view === 'build' ? (
+        {route.view === 'terms' ? (
+          <TermsView />
+        ) : ready && route.view === 'build' ? (
           <main id="main" className="mx-auto w-full max-w-[74rem] px-4 py-6 lg:px-8 lg:py-8">
             <BuildView />
           </main>

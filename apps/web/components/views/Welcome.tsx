@@ -259,6 +259,10 @@ export function Welcome() {
           plan is safe.
         </p>
         <p className="mt-3">
+          <a href={href('terms')} className="link">
+            Terms and disclaimer
+          </a>
+          {' · '}
           <a href={href('reasoning')} className="link">
             Every rule it applies
           </a>

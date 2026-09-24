@@ -3,6 +3,7 @@
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/Button.tsx'
 import { useStore } from '@/lib/store.ts'
+import { href } from '@/lib/router.ts'
 
 /**
  * Said once, and then never again.
@@ -20,7 +21,12 @@ export function ScopeNotice() {
     <div className="no-print mb-5 flex items-center gap-3 rounded-[var(--radius-control)] border border-accent/30 bg-accent/[0.06] px-3 py-1.5 text-xs text-muted">
       <p className="min-w-0 flex-1">
         <span className="font-medium text-strong">Structure, not advice.</span> No findings means
-        nothing this program has a rule for, not that the plan is safe.
+        nothing this program has a rule for, not that the plan is safe. You are responsible for your
+        bitcoin:{' '}
+        <a href={href('terms')} className="link">
+          terms
+        </a>
+        .
       </p>
       <Button variant="ghost" size="sm" aria-label="Understood" onClick={acknowledge}>
         <X className="size-3.5" aria-hidden />

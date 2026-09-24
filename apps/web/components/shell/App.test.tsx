@@ -308,6 +308,21 @@ describe('building a plan by its shape', () => {
   })
 })
 
+describe('the terms', () => {
+  it('say who is responsible, and can be read before anything is stored', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByRole('link', { name: /terms and disclaimer/i }))
+    expect(
+      await screen.findByRole('heading', { name: /terms of use and disclaimer/i })
+    ).toBeInTheDocument()
+    expect(screen.getByText(/you are responsible for your bitcoin/i)).toBeInTheDocument()
+    expect(screen.getByText(/not responsible or liable for any loss/i)).toBeInTheDocument()
+    expect(useStore.getState().plans).toHaveLength(0)
+  })
+})
+
 describe('the way home', () => {
   it('goes back to the landing page from inside a plan, and back into the plan', async () => {
     reset()
