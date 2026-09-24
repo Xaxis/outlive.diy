@@ -707,7 +707,8 @@ describe('a change that closes nothing', () => {
     // "the quorum is concentrated in Home city" and it is not: two of the
     // three keys have material at home, so the group is still concentrated.
     goto('#/design/locations')
-    await user.click(await screen.findByText('Site B'))
+    const places = await screen.findByRole('list', { name: /^places$/i })
+    await user.click(within(places).getByText('Site B'))
     const group = await screen.findByLabelText('Disaster group')
     await user.clear(group)
     await user.type(group, 'Second city')
@@ -1074,6 +1075,22 @@ describe('describing a plan', () => {
     expect(screen.getByLabelText(/how often/i)).toHaveValue(90)
   })
 
+  it('draws the plan above the editor and opens a box for editing', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/design/keys')
+    const drawing = await screen.findByRole('group', { name: /the plan, drawn/i })
+
+    // A place, from the keys step: it opens on its own step, selected.
+    await user.click(within(drawing).getByRole('button', { name: /^Site B\b/ }))
+    expect(window.location.hash).toBe('#/design/locations')
+    expect(await screen.findByRole('heading', { name: /^places$/i })).toBeInTheDocument()
+    expect(useStore.getState().selection).toEqual({ type: 'location', id: 'loc_bank' })
+  })
+
   it('is one screen with a position in an order, not two screens', async () => {
     reset()
     const user = userEvent.setup()
@@ -1117,6 +1134,17 @@ describe('a finding and its picture', () => {
   })
 })
 
+/**
+ * The row of an item list, and not the box of the same name in the drawing
+ * above the editor. The row is the one that opens.
+ */
+async function itemRow(name: RegExp): Promise<HTMLElement> {
+  const named = await screen.findAllByRole('button', { name })
+  const row = named.find((button) => button.hasAttribute('aria-expanded'))
+  if (!row) throw new Error(`No item row named ${name}`)
+  return row
+}
+
 describe('the repeated parts of an entity', () => {
   it('are rows that say what they are, shut, until you open one', async () => {
     reset()
@@ -1128,7 +1156,7 @@ describe('the repeated parts of an entity', () => {
 
     // The backup reads as a line, not as five fields.
     // Anchored, because the remove button beside it is "Remove Steel plate".
-    const row = await screen.findByRole('button', { name: /^Steel plate/ })
+    const row = await itemRow(/^Steel plate/)
     expect(row).toHaveAttribute('aria-expanded', 'false')
     expect(row).toHaveTextContent(/Site A/)
 
@@ -1146,15 +1174,12 @@ describe('the repeated parts of an entity', () => {
     goto('#/design/keys')
     await user.click(screen.getByRole('button', { name: /add backup/i }))
 
-    const added = await screen.findByRole('button', { name: /^Backup 2/ })
+    const added = await itemRow(/^Backup 2/)
     expect(added).toHaveAttribute('aria-expanded', 'true')
     // And it says immediately what is still missing from it.
     expect(added).toHaveTextContent(/no place recorded/)
     // The one that was already there stays shut.
-    expect(screen.getByRole('button', { name: /^Steel plate/ })).toHaveAttribute(
-      'aria-expanded',
-      'false'
-    )
+    expect(await itemRow(/^Steel plate/)).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('use the same pattern for the ways to spend a wallet', async () => {

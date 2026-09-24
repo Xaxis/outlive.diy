@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button.tsx'
 import { ProfileEditor } from '@/components/plan/ProfileEditor.tsx'
 import { EntityWorkbench } from '@/components/plan/EntityWorkbench.tsx'
 import { StepEffect } from '@/components/plan/StepEffect.tsx'
+import { LiveDrawing } from '@/components/plan/LiveDrawing.tsx'
 import { entitiesOf, useActivePlan, useStore } from '@/lib/store.ts'
 import { useReport } from '@/lib/analysis.ts'
 import { useRoute } from '@/lib/router.ts'
@@ -133,6 +134,7 @@ export function DesignView() {
         <ProfileEditor plan={plan} />
       ) : (
         <>
+          <LiveDrawing plan={plan} />
           <EntityWorkbench
             plan={plan}
             report={report}
