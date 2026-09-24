@@ -131,7 +131,7 @@ export function RunbookView() {
       <div className="space-y-8">
         {runbook.phases.map((group, phaseIndex) => (
           <section key={group.phase} id={phaseAnchor(group.phase)} className="scroll-mt-44">
-            <header className="mb-3 border-b border-line pb-2">
+            <header className="mb-3 break-inside-avoid break-after-avoid border-b border-line pb-2">
               <p className="eyebrow">Phase {phaseIndex + 1}</p>
               <h2 className="text-base font-semibold text-strong">{PHASE_TITLE[group.phase]}</h2>
               <p className="mt-0.5 text-sm text-muted">{PHASE_PURPOSE[group.phase]}</p>
