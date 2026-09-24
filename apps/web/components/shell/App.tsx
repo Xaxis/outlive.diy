@@ -8,6 +8,7 @@ import { Sidebar } from './Sidebar.tsx'
 import { TopBar } from './TopBar.tsx'
 import { Toast } from './Toast.tsx'
 import { ScopeNotice } from './ScopeNotice.tsx'
+import { CommandPalette } from './CommandPalette.tsx'
 import { Welcome } from '@/components/views/Welcome.tsx'
 import { OverviewView } from '@/components/views/OverviewView.tsx'
 import { DesignView } from '@/components/views/DesignView.tsx'
@@ -135,6 +136,7 @@ export function App() {
           </div>
         </main>
       </div>
+      <CommandPalette plan={plan} report={report} />
       <Toast />
     </>
   )

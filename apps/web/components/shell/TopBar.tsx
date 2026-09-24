@@ -10,9 +10,11 @@ import {
   Moon,
   Redo2,
   Save,
+  Search,
   Sun,
   Undo2,
 } from 'lucide-react'
+import { OPEN_PALETTE } from './CommandPalette.tsx'
 import type { Plan } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
 import { Wordmark } from '@/components/brand/Logo.tsx'
@@ -143,6 +145,20 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
         <div className="ml-auto flex items-center gap-1">
           {plans.length > 0 ? (
             <>
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new Event(OPEN_PALETTE))}
+                aria-label="Go to anything"
+                aria-keyshortcuts="Meta+K Control+K"
+                title="Go to anything (Cmd-K or Ctrl-K)"
+                className="mr-1 flex h-7 items-center gap-2 rounded-[var(--radius-control)] border border-line px-2 text-xs text-faint transition-colors hover:border-line-strong hover:text-muted"
+              >
+                <Search className="size-3.5" aria-hidden />
+                <span className="hidden md:inline">Go to…</span>
+                <kbd className="mono hidden rounded border border-line px-1 text-[0.625rem] md:inline">
+                  ⌘K
+                </kbd>
+              </button>
               <a
                 href={href('file')}
                 className="chip hidden no-underline transition-colors hover:border-line-strong sm:inline-flex"

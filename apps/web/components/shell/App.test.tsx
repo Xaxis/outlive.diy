@@ -281,6 +281,45 @@ describe('drafts', () => {
   })
 })
 
+describe('going anywhere by name', () => {
+  it('opens on the shortcut and goes to what was typed', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    goto('#/overview')
+    await screen.findByRole('heading', { name: /two of three, three sites/i })
+    await user.keyboard('{Control>}k{/Control}')
+    const box = await screen.findByRole('combobox', { name: /go to/i })
+
+    // Every typed word has to start a word, so this is Site A's worlds and not
+    // everything with an "a" in it.
+    await user.type(box, 'site a opened')
+    const options = screen.getAllByRole('option')
+    expect(options).toHaveLength(1)
+    expect(options[0]).toHaveTextContent(/Site A is opened by someone else/)
+
+    await user.keyboard('{Enter}')
+    expect(window.location.hash).toBe('#/map/location-compromised%3Aloc_home')
+    expect(screen.queryByRole('combobox', { name: /go to/i })).toBeNull()
+  })
+
+  it('opens a thing in the plan for editing', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+
+    await user.click(await screen.findByRole('button', { name: /go to anything/i }))
+    await user.type(screen.getByRole('combobox', { name: /go to/i }), 'signer c')
+    await user.click(screen.getByRole('option', { name: /^Signer C device/ }))
+
+    expect(window.location.hash).toBe('#/design/devices')
+    expect(useStore.getState().selection?.type).toBe('device')
+  })
+})
+
 describe('the scope statement', () => {
   it('is said once and then never again', async () => {
     reset()
