@@ -1,22 +1,50 @@
 'use client'
 
-import { Plus } from 'lucide-react'
-import type { AccessCondition, Location, LocationAccess, LocationKind, Plan } from '@outlive/core'
 import {
-  Field,
-  GuardedInput,
-  NumberInput,
-  PresetNumber,
-  Select,
-  Toggle,
-} from '@/components/ui/Field.tsx'
+  Briefcase,
+  Eye,
+  EyeOff,
+  Home,
+  Landmark,
+  MapPin,
+  Plus,
+  Trees,
+  User,
+  Vault,
+} from 'lucide-react'
+import type { AccessCondition, Location, LocationAccess, LocationKind, Plan } from '@outlive/core'
+import { Field, GuardedInput, PresetNumber, Select, Toggle } from '@/components/ui/Field.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { ItemList } from '@/components/ui/ItemList.tsx'
 import { SectionHeading } from '@/components/ui/Surface.tsx'
 import { useEntityUpdater, usePlanEdit } from '@/lib/edit.ts'
 import { ACCESS_CONDITION, LOCATION_KIND } from '@/lib/describe.ts'
+import { cn } from '@/lib/cn.ts'
 
 const KINDS = Object.keys(LOCATION_KIND) as LocationKind[]
+
+const KIND_ICON: Record<LocationKind, typeof Home> = {
+  home: Home,
+  'second-home': Trees,
+  workplace: Briefcase,
+  'bank-vault': Landmark,
+  'private-vault': Vault,
+  'trusted-person': User,
+  concealed: EyeOff,
+  'on-person': Eye,
+  other: MapPin,
+}
+
+/** Door to door, in the units people know their journeys in. */
+const TRAVEL = [
+  { value: 0, label: 'Here' },
+  { value: 15, label: '15 min' },
+  { value: 30, label: '30 min' },
+  { value: 60, label: '1 hour' },
+  { value: 180, label: '3 hours' },
+  { value: 480, label: '8 hours' },
+  { value: 1440, label: 'A day' },
+]
 const CONDITIONS = Object.keys(ACCESS_CONDITION) as AccessCondition[]
 
 /** What a door-access row says when it is shut. */
@@ -55,19 +83,43 @@ export function LocationInspector({ plan, location }: { plan: Plan; location: Lo
       </Field>
 
       <Field label="What kind of place">
-        <Select
-          value={location.kind}
-          onChange={(kind) => set({ kind: (kind ?? 'other') as LocationKind })}
-          options={KINDS.map((kind) => ({ value: kind, label: LOCATION_KIND[kind] }))}
-        />
+        {/* Nine kinds as tiles: a dropdown of nine hides eight of them. */}
+        <div role="radiogroup" className="grid grid-cols-3 gap-1.5">
+          {KINDS.map((kind) => {
+            const Icon = KIND_ICON[kind]
+            const on = location.kind === kind
+            return (
+              <button
+                key={kind}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => set({ kind })}
+                className={cn(
+                  'flex items-center gap-2 rounded-[var(--radius-control)] border px-2.5 py-2 text-left text-xs leading-tight transition-colors',
+                  on
+                    ? 'border-accent bg-accent/10 font-medium text-strong'
+                    : 'border-line text-muted hover:border-line-strong hover:text-strong'
+                )}
+              >
+                <Icon
+                  className={cn('size-4 flex-none', on ? 'text-accent' : 'text-faint')}
+                  aria-hidden
+                />
+                {LOCATION_KIND[kind]}
+              </button>
+            )
+          })}
+        </div>
       </Field>
 
       <Field
         label="Travel time, one way"
         help="Distance is one of only three things that slow an attacker down. Leave it blank if you genuinely do not know; the coercion analysis will then assume it is close."
       >
-        <NumberInput
+        <PresetNumber
           value={location.travelMinutes}
+          presets={TRAVEL}
           nullable
           max={100000}
           suffix="minutes"
