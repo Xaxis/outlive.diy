@@ -17,9 +17,9 @@ import { describe, expect, it } from 'vitest'
 
 const VIEWS = join(process.cwd(), 'components/views')
 
-// The landing page is the one screen with no sidebar beside it, so centring
-// there is correct and is not what this rule is about.
-const OUTSIDE_THE_SHELL = new Set(['Welcome.tsx'])
+// The landing page and the terms are the screens with no sidebar beside
+// them, so centring there is correct and is not what this rule is about.
+const OUTSIDE_THE_SHELL = new Set(['Welcome.tsx', 'TermsView.tsx'])
 
 const files = readdirSync(VIEWS).filter(
   (name) => name.endsWith('.tsx') && !OUTSIDE_THE_SHELL.has(name)
