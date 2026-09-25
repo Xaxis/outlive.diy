@@ -164,8 +164,9 @@ export function CheckInView() {
                 ))}
               </ul>
               <p className="mt-2 text-xs text-muted">
-                A check that could not be done is the most useful thing a check can tell you. The
-                findings say what depends on it.
+                A check that could not be done is the most useful thing a check can tell you.
+                Nothing was recorded for these, so they stay due, and what rests on them is still an
+                assumption.
               </p>
             </div>
           ) : null}

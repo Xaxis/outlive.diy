@@ -122,7 +122,7 @@ export function WorldDiff({
                 <tr key={row.id} className="border-t border-line first:border-t-0">
                   <th
                     scope="row"
-                    className="w-full max-w-0 truncate py-1.5 pr-3 text-[0.8125rem] font-normal text-body"
+                    className="w-full min-w-[9rem] py-1.5 pr-3 text-[0.8125rem] font-normal leading-snug text-body sm:max-w-0 sm:truncate"
                     title={row.label}
                   >
                     {row.label}

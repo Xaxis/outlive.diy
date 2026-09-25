@@ -233,7 +233,7 @@ export function BuildView() {
               />
               {shape.alreadyBuilt ? (
                 <p className="mt-1.5 text-xs text-muted">
-                  The runbook starts at proving it works, not at buying devices.
+                  The steps that build it are marked done; what is left is proving it works.
                 </p>
               ) : null}
             </div>
@@ -479,9 +479,11 @@ export function BuildView() {
                       Successor opens
                       {/* The one row filled in for the reader rather than by
                           them, so it says it is an assumption. */}
-                      <span className="block text-[0.6875rem] font-normal text-faint">
-                        assumed; untick if none
-                      </span>
+                      {shape.successorPlaces.length > 0 ? (
+                        <span className="block text-[0.6875rem] font-normal text-faint">
+                          assumed; untick if none
+                        </span>
+                      ) : null}
                     </th>
                     {shape.places.map((_, at) => (
                       <td key={at} className="px-1 py-1.5">

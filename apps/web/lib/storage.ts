@@ -237,7 +237,7 @@ export function makeFile(plans: Plan[], activePlanId: string | null): PlanFile {
 export async function saveToDisk(
   file: PlanFile,
   suggestedName: string
-): Promise<'saved' | 'cancelled'> {
+): Promise<'saved' | 'downloaded' | 'cancelled'> {
   const json = `${JSON.stringify(file, null, 2)}\n`
   const picker = (
     window as unknown as {
@@ -275,7 +275,8 @@ export async function saveToDisk(
   anchor.click()
   anchor.remove()
   URL.revokeObjectURL(url)
-  return 'saved'
+  // Handed to the browser's downloads, which does not say whether it landed.
+  return 'downloaded'
 }
 
 export function readTextFile(file: File): Promise<string> {

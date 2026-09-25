@@ -171,7 +171,8 @@ export function OverviewView() {
             size="sm"
             onClick={() => navigate({ view: 'checkin', section: null })}
           >
-            Check in: {overdue.length} {overdue.length === 1 ? 'check' : 'checks'}
+            Check in: {pending > 0 ? `${pending} ${pending === 1 ? 'change' : 'changes'}, ` : ''}
+            {overdue.length} {overdue.length === 1 ? 'check' : 'checks'}
           </Button>
           {overdue.length > 5 ? (
             <span className="text-xs text-faint">{overdue.length - 5} more than listed above</span>

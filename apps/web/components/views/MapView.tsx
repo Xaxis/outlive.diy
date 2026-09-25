@@ -278,6 +278,7 @@ export function MapView() {
       id: entry.id,
       label: entry.label,
     })),
+    ...plan.keys.map((entry) => ({ kind: 'objects' as const, id: entry.id, label: entry.label })),
     ...plan.people.map((entry) => ({ kind: 'people' as const, id: entry.id, label: entry.label })),
   ]
 
@@ -443,8 +444,9 @@ export function MapView() {
         <div
           role="group"
           aria-label="Take something away"
-          className="-mx-4 mb-2 flex gap-1.5 overflow-x-auto px-4 pb-1 no-print sm:hidden"
+          className="-mx-4 mb-2 flex items-center gap-1.5 overflow-x-auto px-4 pb-1 no-print [mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] sm:hidden"
         >
+          <span className="flex-none text-xs text-faint">Take away:</span>
           {things.map((thing) => {
             const gone = knocked.some((entry) => entry.id === thing.id)
             return (
@@ -466,7 +468,9 @@ export function MapView() {
 
         {knocked.length > 0 ? (
           <div className="mb-2 flex flex-wrap items-center gap-1.5 no-print">
-            <span className="text-xs text-faint">Taken away:</span>
+            <span className="text-xs text-faint max-sm:hidden">Taken away:</span>
+            {/* On a phone the row of chips above already shows what is gone,
+                struck through; listing it again here was the same thing twice. */}
             {knocked.map((entry) => (
               <button
                 key={entry.id}
@@ -474,7 +478,7 @@ export function MapView() {
                 onClick={() =>
                   setKnocked((current) => current.filter((item) => item.id !== entry.id))
                 }
-                className="chip gap-1 border-critical/50 text-body hover:border-critical"
+                className="chip gap-1 border-critical/50 text-body hover:border-critical max-sm:hidden"
                 aria-label={`Put ${entry.label} back`}
               >
                 {entry.label}
@@ -518,8 +522,8 @@ export function MapView() {
               <MousePointerClick className="size-3" aria-hidden />
             )}
             {mode === 'remove'
-              ? 'Click a place, device, backup, key or person to take it away. Wallets and paths explain themselves.'
-              : 'Click a box to see what it needs and what this world does to it.'}
+              ? 'Tap or click a place, device, backup, key or person to take it away. Wallets and paths explain themselves.'
+              : 'Tap or click a box to see what it needs and what this world does to it.'}
           </span>
           <span>Drag to move, scroll or pinch to zoom.</span>
           <span className="max-md:hidden">[ and ] step through worlds.</span>

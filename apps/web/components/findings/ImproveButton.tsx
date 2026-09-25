@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { LoaderCircle, Wand2 } from 'lucide-react'
-import { compareReports, improve, newId, type Plan } from '@outlive/core'
+import { compareReports, describeActions, improve, newId, type Plan } from '@outlive/core'
 import { reportFor } from '@/lib/analysis.ts'
 import { Button } from '@/components/ui/Button.tsx'
 import { baseName, useStore } from '@/lib/store.ts'
@@ -71,6 +71,9 @@ export function ImproveButton({
           }
           const baseline = plan.id
           const delta = compareReports(reportFor(plan), reportFor(result.plan))
+          const errands = describeActions(plan, result.plan).filter(
+            (action) => action.errand
+          ).length
           addPlan({
             ...result.plan,
             id: newId('plan'),
@@ -80,7 +83,9 @@ export function ImproveButton({
           setCompare(baseline)
           notify({
             tone: 'ok',
-            message: `Draft made with ${result.steps.length} ${result.steps.length === 1 ? 'change' : 'changes'}`,
+            // Counted as the errands the comparison lists, not as the engine's
+            // steps: one step can be several trips.
+            message: `Draft made: ${errands} ${errands === 1 ? 'thing' : 'things'} to do`,
             // Counted from the two plans, as the comparison it lands on
             // counts them. Summing the steps counted a finding one step
             // opened and the next closed on both sides.

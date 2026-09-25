@@ -33,6 +33,7 @@ import { PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
 import { useActivePlan, useComparePlan, useStore } from '@/lib/store.ts'
 import { useScenarioResults } from '@/lib/analysis.ts'
 import { WorldDiff } from '@/components/graph/WorldDiff.tsx'
+import { navigateTo } from '@/lib/router.ts'
 import { cn } from '@/lib/cn.ts'
 
 /**
@@ -52,6 +53,7 @@ const ACTION_ICON: Record<ActionSubject, typeof MapPin> = {
 }
 
 export function CompareView() {
+  const notify = useStore((state) => state.notify)
   const plan = useActivePlan()
   const other = useComparePlan()
   const plans = useStore((state) => state.plans)
@@ -133,7 +135,18 @@ export function CompareView() {
               <Button
                 variant="primary"
                 icon={<Check className="size-3.5" aria-hidden />}
-                onClick={() => adoptDraft(plan.id, other.id)}
+                onClick={() => {
+                  adoptDraft(plan.id, other.id)
+                  // To the list of what to go and do, which is what adopting
+                  // it just created; the comparison has nothing left to show.
+                  notify({
+                    tone: 'ok',
+                    message: `${other.name} now uses this version`,
+                    detail: `${actions.filter((action) => action.errand).length} changes to make are in the runbook.`,
+                    undoable: true,
+                  })
+                  navigateTo('runbook')
+                }}
               >
                 Use this version
               </Button>

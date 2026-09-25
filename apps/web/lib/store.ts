@@ -248,6 +248,9 @@ export const useStore = create<StoreState>()(
     undo: () => {
       set((state) => {
         state.lastEditAt = 0
+        // A toast offering to undo a change is about the state it announced;
+        // once history has moved, its button would undo something else.
+        if (state.toast?.undoable) state.toast = null
         const previous = state.past.pop()
         if (!previous) return
         state.future.push({
@@ -263,6 +266,7 @@ export const useStore = create<StoreState>()(
 
     redo: () => {
       set((state) => {
+        if (state.toast?.undoable) state.toast = null
         state.lastEditAt = 0
         const next = state.future.pop()
         if (!next) return
@@ -669,16 +673,25 @@ export const useStore = create<StoreState>()(
         makeFile(state.plans, state.activeId),
         suggestedFilename(active?.name ?? 'plan')
       )
-      if (outcome === 'saved') {
+      if (outcome !== 'cancelled') {
         set((state) => {
           state.dirty = false
         })
         writeUnsaved(false)
-        get().notify({
-          tone: 'ok',
-          message: 'Saved',
-          detail: 'The file is yours. Nothing left this browser.',
-        })
+        get().notify(
+          outcome === 'saved'
+            ? {
+                tone: 'ok',
+                message: 'Saved',
+                detail: 'The file is yours. Nothing left this browser.',
+              }
+            : {
+                tone: 'ok',
+                message: 'Downloaded',
+                detail:
+                  'Check it is in your downloads, then keep a copy somewhere other than this machine. Nothing left this browser.',
+              }
+        )
       }
     },
 

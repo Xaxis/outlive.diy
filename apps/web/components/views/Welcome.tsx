@@ -95,8 +95,8 @@ export function Welcome() {
           <h2 className="text-sm font-semibold text-strong">Your plans</h2>
           <ul className="mt-2 divide-y divide-line">
             {plans.map((entry) => (
-              <li key={entry.id} className="flex items-center gap-3 py-2">
-                <span className="min-w-0 flex-1">
+              <li key={entry.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2">
+                <span className="min-w-[14rem] flex-1">
                   <span className="block truncate text-sm font-medium text-strong">
                     {entry.name}
                   </span>

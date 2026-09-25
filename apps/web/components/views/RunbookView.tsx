@@ -147,7 +147,7 @@ export function RunbookView() {
                       ?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
                   }}
                   className={cn(
-                    'flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors hover:border-accent',
+                    'flex max-w-full items-start gap-1.5 rounded-[12px] border px-2.5 py-1 text-left text-xs transition-colors hover:border-accent sm:items-center sm:rounded-full',
                     done(gate) ? 'border-ok/40 text-muted' : 'border-line-strong text-body'
                   )}
                 >
@@ -156,7 +156,7 @@ export function RunbookView() {
                   ) : (
                     <Circle className="size-3.5 flex-none text-faint" aria-hidden />
                   )}
-                  <span className="truncate">{gate.title}</span>
+                  <span className="sm:truncate">{gate.title}</span>
                   <span className="sr-only">{done(gate) ? ', done' : ', not done'}</span>
                 </button>
               </li>
@@ -250,7 +250,9 @@ export function RunbookView() {
                               />
                             )}
                           </button>
-                          <span className="print-only mt-0.5 flex-none self-start">☐</span>
+                          <span className="print-only mt-0.5 flex-none self-start">
+                            {done(step) ? '☑' : '☐'}
+                          </span>
                           <div className="min-w-0">
                             <p
                               className={cn(
