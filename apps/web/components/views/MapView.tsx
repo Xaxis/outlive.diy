@@ -32,6 +32,7 @@ import { navigateTo, useRoute } from '@/lib/router.ts'
 import { SECTION_FOR } from '@/lib/sections.ts'
 import { VERDICT } from '@/lib/verdict.ts'
 import { cn } from '@/lib/cn.ts'
+import { AGENT_KNOCKOUT, takeAgentKnockouts } from '@/lib/agent/tools.ts'
 
 /**
  * The map, as an instrument.
@@ -88,8 +89,10 @@ export function MapView() {
   // Stable, because the composer reports from an effect that depends on it,
   // and it only clears the knockouts when there were some. An inline arrow
   // here re-ran that effect on every render and wiped every click.
+  // A null report means nothing is composed, which invalidates no knockout;
+  // clearing on it wiped a set made while the composer was still mounting.
   const onComposed = useCallback((next: World | null) => {
-    setKnocked((current) => (current.length === 0 ? current : []))
+    if (next) setKnocked((current) => (current.length === 0 ? current : []))
     setComposed(next)
   }, [])
 
@@ -147,6 +150,42 @@ export function MapView() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [order, lensId, setLens, composed])
+
+  // An assistant driving the page through WebMCP takes things away here the
+  // way a reader would, one at a time, so the verdicts visibly change.
+  useEffect(() => {
+    let timers: number[] = []
+    const stage = () => {
+      const items = takeAgentKnockouts()
+      if (!items) return
+      setComposed(null)
+      setMode('remove')
+      setKnocked([])
+      setLens(TODAY)
+      timers = items.map((item, index) =>
+        window.setTimeout(
+          () =>
+            setKnocked((current) =>
+              current.some((entry) => entry.id === item.id) ? current : [...current, item]
+            ),
+          350 * (index + 1)
+        )
+      )
+    }
+    // Taken in a timer rather than now, so that a mount that is immediately
+    // undone, as development mode does to every component, leaves the request
+    // for the mount that stays.
+    const play = () => {
+      timers.forEach((timer) => window.clearTimeout(timer))
+      timers = [window.setTimeout(stage, 0)]
+    }
+    play()
+    window.addEventListener(AGENT_KNOCKOUT, play)
+    return () => {
+      window.removeEventListener(AGENT_KNOCKOUT, play)
+      timers.forEach((timer) => window.clearTimeout(timer))
+    }
+  }, [setLens])
 
   // Full screen owns the page: nothing behind it should scroll.
   useEffect(() => {

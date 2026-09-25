@@ -143,6 +143,14 @@
       "tests": []
     },
     {
+      "id": "integration:WebMCP tools",
+      "kind": "integration",
+      "entry": "apps/web/lib/agent/tools.ts",
+      "reach": "document.modelContext.registerTool, once the app document has loaded a plan",
+      "area": "claude",
+      "tests": []
+    },
+    {
       "id": "page:/",
       "kind": "page",
       "entry": "apps/web/app/page.tsx",

@@ -102,6 +102,17 @@ Fees, transaction construction, address reuse, network privacy and anything
 on-chain. Device-specific facts, unless the user loads their own dated vendor
 file. Law, beyond modelling probate as a delay and jurisdiction as a grouping.
 
+## A browser's own agent
+
+The app registers WebMCP tools, so an AI agent built into the reader's browser
+can read the plan's structure and findings and make the same edits a person
+can. The tools make no request and the policy is unchanged, but whatever the
+agent reads, it may send to its own model provider. That is a decision the
+reader makes by turning the agent on, and it is outside what this page can
+constrain. The tools refuse key material in their inputs like any field, never
+expose the Claude key, and never record that a check was done unless the
+reader says so.
+
 ## Third parties
 
 None at runtime. Two typefaces are checked into the repository and served from

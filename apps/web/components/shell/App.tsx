@@ -11,6 +11,7 @@ import { ScopeNotice } from './ScopeNotice.tsx'
 import { CommandPalette } from './CommandPalette.tsx'
 import { ViewBoundary } from './ViewBoundary.tsx'
 import { goTo } from '@/lib/site.ts'
+import { registerAgentTools } from '@/lib/agent/register.ts'
 import { Welcome } from '@/components/views/Welcome.tsx'
 import { BuildView } from '@/components/views/BuildView.tsx'
 import { OverviewView } from '@/components/views/OverviewView.tsx'
@@ -57,6 +58,10 @@ export function App() {
 
   useShortcuts()
   useUnsavedWarning()
+
+  // Tools for an AI agent built into the reader's browser, if it has one.
+  // Once the plan is loaded, so the first call answers about the real plan.
+  useEffect(() => (ready ? registerAgentTools() : undefined), [ready])
 
   // Closing the drawer belongs to navigation, which is an external event, not
   // to a change in derived state.

@@ -78,6 +78,14 @@ export function FileView() {
               build fails if any other source gains a way to make one.
             </li>
             <li>
+              <strong className="font-medium text-strong">
+                Your browser&apos;s agent, if any.
+              </strong>{' '}
+              A browser with a built-in AI agent that speaks WebMCP can use tools this page offers
+              to read and edit the plan. They make no request, but the agent may send what it reads
+              to whoever runs it.
+            </li>
+            <li>
               <strong className="font-medium text-strong">No third parties.</strong> No analytics,
               no telemetry, no error reporting, no update check, no fonts from a content network.
               The two typefaces are files in this app.

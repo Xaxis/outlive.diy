@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { analyze, defaultShape, exampleById } from '@outlive/core'
 import { assertQuestionSendable, planContext, RefusedToSend } from './context.ts'
-import { toShape } from '@/components/ai/DescribeShape.tsx'
+import { toShape } from '@/lib/shape-input.ts'
 
 describe('what leaves the browser when Claude is asked', () => {
   it('carries structure and findings, and no notes', () => {

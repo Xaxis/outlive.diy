@@ -93,6 +93,13 @@
       "area": "claude"
     },
     {
+      "kind": "integration",
+      "label": "WebMCP tools",
+      "entry": "apps/web/lib/agent/tools.ts",
+      "reach": "document.modelContext.registerTool, once the app document has loaded a plan",
+      "area": "claude"
+    },
+    {
       "kind": "command",
       "label": "make offline",
       "entry": "tools/relative-assets.mjs",

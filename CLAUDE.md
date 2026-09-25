@@ -281,6 +281,23 @@ returns `omitted` and the drawing says what it left out. `S024` says the same
 thing as a finding, because a key nothing can spend with is the one case every
 other structure rule is silent about.
 
+**Move between views by assigning the fragment, never `history.pushState`.**
+Next patches pushState and replays each call as a transition of its own
+router; two in quick succession left the app drawing the first view with the
+second in the address bar. `setFragment` in `lib/router.ts` is the one way.
+
+**A browser's own agent drives the page with the reader's hands.**
+`lib/agent/tools.ts` registers WebMCP tools (`document.modelContext`, or
+`navigator.modelContext` in older builds) so an AI agent built into the
+reader's browser can read the plan, list findings and worlds, take things away
+on the map, and apply templates, fixes, placements and thresholds. They run in
+the page and send nothing anywhere, so the policy does not change. Every string
+an agent passes goes through the guard; every change is one undo step and a
+toast that begins "Assistant:"; a fix that records something done in the world
+is applied only when the reader says they did it. No tool reaches the Claude
+key or the Claude request. What the agent does with an answer is the browser's
+business, and the terms say so.
+
 **Runbook progress lives in the plan file,** not in browser storage. Building one
 of these takes weeks; "half done, and here is which half" is state worth saving
 and handing over.

@@ -45,8 +45,10 @@ export function TermsView() {
           seed, key, descriptor, address or passphrase anyway. It makes no network calls of its own.
           If you enter your own Anthropic API key and ask Claude, the plan&apos;s structure and
           findings, without notes, go to Anthropic under your account and Anthropic&apos;s terms;
-          Claude&apos;s answers are not this program&apos;s conclusions and may be wrong. Otherwise
-          your plan stays in this browser or in files you save, and keeping those safe is up to you.
+          Claude&apos;s answers are not this program&apos;s conclusions and may be wrong. If your
+          browser has an AI agent, this page offers it tools that read and change your plan; what
+          that agent sends elsewhere is up to it and you, not this program. Otherwise your plan
+          stays in this browser or in files you save, and keeping those safe is up to you.
         </Term>
         <Term title="Names of products">
           Device and service names are used only so you can say what you own. No affiliation with,

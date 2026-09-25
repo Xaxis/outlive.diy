@@ -33,6 +33,12 @@ go from your browser to `api.anthropic.com`. The Content-Security-Policy allows
 that one host and no other, and `make no-network` fails the build if the
 policy widens or any other file gains a way out.
 
+If your browser has an AI agent that speaks WebMCP, the app offers it tools:
+read the plan, list what is wrong, take things away on the map while you
+watch, apply a template or a fix, move a key, change a threshold, undo. They
+run in the page on the plan in your browser and make no request. What your
+browser's agent does with the answers is between you and whoever makes it.
+
 Your plan lives in your browser, and in files you save yourself.
 
 ## What the analysis does

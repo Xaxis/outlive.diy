@@ -102,7 +102,8 @@ export function useLens(plan: Plan | null, initial?: string | null): Lens {
     groups,
     // A lens whose scenario disappeared, because the plan changed under it,
     // falls back to today rather than showing a world that no longer exists.
-    set: (next: string) => set(next === TODAY ? TODAY : next),
+    // The setter itself, so that it is stable across renders.
+    set,
     find: (ref, perspective) =>
       scenarios.find(
         (entry) =>
