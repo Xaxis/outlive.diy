@@ -112,6 +112,13 @@
       "entry": "tools/check-no-network.mjs",
       "reach": "make no-network",
       "area": "shell"
+    },
+    {
+      "kind": "view",
+      "label": "#/checkin",
+      "entry": "apps/web/components/views/CheckInView.tsx",
+      "reach": "http://localhost:$PORT/app/#/checkin, or Check in on a landing plan card or the overview's Checks due",
+      "area": "diagnosis"
     }
   ],
   "ignore": []

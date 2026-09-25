@@ -195,6 +195,14 @@
       "tests": []
     },
     {
+      "id": "view:#/checkin",
+      "kind": "view",
+      "entry": "apps/web/components/views/CheckInView.tsx",
+      "reach": "http://localhost:$PORT/app/#/checkin, or Check in on a landing plan card or the overview's Checks due",
+      "area": "diagnosis",
+      "tests": []
+    },
+    {
       "id": "view:#/compare",
       "kind": "view",
       "entry": "apps/web/components/views/CompareView.tsx",

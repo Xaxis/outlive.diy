@@ -7,7 +7,8 @@ import {
   buildGraph,
   createContext,
   indexPlan,
-  overdueVerifications,
+  checksDue,
+  createVerification,
   today,
 } from '@outlive/core'
 import { MEASURE, Card, Panel, SectionHeading, ViewHeader } from '@/components/ui/Surface.tsx'
@@ -34,7 +35,7 @@ export function OverviewView() {
   const edit = useStore((state) => state.edit)
   const [, navigate] = useRoute()
 
-  const overdue = useMemo(() => (plan ? overdueVerifications(createContext(plan)) : []), [plan])
+  const overdue = useMemo(() => (plan ? checksDue(createContext(plan)) : []), [plan])
   const index = useMemo(() => (plan ? indexPlan(plan) : null), [plan])
   const world = useMemo(() => (plan ? baseWorld(plan) : null), [plan])
   const graph = useMemo(
@@ -141,7 +142,16 @@ export function OverviewView() {
                     const target = draft.verifications.find(
                       (check) => check.id === entry.verification.id
                     )
+                    // A check nobody scheduled is added, done today.
                     if (target) target.lastVerifiedAt = today()
+                    else
+                      draft.verifications.push(
+                        createVerification({
+                          kind: entry.verification.kind,
+                          subject: entry.verification.subject,
+                          lastVerifiedAt: today(),
+                        })
+                      )
                   })
                 }
               >
@@ -151,6 +161,22 @@ export function OverviewView() {
           ))}
         </ul>
       )}
+      {overdue.length > 0 ? (
+        // The sitting, rather than a row of buttons: one check at a time with
+        // how to do it.
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => navigate({ view: 'checkin', section: null })}
+          >
+            Check in: {overdue.length} {overdue.length === 1 ? 'check' : 'checks'}
+          </Button>
+          {overdue.length > 5 ? (
+            <span className="text-xs text-faint">{overdue.length - 5} more than listed above</span>
+          ) : null}
+        </div>
+      ) : null}
     </Panel>
   )
 

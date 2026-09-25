@@ -1,7 +1,14 @@
 'use client'
 
 import { CheckCircle2, Circle, Printer, ShieldCheck } from 'lucide-react'
-import { PHASE_PURPOSE, PHASE_TITLE, today, type RunbookStep } from '@outlive/core'
+import {
+  PHASE_PURPOSE,
+  PHASE_TITLE,
+  setStepDone,
+  stepDone,
+  today,
+  type RunbookStep,
+} from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
 import { PrintHeader } from '@/components/shell/PrintHeader.tsx'
 import { MEASURE, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
@@ -43,12 +50,11 @@ export function RunbookView() {
 
   if (!plan || !runbook) return null
 
-  const done = (step: RunbookStep) => Boolean(plan.progress[step.id])
+  // A gate is done when its check is recorded, wherever it was recorded, and
+  // ticking one records the check the analysis reads.
+  const done = (step: RunbookStep) => stepDone(plan, step)
   const toggle = (step: RunbookStep) =>
-    edit((draft) => {
-      if (draft.progress[step.id]) delete draft.progress[step.id]
-      else draft.progress[step.id] = today()
-    })
+    edit((draft) => setStepDone(draft, step, !stepDone(draft, step), today()))
 
   const completed = runbook.steps.filter(done).length
   const gatesDone = runbook.gates.filter(done).length
@@ -176,8 +182,8 @@ export function RunbookView() {
                   const all = group.steps.every(done)
                   edit((draft) => {
                     for (const step of group.steps) {
-                      if (all) delete draft.progress[step.id]
-                      else if (!draft.progress[step.id]) draft.progress[step.id] = today()
+                      if (all) setStepDone(draft, step, false, today())
+                      else if (!stepDone(draft, step)) setStepDone(draft, step, true, today())
                     }
                   })
                 }}

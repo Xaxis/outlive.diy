@@ -27,7 +27,7 @@ export * from './analysis/timing.ts'
 export * from './analysis/implications.ts'
 export * from './analysis/analyze.ts'
 export { successionBrief, requiredSkill, heirs } from './analysis/succession.ts'
-export { overdueVerifications, describeKind } from './analysis/staleness.ts'
+export { checksDue, overdueVerifications, describeKind } from './analysis/staleness.ts'
 
 export * from './documents/runbook.ts'
 export * from './documents/recovery.ts'

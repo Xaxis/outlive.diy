@@ -5,6 +5,7 @@ import { ArrowRight, FileUp, PenLine, ShieldCheck, WifiOff } from 'lucide-react'
 import {
   baseWorld,
   buildGraph,
+  checksDue,
   createContext,
   enumerateScenarios,
   EXAMPLES,
@@ -31,6 +32,12 @@ export function Welcome() {
   const startPlan = useStore((state) => state.startPlan)
   const plans = useStore((state) => state.plans)
   const activeId = useStore((state) => state.activeId)
+  // Counted once per plan list, not per render of each card.
+  const dueCounts = useMemo(
+    () => new Map(plans.map((entry) => [entry.id, checksDue(createContext(entry)).length])),
+    [plans]
+  )
+  const due = (entry: { id: string }) => dueCounts.get(entry.id) ?? 0
   const setActive = useStore((state) => state.setActive)
   const openExample = useStore((state) => state.openExample)
 
@@ -95,8 +102,27 @@ export function Welcome() {
                     {entry.kind === 'draft' ? 'Draft' : 'Current'} · changed {entry.updatedAt} ·{' '}
                     {entry.keys.length} {entry.keys.length === 1 ? 'key' : 'keys'},{' '}
                     {entry.locations.length} {entry.locations.length === 1 ? 'place' : 'places'}
+                    {/* What somebody back after months came to do, on the
+                        card they arrive at. */}
+                    {due(entry) > 0 ? (
+                      <span className="text-muted">
+                        {' '}
+                        · {due(entry)} {due(entry) === 1 ? 'check' : 'checks'} due
+                      </span>
+                    ) : null}
                   </span>
                 </span>
+                {due(entry) > 0 ? (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setActive(entry.id)
+                      navigateTo('checkin')
+                    }}
+                  >
+                    Check in
+                  </Button>
+                ) : null}
                 <Button
                   size="sm"
                   variant={entry.id === activeId ? 'primary' : 'default'}

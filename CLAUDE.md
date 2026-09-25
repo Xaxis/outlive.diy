@@ -304,6 +304,14 @@ is applied only when the reader says they did it. No tool reaches the Claude
 key or the Claude request. What the agent does with an answer is the browser's
 business, and the terms say so.
 
+**A check is one record.** `checksDue` lists the scheduled checks that are
+late and every check a staleness rule says was never done, whether or not
+anybody scheduled it; the overview, the landing cards and the check-in all read
+it. A runbook gate names the check it is (`RunbookStep.records`): ticking it
+records that check, and a check recorded anywhere shows the gate as passed.
+The runbook and the checks used to be two stores, and a restored backup ticked
+in one read as never restored in the other.
+
 **Runbook progress lives in the plan file,** not in browser storage. Building one
 of these takes weeks; "half done, and here is which half" is state worth saving
 and handing over.

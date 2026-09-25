@@ -111,6 +111,7 @@ function Palette({
     // The things people open a palette to do, not only places to go.
     const actions: [string, string, () => void][] = [
       ['build', 'Build a new plan', go('build')],
+      ['checkin', 'Check in: do the checks that are due', go('checkin')],
       ['save', 'Save this plan to a file', () => void save()],
       ['print', 'Print this view', () => window.setTimeout(() => window.print(), 50)],
       ['undo', 'Undo the last change', undo],

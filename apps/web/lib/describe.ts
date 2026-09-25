@@ -140,6 +140,23 @@ export const VERIFICATION_KIND: Record<VerificationKind, string> = {
   'inventory-check': 'Count everything against the plan',
 }
 
+/** How to do each check, in one sentence a person can follow at the kitchen table. */
+export const VERIFICATION_HOW: Record<VerificationKind, string> = {
+  'backup-restore':
+    'Restore the backup onto a spare device, confirm it produces the same wallet, then wipe the spare.',
+  'config-backup-restore':
+    'On a clean machine, rebuild the wallet from the written configuration alone and confirm the first address matches.',
+  'spend-test': 'Send a small amount out, signing with the keys you would use in a recovery.',
+  'recovery-drill': 'Walk one recovery route from start to finish on a throwaway wallet.',
+  'successor-dry-run':
+    'Watch your successor attempt the recovery on a throwaway wallet, and do not help.',
+  'location-access': 'Go there, open it, and check that what is inside matches the plan.',
+  'device-firmware': 'Power it on, confirm it still unlocks, and check its firmware is current.',
+  'passphrase-recall':
+    'Recall the passphrase without looking it up, and confirm it opens the right wallet.',
+  'inventory-check': 'Check every item the plan lists is where the plan says it is.',
+}
+
 /** "2-of-3", or "2-of-3, plus 1-of-1 after 180 days". */
 export function describePolicy(wallet: Wallet): string {
   if (wallet.paths.length === 0) return 'no way to spend'

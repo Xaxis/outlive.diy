@@ -6,7 +6,7 @@ import { Landing } from './Landing.tsx'
 import { TermsView } from '@/components/views/TermsView.tsx'
 
 import { useStore } from '@/lib/store.ts'
-import { analyze, exampleById } from '@outlive/core'
+import { analyze, exampleById, today } from '@outlive/core'
 
 const originalLocation = window.location
 
@@ -654,10 +654,17 @@ describe('fixing a finding', () => {
     expect(within(rail).getByRole('button', { name: /prepare: 3 of 3 done/i })).toBeInTheDocument()
 
     goto('#/overview')
+    // The list shows five at a time and refills, so what falls is the total.
+    const total = () =>
+      Number(
+        /(\d+) check/.exec(
+          screen.getAllByRole('button', { name: /^check in:/i })[0].textContent ?? ''
+        )![1]
+      )
     const done = await screen.findAllByRole('button', { name: /done today/i })
-    const count = done.length
+    const before = total()
     await user.click(done[0])
-    expect(screen.queryAllByRole('button', { name: /done today/i }).length).toBeLessThan(count)
+    expect(total()).toBe(before - 1)
   })
 })
 
@@ -1883,5 +1890,34 @@ describe('what a page shows at rest', () => {
     expect(table).toHaveAttribute('aria-expanded', 'false')
     await user.click(table)
     expect(screen.getByText(/what each place is enough for/i)).toBeInTheDocument()
+  })
+})
+
+describe('checking in', () => {
+  it('walks the due checks one at a time and records only what was done', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+    const doneToday = () =>
+      useStore.getState().plans[0].verifications.filter((check) => check.lastVerifiedAt === today())
+        .length
+    expect(doneToday()).toBe(0)
+
+    goto('#/checkin')
+    const progress = await screen.findByText(/^1 of (\d+)/)
+    const total = Number(/of (\d+)/.exec(progress.textContent ?? '')![1])
+    expect(total).toBeGreaterThan(2)
+
+    await user.click(screen.getByRole('button', { name: 'Done today' }))
+    await user.click(screen.getByRole('button', { name: 'Could not do it' }))
+    for (let n = 2; n < total; n += 1)
+      await user.click(screen.getByRole('button', { name: 'Later' }))
+
+    // One recorded, one listed as not done, and nothing said about how well it went.
+    expect(screen.getByText(/1 recorded as done today, 1 could not be done/)).toBeInTheDocument()
+    expect(screen.getByText('Could not be done')).toBeInTheDocument()
+    expect(screen.queryByText(/well done|great|congrat/i)).toBeNull()
+    expect(doneToday()).toBe(1)
   })
 })

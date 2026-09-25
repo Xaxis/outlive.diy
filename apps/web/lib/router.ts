@@ -29,6 +29,7 @@ export type ViewId =
   | 'compare'
   | 'file'
   | 'reasoning'
+  | 'checkin'
 
 export interface Route {
   view: ViewId
@@ -50,6 +51,7 @@ const VIEWS: ViewId[] = [
   'compare',
   'file',
   'reasoning',
+  'checkin',
 ]
 
 export const DEFAULT_ROUTE: Route = { view: 'overview', section: null }

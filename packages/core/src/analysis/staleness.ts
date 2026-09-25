@@ -13,6 +13,7 @@ import type { AnalysisContext } from './context.ts'
 import { daysBetween, isMultisig } from '../model/selectors.ts'
 import type { Ref, Verification } from '../model/types.ts'
 import { heirs } from './succession.ts'
+import { createVerification } from '../model/factory.ts'
 
 function names(items: readonly string[]): string {
   if (items.length === 0) return 'nothing'
@@ -42,6 +43,56 @@ export function overdueVerifications(ctx: AnalysisContext): Overdue[] {
       }
     })
     .filter((entry) => entry.overdueDays > 0)
+}
+
+/**
+ * Every check that is due: the scheduled ones that are late, and every one a
+ * staleness rule says has never been done, whether or not anybody scheduled
+ * it. The overview listed only the first kind, so somebody back to do their
+ * checks saw two where the findings named seven. A check nobody scheduled
+ * comes back with an id beginning `due:`; recording it adds it to the plan.
+ */
+export function checksDue(ctx: AnalysisContext): Overdue[] {
+  const { plan } = ctx
+  const due = overdueVerifications(ctx)
+  const scheduled = (kind: Verification['kind'], subject: Ref) =>
+    plan.verifications.some(
+      (entry) =>
+        entry.kind === kind &&
+        entry.subject.type === subject.type &&
+        entry.subject.id === subject.id
+    )
+  const implicit = (kind: Verification['kind'], subject: Ref) => {
+    if (scheduled(kind, subject) || everDone(ctx, kind, subject)) return
+    due.push({
+      verification: {
+        ...createVerification({ kind, subject }),
+        id: `due:${kind}:${subject.id}`,
+      },
+      overdueDays: Number.POSITIVE_INFINITY,
+      lastVerifiedAt: null,
+    })
+  }
+  for (const key of plan.keys)
+    if (
+      key.backups.length > 0 &&
+      !key.backups.some((backup) =>
+        everDone(ctx, 'backup-restore', { type: 'backup', id: backup.id })
+      )
+    )
+      implicit('backup-restore', { type: 'key', id: key.id })
+  for (const wallet of plan.wallets) {
+    implicit('spend-test', { type: 'wallet', id: wallet.id })
+    if (isMultisig(wallet) && wallet.configBackups.length > 0)
+      implicit('config-backup-restore', { type: 'wallet', id: wallet.id })
+  }
+  const heir = heirs(plan)[0]
+  if (heir && !everDone(ctx, 'successor-dry-run'))
+    implicit('successor-dry-run', { type: 'person', id: heir.id })
+  for (const device of plan.devices)
+    if (device.kind !== 'service-cosigner')
+      implicit('device-firmware', { type: 'device', id: device.id })
+  return due
 }
 
 /** Whether a claim of this kind has ever been recorded as done. */

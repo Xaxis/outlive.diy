@@ -24,6 +24,7 @@ import { LetterView } from '@/components/views/LetterView.tsx'
 import { CompareView } from '@/components/views/CompareView.tsx'
 import { FileView } from '@/components/views/FileView.tsx'
 import { ReasoningView } from '@/components/views/ReasoningView.tsx'
+import { CheckInView } from '@/components/views/CheckInView.tsx'
 import { useShortcuts, useUnsavedWarning } from '@/lib/shortcuts.ts'
 import { cn } from '@/lib/cn.ts'
 
@@ -210,6 +211,8 @@ function View() {
       return <FileView />
     case 'reasoning':
       return <ReasoningView />
+    case 'checkin':
+      return <CheckInView />
     case 'overview':
     default:
       return <OverviewView />

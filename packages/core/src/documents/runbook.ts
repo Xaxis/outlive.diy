@@ -9,7 +9,8 @@
  * because they are the steps everybody skips.
  */
 
-import type { Id, Plan, Ref } from '../model/types.ts'
+import type { Id, IsoDate, Plan, Ref, VerificationKind } from '../model/types.ts'
+import { createVerification } from '../model/factory.ts'
 import { isMultisig, keyHolderLabel, splitGroups, walletKeyIds } from '../model/selectors.ts'
 import { indexPlan } from '../model/selectors.ts'
 
@@ -57,6 +58,13 @@ export interface RunbookStep {
   /** Produces evidence rather than progress. Nothing downstream is safe until it passes. */
   gate: boolean
   subjects: Ref[]
+  /**
+   * The check a gate is, when it is one the analysis tracks. Ticking the gate
+   * records that check for each subject, and a check already recorded shows
+   * the gate as passed: the runbook and the checks are one record, because two
+   * that disagreed left a restored backup reading as never restored.
+   */
+  records?: VerificationKind
 }
 
 export interface Runbook {
@@ -71,7 +79,7 @@ function step(
   phase: RunbookPhase,
   title: string,
   detail: string,
-  options: { gate?: boolean; subjects?: Ref[] } = {}
+  options: { gate?: boolean; subjects?: Ref[]; records?: VerificationKind } = {}
 ): RunbookStep {
   return {
     id,
@@ -80,7 +88,53 @@ function step(
     detail,
     gate: options.gate ?? false,
     subjects: options.subjects ?? [],
+    ...(options.records ? { records: options.records } : {}),
   }
+}
+
+const recordsFor = (plan: Plan, step: RunbookStep, date: IsoDate | null) => {
+  if (!step.records) return
+  for (const subject of step.subjects) {
+    const existing = plan.verifications.find(
+      (entry) =>
+        entry.kind === step.records &&
+        entry.subject.type === subject.type &&
+        entry.subject.id === subject.id
+    )
+    if (date === null) {
+      if (existing) existing.lastVerifiedAt = null
+    } else if (existing) existing.lastVerifiedAt = date
+    else
+      plan.verifications.push(
+        createVerification({ kind: step.records, subject, lastVerifiedAt: date })
+      )
+  }
+}
+
+/** Whether a step is done: ticked, or for a gate, its check recorded for every subject. */
+export function stepDone(plan: Plan, step: RunbookStep): boolean {
+  if (plan.progress[step.id]) return true
+  if (!step.records || step.subjects.length === 0) return false
+  return step.subjects.every((subject) =>
+    plan.verifications.some(
+      (entry) =>
+        entry.kind === step.records &&
+        entry.subject.type === subject.type &&
+        entry.subject.id === subject.id &&
+        entry.lastVerifiedAt !== null
+    )
+  )
+}
+
+/**
+ * Tick or untick a step, in a draft of the plan. A gate records its check as
+ * done today, or takes the record back: the analysis reads checks, so this is
+ * what closes "never restored" when the restore is ticked in the runbook.
+ */
+export function setStepDone(plan: Plan, step: RunbookStep, done: boolean, date: IsoDate): void {
+  if (done) plan.progress[step.id] = date
+  else delete plan.progress[step.id]
+  recordsFor(plan, step, done ? date : null)
 }
 
 export function buildRunbook(plan: Plan): Runbook {
@@ -122,7 +176,11 @@ export function buildRunbook(plan: Plan): Runbook {
         'prepare',
         'Verify firmware on every device before it holds anything',
         'Check the signature the vendor publishes, on a machine that is not the one you will use for anything else. A device compromised before the key exists compromises the key at the moment it is created, and nothing later fixes that.',
-        { gate: true, subjects: boxes.map((device) => ({ type: 'device', id: device.id })) }
+        {
+          gate: true,
+          subjects: boxes.map((device) => ({ type: 'device', id: device.id })),
+          records: 'device-firmware',
+        }
       )
     )
   }
@@ -319,7 +377,7 @@ export function buildRunbook(plan: Plan): Runbook {
             ? `Reassemble ${groups[0][1].threshold} shares onto a spare device.`
             : 'Restore the written backup onto a spare device.'
         } Confirm the fingerprint or first address is the one the original produces, then wipe the spare. Until this passes, that backup is a piece of metal you have not read.`,
-        { gate: true, subjects: [{ type: 'key', id: key.id }] }
+        { gate: true, subjects: [{ type: 'key', id: key.id }], records: 'backup-restore' }
       )
     )
   }
@@ -331,7 +389,11 @@ export function buildRunbook(plan: Plan): Runbook {
           'verify',
           `Rebuild ${wallet.label} from the written configuration alone`,
           'On a clean machine, with only the paper copy and no exported file. Confirm the first address matches. A descriptor copied by hand has no checksum a human can see.',
-          { gate: true, subjects: [{ type: 'wallet', id: wallet.id }] }
+          {
+            gate: true,
+            subjects: [{ type: 'wallet', id: wallet.id }],
+            records: 'config-backup-restore',
+          }
         )
       )
     }
@@ -356,7 +418,7 @@ export function buildRunbook(plan: Plan): Runbook {
         ]
           .filter(Boolean)
           .join(' '),
-        { gate: true, subjects: [{ type: 'wallet', id: wallet.id }] }
+        { gate: true, subjects: [{ type: 'wallet', id: wallet.id }], records: 'spend-test' }
       )
     )
   }
@@ -383,7 +445,13 @@ export function buildRunbook(plan: Plan): Runbook {
         'brief',
         'Watch a successor attempt the recovery, without helping',
         'On a throwaway wallet, with the written instructions and nothing else. Whatever they get stuck on is a defect in the instructions, not in them. Rewrite it and repeat.',
-        { gate: true }
+        {
+          gate: true,
+          subjects: plan.people
+            .filter((person) => person.role === 'successor')
+            .map((person) => ({ type: 'person', id: person.id })),
+          records: 'successor-dry-run',
+        }
       )
     )
   }

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { buildRunbook } from './runbook.ts'
+import { buildRunbook, setStepDone, stepDone } from './runbook.ts'
+import { analyze } from '../analysis/analyze.ts'
 import { recoveryRoutes } from './recovery.ts'
 import { lettersFor, successorLetter } from './successor-letter.ts'
 import { createContext } from '../analysis/context.ts'
 import { exampleById } from '../model/examples.ts'
+import { createVerification } from '../model/factory.ts'
 import { inspectDeep } from '../guard/guard.ts'
 import type { Plan } from '../model/types.ts'
 
@@ -307,5 +309,51 @@ describe('one letter per successor', () => {
     )!
     expect(wait.paragraphs[0]).toContain('90 days')
     expect(wait.paragraphs[0]).not.toContain('400')
+  })
+})
+
+describe('a gate and its check are one record', () => {
+  it('closes the finding a ticked restore gate answers, and reopens it when unticked', () => {
+    const plan = repaired()
+    const runbook = buildRunbook(plan)
+    const restore = runbook.gates.find(
+      (gate) => gate.records === 'backup-restore' && !stepDone(plan, gate)
+    )!
+    const key = restore.subjects[0]
+    const about = (report: ReturnType<typeof analyze>) =>
+      report.findings.filter(
+        (finding) =>
+          finding.category === 'staleness' &&
+          finding.subjects.some((subject) => subject.id === key.id)
+      )
+    const before = about(analyze(plan, { includeScenarios: false, today: TODAY }))
+    expect(before.length).toBeGreaterThan(0)
+
+    setStepDone(plan, restore, true, TODAY)
+    expect(stepDone(plan, restore)).toBe(true)
+    expect(about(analyze(plan, { includeScenarios: false, today: TODAY }))).toHaveLength(0)
+
+    setStepDone(plan, restore, false, TODAY)
+    expect(stepDone(plan, restore)).toBe(false)
+    expect(about(analyze(plan, { includeScenarios: false, today: TODAY })).length).toBe(
+      before.length
+    )
+  })
+
+  it('shows a gate as passed when its check was recorded somewhere else', () => {
+    const plan = repaired()
+    const restore = buildRunbook(plan).gates.find(
+      (gate) => gate.records === 'backup-restore' && !stepDone(plan, gate)
+    )!
+    expect(restore).toBeDefined()
+    // Recorded from the checks step, not the runbook.
+    plan.verifications.push(
+      createVerification({
+        kind: 'backup-restore',
+        subject: restore.subjects[0],
+        lastVerifiedAt: TODAY,
+      })
+    )
+    expect(stepDone(plan, restore)).toBe(true)
   })
 })
