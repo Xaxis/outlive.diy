@@ -1,0 +1,111 @@
+{
+  "url": "http://localhost:$PORT",
+  "manual": [
+    {
+      "kind": "view",
+      "label": "#/overview",
+      "entry": "apps/web/components/views/OverviewView.tsx",
+      "reach": "http://localhost:$PORT/app/#/overview",
+      "area": "diagnosis"
+    },
+    {
+      "kind": "view",
+      "label": "#/findings",
+      "entry": "apps/web/components/views/FindingsView.tsx",
+      "reach": "http://localhost:$PORT/app/#/findings",
+      "area": "diagnosis"
+    },
+    {
+      "kind": "view",
+      "label": "#/map",
+      "entry": "apps/web/components/views/MapView.tsx",
+      "reach": "http://localhost:$PORT/app/#/map",
+      "area": "diagnosis"
+    },
+    {
+      "kind": "view",
+      "label": "#/build",
+      "entry": "apps/web/components/views/BuildView.tsx",
+      "reach": "http://localhost:$PORT/app/#/build",
+      "area": "describe"
+    },
+    {
+      "kind": "view",
+      "label": "#/design/<step>",
+      "entry": "apps/web/components/views/DesignView.tsx",
+      "reach": "http://localhost:$PORT/app/#/design/profile|locations|people|devices|keys|wallets|checks",
+      "area": "describe"
+    },
+    {
+      "kind": "view",
+      "label": "#/runbook",
+      "entry": "apps/web/components/views/RunbookView.tsx",
+      "reach": "http://localhost:$PORT/app/#/runbook",
+      "area": "documents"
+    },
+    {
+      "kind": "view",
+      "label": "#/recovery",
+      "entry": "apps/web/components/views/RecoveryView.tsx",
+      "reach": "http://localhost:$PORT/app/#/recovery",
+      "area": "documents"
+    },
+    {
+      "kind": "view",
+      "label": "#/letter",
+      "entry": "apps/web/components/views/LetterView.tsx",
+      "reach": "http://localhost:$PORT/app/#/letter",
+      "area": "documents"
+    },
+    {
+      "kind": "view",
+      "label": "#/compare",
+      "entry": "apps/web/components/views/CompareView.tsx",
+      "reach": "http://localhost:$PORT/app/#/compare",
+      "area": "more"
+    },
+    {
+      "kind": "view",
+      "label": "#/file",
+      "entry": "apps/web/components/views/FileView.tsx",
+      "reach": "http://localhost:$PORT/app/#/file",
+      "area": "more"
+    },
+    {
+      "kind": "view",
+      "label": "#/reasoning",
+      "entry": "apps/web/components/views/ReasoningView.tsx",
+      "reach": "http://localhost:$PORT/app/#/reasoning",
+      "area": "more"
+    },
+    {
+      "kind": "shortcut",
+      "label": "Cmd-K palette",
+      "entry": "apps/web/components/shell/CommandPalette.tsx",
+      "reach": "Cmd-K or Ctrl-K inside /app/",
+      "area": "shell"
+    },
+    {
+      "kind": "integration",
+      "label": "Ask Claude",
+      "entry": "apps/web/lib/ai/client.ts",
+      "reach": "Ask Claude panel on #/overview, finding cards, recovery routes, #/build describe box",
+      "area": "claude"
+    },
+    {
+      "kind": "command",
+      "label": "make offline",
+      "entry": "tools/relative-assets.mjs",
+      "reach": "make offline, then open apps/web/out/index.html from disk",
+      "area": "shell"
+    },
+    {
+      "kind": "command",
+      "label": "make no-network",
+      "entry": "tools/check-no-network.mjs",
+      "reach": "make no-network",
+      "area": "shell"
+    }
+  ],
+  "ignore": []
+}

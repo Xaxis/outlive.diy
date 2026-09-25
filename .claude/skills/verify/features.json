@@ -1,0 +1,270 @@
+{
+  "version": 1,
+  "generated_by": "featuremap (claude-core) - regenerate with `featuremap generate --write`; do not edit by hand",
+  "checks": [
+    {
+      "id": "check:typecheck",
+      "kind": "typecheck",
+      "run": "yarn type-check",
+      "script": "yarn workspaces run type-check"
+    },
+    {
+      "id": "check:lint",
+      "kind": "lint",
+      "run": "yarn lint",
+      "script": "yarn workspace @outlive/web lint"
+    },
+    {
+      "id": "check:format",
+      "kind": "format",
+      "run": "yarn format:check",
+      "script": "prettier --check ."
+    },
+    {
+      "id": "check:test",
+      "kind": "test",
+      "run": "yarn test",
+      "script": "yarn workspace @outlive/core test"
+    },
+    {
+      "id": "check:build",
+      "kind": "build",
+      "run": "yarn build",
+      "script": "yarn workspace @outlive/web build"
+    },
+    {
+      "id": "check:verify",
+      "kind": "verify",
+      "run": "yarn check",
+      "script": "make check"
+    },
+    {
+      "id": "check:make:check",
+      "kind": "verify",
+      "run": "make check",
+      "script": "(Makefile)"
+    },
+    {
+      "id": "check:make:test",
+      "kind": "test",
+      "run": "make test",
+      "script": "(Makefile)"
+    },
+    {
+      "id": "check:make:lint",
+      "kind": "lint",
+      "run": "make lint",
+      "script": "(Makefile)"
+    }
+  ],
+  "launch": [
+    {
+      "id": "launch:dev",
+      "run": "yarn dev",
+      "script": "yarn workspace @outlive/web dev"
+    },
+    {
+      "id": "launch:dev:apps/web",
+      "run": "cd apps/web && yarn dev",
+      "script": "next dev"
+    }
+  ],
+  "features": [
+    {
+      "id": "api:GET /apple-icon",
+      "kind": "api",
+      "entry": "apps/web/app/apple-icon.tsx",
+      "reach": "GET http://localhost:$PORT/apple-icon",
+      "area": "apple-icon",
+      "tests": []
+    },
+    {
+      "id": "api:GET /manifest.webmanifest",
+      "kind": "api",
+      "entry": "apps/web/app/manifest.ts",
+      "reach": "GET http://localhost:$PORT/manifest.webmanifest",
+      "area": "manifest",
+      "tests": []
+    },
+    {
+      "id": "api:GET /opengraph-image",
+      "kind": "api",
+      "entry": "apps/web/app/opengraph-image.tsx",
+      "reach": "GET http://localhost:$PORT/opengraph-image",
+      "area": "opengraph-image",
+      "tests": []
+    },
+    {
+      "id": "api:GET /robots.txt",
+      "kind": "api",
+      "entry": "apps/web/app/robots.ts",
+      "reach": "GET http://localhost:$PORT/robots.txt",
+      "area": "robots",
+      "tests": []
+    },
+    {
+      "id": "api:GET /sitemap.xml",
+      "kind": "api",
+      "entry": "apps/web/app/sitemap.ts",
+      "reach": "GET http://localhost:$PORT/sitemap.xml",
+      "area": "sitemap",
+      "tests": []
+    },
+    {
+      "id": "command:make no-network",
+      "kind": "command",
+      "entry": "tools/check-no-network.mjs",
+      "reach": "make no-network",
+      "area": "shell",
+      "tests": []
+    },
+    {
+      "id": "command:make offline",
+      "kind": "command",
+      "entry": "tools/relative-assets.mjs",
+      "reach": "make offline, then open apps/web/out/index.html from disk",
+      "area": "shell",
+      "tests": []
+    },
+    {
+      "id": "export:@outlive/core",
+      "kind": "export",
+      "entry": "packages/core/src/index.ts",
+      "reach": "import from '@outlive/core'",
+      "area": "exports",
+      "tests": []
+    },
+    {
+      "id": "integration:Ask Claude",
+      "kind": "integration",
+      "entry": "apps/web/lib/ai/client.ts",
+      "reach": "Ask Claude panel on #/overview, finding cards, recovery routes, #/build describe box",
+      "area": "claude",
+      "tests": []
+    },
+    {
+      "id": "page:/",
+      "kind": "page",
+      "entry": "apps/web/app/page.tsx",
+      "reach": "http://localhost:$PORT/",
+      "area": "home",
+      "tests": []
+    },
+    {
+      "id": "page:/app",
+      "kind": "page",
+      "entry": "apps/web/app/app/page.tsx",
+      "reach": "http://localhost:$PORT/app",
+      "area": "app",
+      "tests": [
+        "apps/web/components/shell/App.test.tsx"
+      ]
+    },
+    {
+      "id": "page:/terms",
+      "kind": "page",
+      "entry": "apps/web/app/terms/page.tsx",
+      "reach": "http://localhost:$PORT/terms",
+      "area": "terms",
+      "tests": [
+        "apps/web/components/shell/App.test.tsx"
+      ]
+    },
+    {
+      "id": "shortcut:Cmd-K palette",
+      "kind": "shortcut",
+      "entry": "apps/web/components/shell/CommandPalette.tsx",
+      "reach": "Cmd-K or Ctrl-K inside /app/",
+      "area": "shell",
+      "tests": []
+    },
+    {
+      "id": "view:#/build",
+      "kind": "view",
+      "entry": "apps/web/components/views/BuildView.tsx",
+      "reach": "http://localhost:$PORT/app/#/build",
+      "area": "describe",
+      "tests": []
+    },
+    {
+      "id": "view:#/compare",
+      "kind": "view",
+      "entry": "apps/web/components/views/CompareView.tsx",
+      "reach": "http://localhost:$PORT/app/#/compare",
+      "area": "more",
+      "tests": []
+    },
+    {
+      "id": "view:#/design/<step>",
+      "kind": "view",
+      "entry": "apps/web/components/views/DesignView.tsx",
+      "reach": "http://localhost:$PORT/app/#/design/profile|locations|people|devices|keys|wallets|checks",
+      "area": "describe",
+      "tests": []
+    },
+    {
+      "id": "view:#/file",
+      "kind": "view",
+      "entry": "apps/web/components/views/FileView.tsx",
+      "reach": "http://localhost:$PORT/app/#/file",
+      "area": "more",
+      "tests": []
+    },
+    {
+      "id": "view:#/findings",
+      "kind": "view",
+      "entry": "apps/web/components/views/FindingsView.tsx",
+      "reach": "http://localhost:$PORT/app/#/findings",
+      "area": "diagnosis",
+      "tests": []
+    },
+    {
+      "id": "view:#/letter",
+      "kind": "view",
+      "entry": "apps/web/components/views/LetterView.tsx",
+      "reach": "http://localhost:$PORT/app/#/letter",
+      "area": "documents",
+      "tests": []
+    },
+    {
+      "id": "view:#/map",
+      "kind": "view",
+      "entry": "apps/web/components/views/MapView.tsx",
+      "reach": "http://localhost:$PORT/app/#/map",
+      "area": "diagnosis",
+      "tests": []
+    },
+    {
+      "id": "view:#/overview",
+      "kind": "view",
+      "entry": "apps/web/components/views/OverviewView.tsx",
+      "reach": "http://localhost:$PORT/app/#/overview",
+      "area": "diagnosis",
+      "tests": []
+    },
+    {
+      "id": "view:#/reasoning",
+      "kind": "view",
+      "entry": "apps/web/components/views/ReasoningView.tsx",
+      "reach": "http://localhost:$PORT/app/#/reasoning",
+      "area": "more",
+      "tests": []
+    },
+    {
+      "id": "view:#/recovery",
+      "kind": "view",
+      "entry": "apps/web/components/views/RecoveryView.tsx",
+      "reach": "http://localhost:$PORT/app/#/recovery",
+      "area": "documents",
+      "tests": []
+    },
+    {
+      "id": "view:#/runbook",
+      "kind": "view",
+      "entry": "apps/web/components/views/RunbookView.tsx",
+      "reach": "http://localhost:$PORT/app/#/runbook",
+      "area": "documents",
+      "tests": []
+    }
+  ]
+}
