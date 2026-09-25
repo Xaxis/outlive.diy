@@ -31,15 +31,33 @@ function names(items: readonly string[]): string {
   return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
 }
 
+/**
+ * Whether a wallet can be spent in a world, waiting out its timelock when
+ * waiting is the only way it is ever spent. A wallet whose every route is
+ * timelocked is unspendable today by design, and asked only about today it
+ * was never counted as live, so a fire that took every key behind it went
+ * unreported. Wallets with a route open now are asked exactly as before.
+ */
+function spendable(ctx: AnalysisContext, wallet: Wallet, world: Scenario['world']): boolean {
+  const waits = wallet.paths.length > 0 && wallet.paths.every((path) => path.timelockDays > 0)
+  const settled = waits
+    ? {
+        ...world,
+        elapsedDays: Math.max(world.elapsedDays, ...wallet.paths.map((path) => path.timelockDays)),
+      }
+    : world
+  return evaluateWallet(ctx.plan, wallet, settled).spendable
+}
+
 /** Wallets that go from spendable to unspendable in this scenario. */
 function broken(ctx: AnalysisContext, scenario: Scenario, live: readonly Wallet[]): Wallet[] {
-  return live.filter((wallet) => !evaluateWallet(ctx.plan, wallet, scenario.world).spendable)
+  return live.filter((wallet) => !spendable(ctx, wallet, scenario.world))
 }
 
 export function analyseLoss(ctx: AnalysisContext): Finding[] {
   const { plan } = ctx
   const findings: Finding[] = []
-  const live = plan.wallets.filter((wallet) => evaluateWallet(plan, wallet, ctx.base).spendable)
+  const live = plan.wallets.filter((wallet) => spendable(ctx, wallet, ctx.base))
   if (live.length === 0) return findings
 
   const worst = (wallets: readonly Wallet[]) =>
@@ -225,7 +243,7 @@ export function analyseLoss(ctx: AnalysisContext): Finding[] {
     if (wallet.configBackups.length === 0) continue
     const fatal = wallet.configBackups.filter((backup) => {
       const scenario = objectLostScenario(ctx, 'config-lost', backup.id, backup.label)
-      return !evaluateWallet(plan, wallet, scenario.world).spendable
+      return !spendable(ctx, wallet, scenario.world)
     })
     if (fatal.length === 0) continue
     findings.push(
@@ -271,7 +289,7 @@ export function analyseLoss(ctx: AnalysisContext): Finding[] {
   for (const wallet of live) {
     const survivable = plan.locations
       .map((location) => locationLostScenario(ctx, location.id))
-      .filter((scenario) => evaluateWallet(plan, wallet, scenario.world).spendable)
+      .filter((scenario) => spendable(ctx, wallet, scenario.world))
       .map((scenario) => ({ scenario, timing: recoveryTiming(plan, wallet, scenario.world) }))
     if (survivable.length === 0) continue
 

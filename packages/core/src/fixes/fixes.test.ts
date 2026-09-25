@@ -119,3 +119,36 @@ describe('the trades on offer when nothing wins outright', () => {
     expect(exampleById('one-signer')).toEqual(plan)
   })
 })
+
+describe('a tier out of reach of one afternoon', () => {
+  it('eases the session finding on the builder default, and nothing a fire decides', () => {
+    const plan = planFromShape(defaultShape())
+    const deep = candidateFixes(plan, TODAY).find((fix) => fix.id.startsWith('deep-vault:'))!
+    const before = analyze(plan, { includeScenarios: false, today: TODAY }).findings
+    const result = tryFix(plan, deep, before, TODAY)
+    const eased = result.shifts.map(
+      (pair) => `${pair.before.rule} ${pair.before.severity}>${pair.after.severity}`
+    )
+    expect(eased).toContain('X001 critical>high')
+    // Same keys, same places: whatever a loss did to the vault it does to the
+    // deep vault, so no loss finding may read as eased.
+    expect(result.shifts.some((pair) => pair.before.rule.startsWith('L'))).toBe(false)
+  })
+
+  it('is offered once, and never beside a timelocked route', () => {
+    const plan = planFromShape(defaultShape())
+    const deep = candidateFixes(plan, TODAY).find((fix) => fix.id.startsWith('deep-vault:'))!
+    deep.apply(plan)
+    expect(candidateFixes(plan, TODAY).some((fix) => fix.id.startsWith('deep-vault:'))).toBe(false)
+  })
+})
+
+describe('chaining two changes', () => {
+  it('applies a pair from the plan it was found on, so new keys keep their ids', () => {
+    // The upgrade creates keys; a second change found after it names them.
+    for (const id of ['one-signer', 'two-of-three']) {
+      const plan = exampleById(id)!
+      expect(() => improve(plan, { today: TODAY })).not.toThrow()
+    }
+  })
+})

@@ -94,6 +94,19 @@ being replaced so a draft's own history is not counted twice; the runbook,
 the overview, the landing card and the check-in show the open ones, because a
 fix applied in one click is the plan running ahead of the world.
 
+**A fix that eases counts, and a wallet that waits is still a wallet.** A
+change can leave a finding standing at a lower severity: keeping most of the
+balance in a deep vault that opens after 90 days leaves "this can be emptied
+in a session" true of the small wallet that is left. `tryFix` reports these as
+`shifts` and counts them in its gain, and raising anything to critical counts
+as opening one. Adding that fix exposed that the loss rules asked only whether
+a wallet could be spent today, which a wallet whose every route is timelocked
+never can, so a fire behind one went unreported and the deep vault looked as
+if it survived what the vault did not. `loss.ts` now asks those wallets after
+their wait. And a chain of changes is applied as the plan it produced, never
+by replaying each: a change that creates keys gives them new ids on replay,
+and the next change then names keys that do not exist.
+
 **Templates only add.** `model/presets.ts` and the builder's `planFromShape`
 never replace or delete what a plan holds, use roles for every name, and are
 tested to leave a whole, guard-clean plan. A preset that needs something first

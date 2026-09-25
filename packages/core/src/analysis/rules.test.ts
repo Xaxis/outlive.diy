@@ -1078,3 +1078,12 @@ describe('a key somebody else holds', () => {
     expect(analyze(plan, { today: '2026-03-01' }).findings.map((f) => f.rule)).toContain('L006')
   })
 })
+
+describe('a wallet that only opens after a wait', () => {
+  it('is still reported when a loss takes every key behind it', () => {
+    const plan = exampleById('one-signer')!
+    for (const wallet of plan.wallets) for (const path of wallet.paths) path.timelockDays = 90
+    const findings = analyze(plan, { includeScenarios: false, today: '2026-09-25' }).findings
+    expect(findings.some((finding) => finding.rule === 'L001')).toBe(true)
+  })
+})

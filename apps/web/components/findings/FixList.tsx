@@ -3,7 +3,7 @@
 import { netChange } from '@/lib/net.ts'
 import { useEffect, useState } from 'react'
 import { Check, LoaderCircle, Wand2 } from 'lucide-react'
-import { fixesFor, type Plan, type RankedFix } from '@outlive/core'
+import { fixesFor, SEVERITY_ORDER, type Plan, type RankedFix } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
 import { SeverityDot } from '@/components/ui/Severity.tsx'
 import { useStore } from '@/lib/store.ts'
@@ -72,6 +72,22 @@ export function FixList({
               </span>
               <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[0.6875rem] text-faint">
                 <span className="text-ok">closes {result.closes.length}</span>
+                {result.shifts.some(
+                  (pair) =>
+                    SEVERITY_ORDER.indexOf(pair.after.severity) >
+                    SEVERITY_ORDER.indexOf(pair.before.severity)
+                ) ? (
+                  <span className="text-ok">
+                    eases{' '}
+                    {
+                      result.shifts.filter(
+                        (pair) =>
+                          SEVERITY_ORDER.indexOf(pair.after.severity) >
+                          SEVERITY_ORDER.indexOf(pair.before.severity)
+                      ).length
+                    }
+                  </span>
+                ) : null}
                 {result.opens.length > 0 ? (
                   // Named, because "opens 1" is a trade nobody can weigh
                   // without knowing what the one is.

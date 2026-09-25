@@ -32,7 +32,9 @@ import {
   createKey,
   createLocation,
   createPerson,
+  createSpendPath,
   createVerification,
+  createWallet,
   today as todayDate,
 } from '../model/factory.ts'
 
@@ -53,7 +55,14 @@ export interface RankedFix {
   plan: Plan
   closes: Finding[]
   opens: Finding[]
-  /** Weighted closed minus weighted opened. Positive is better. */
+  /**
+   * Findings that stay but change severity. Moving most of the balance out of
+   * reach of an afternoon leaves "this can be emptied in a session" true of
+   * what is left, and a critical becoming a high is progress the list of what
+   * closed cannot show.
+   */
+  shifts: { before: Finding; after: Finding }[]
+  /** Weighted closed and eased, minus weighted opened and worsened. Positive is better. */
   gain: number
 }
 
@@ -176,6 +185,56 @@ export function candidateFixes(plan: Plan, today = todayDate()): Fix[] {
       })
     }
   }
+
+  // A tier out of reach of one afternoon. What a single session can take is
+  // decided by distance, a delay or another party, and of those only a delay
+  // can be added without new places or people: a deep vault on the same keys
+  // that opens only after a stretch of no movement, holding most of the
+  // balance, leaves the wallet a session can reach holding little. Offered
+  // once, and never where a timelocked route already exists.
+  const hasTimelock = plan.wallets.some((entry) =>
+    entry.paths.some((path) => path.timelockDays > 0)
+  )
+  if (!hasTimelock)
+    for (const wallet of plan.wallets) {
+      const path = wallet.paths[0]
+      if (wallet.decoy || wallet.stake === 'small' || !path || path.keyIds.length === 0) continue
+      fixes.push({
+        id: `deep-vault:${wallet.id}`,
+        kind: 'structure',
+        label: `Keep most of the balance in a deep vault on the same keys that opens only after 90 days without movement, and keep ${wallet.label} for smaller amounts`,
+        apply: (draft) => {
+          const target = draft.wallets.find((entry) => entry.id === wallet.id)
+          if (!target) return
+          const first = target.paths[0]
+          draft.wallets.push(
+            createWallet({
+              label: 'Deep vault',
+              tier: 'vault',
+              stake: 'large',
+              paths: [
+                createSpendPath({
+                  label: 'After 90 days',
+                  kind: 'primary',
+                  threshold: first.threshold,
+                  keyIds: [...first.keyIds],
+                  timelockDays: 90,
+                }),
+              ],
+              configBackups: target.configBackups.map((copy) =>
+                createConfigBackup({
+                  label: copy.label,
+                  medium: copy.medium,
+                  locationId: copy.locationId,
+                })
+              ),
+            })
+          )
+          target.tier = 'active'
+          target.stake = 'small'
+        },
+      })
+    }
 
   for (const wallet of plan.wallets) {
     const multisig = wallet.paths.some((path) => path.keyIds.length > 1)
@@ -489,6 +548,28 @@ export function candidateFixes(plan: Plan, today = todayDate()): Fix[] {
   return fixes
 }
 
+/**
+ * A change that turns a draft into a plan already worked out. Chained changes
+ * are applied this way, because each was found against the plan the one
+ * before produced, ids and all.
+ */
+function becomes(result: Plan): Fix['apply'] {
+  return (draft) => {
+    const { id, name, kind, createdAt } = draft
+    Object.assign(draft, structuredClone(result), { id, name, kind, createdAt })
+  }
+}
+
+/** Whether a change opens a critical, or pushes something that was not one up to it. */
+function opensCritical(result: Pick<RankedFix, 'opens' | 'shifts'>): boolean {
+  return (
+    result.opens.some((finding) => finding.severity === 'critical') ||
+    result.shifts.some(
+      (pair) => pair.after.severity === 'critical' && pair.before.severity !== 'critical'
+    )
+  )
+}
+
 function score(findings: Finding[]): number {
   return findings.reduce((sum, finding) => sum + WEIGHT[finding.severity], 0)
 }
@@ -502,7 +583,18 @@ export function tryFix(plan: Plan, fix: Fix, before: Finding[], today?: string):
   const now = new Set(after.map((finding) => finding.id))
   const closes = before.filter((finding) => !now.has(finding.id))
   const opens = after.filter((finding) => !was.has(finding.id))
-  return { fix, plan: draft, closes, opens, gain: score(closes) - score(opens) }
+  const afterById = new Map(after.map((finding) => [finding.id, finding]))
+  const shifts = before
+    .map((finding) => ({ before: finding, after: afterById.get(finding.id) }))
+    .filter(
+      (pair): pair is { before: Finding; after: Finding } =>
+        pair.after !== undefined && pair.after.severity !== pair.before.severity
+    )
+  const moved = shifts.reduce(
+    (sum, pair) => sum + WEIGHT[pair.before.severity] - WEIGHT[pair.after.severity],
+    0
+  )
+  return { fix, plan: draft, closes, opens, shifts, gain: score(closes) - score(opens) + moved }
 }
 
 /**
@@ -521,7 +613,11 @@ export function fixesFor(
   const target = before.find((finding) => finding.id === findingId)
   if (!target) return []
   const acceptable = (result: RankedFix) =>
-    result.closes.some((finding) => finding.id === findingId) &&
+    (result.closes.some((finding) => finding.id === findingId) ||
+      result.shifts.some(
+        (pair) =>
+          pair.before.id === findingId && WEIGHT[pair.after.severity] < WEIGHT[pair.before.severity]
+      )) &&
     result.gain > 0 &&
     !result.opens.some((finding) => WEIGHT[finding.severity] >= WEIGHT[target.severity])
   const tried = candidateFixes(plan, options.today).map((fix) =>
@@ -537,21 +633,21 @@ export function fixesFor(
   // problems are a backup moving out and something else following it.
   const firsts = tried
     .filter((result) => result.fix.kind === 'structure')
-    .filter((result) => !result.opens.some((finding) => finding.severity === 'critical'))
+    .filter((result) => !opensCritical(result))
     .sort((a, b) => b.gain - a.gain)
     .slice(0, LOOKAHEAD * 2)
   let best: RankedFix | null = null
   for (const first of firsts) {
     for (const second of candidateFixes(first.plan, options.today)) {
       if (second.kind !== 'structure') continue
+      // The pair as the plan it produces, for the same reason as the lookahead.
+      const after = structuredClone(first.plan)
+      second.apply(after)
       const combined: Fix = {
         id: `${first.fix.id}+${second.id}`,
         kind: 'structure',
         label: `${first.fix.label}, and ${lower(second.label)}`,
-        apply: (draft) => {
-          first.fix.apply(draft)
-          second.apply(draft)
-        },
+        apply: becomes(after),
       }
       const result = tryFix(plan, combined, before, options.today)
       if (acceptable(result) && (!best || result.gain > best.gain)) best = result
@@ -593,7 +689,7 @@ export function improve(
       .filter((fix) => fix.kind === 'structure')
       .map((fix) => tryFix(current, fix, before, options.today))
       // Never trade into a new critical, however much it closes.
-      .filter((result) => !result.opens.some((finding) => finding.severity === 'critical'))
+      .filter((result) => !opensCritical(result))
       .sort((a, b) => b.gain - a.gain)
     const best = tried[0]
     if (best && best.gain > 0) {
@@ -628,21 +724,13 @@ function lookahead(
     for (const fix of candidateFixes(first.plan, today)) {
       if (fix.kind !== 'structure') continue
       const second = tryFix(first.plan, fix, middle, today)
-      if (second.opens.some((finding) => finding.severity === 'critical')) continue
-      // Judged end to end against where it started, not step by step.
-      const total = tryFix(
-        plan,
-        {
-          ...fix,
-          apply: (draft) => {
-            first.fix.apply(draft)
-            fix.apply(draft)
-          },
-        },
-        before,
-        today
-      )
-      if (total.opens.some((finding) => finding.severity === 'critical')) continue
+      if (opensCritical(second)) continue
+      // Judged end to end against where it started, not step by step, and
+      // from the plan the second change was found on. Replaying the first on
+      // a fresh copy gave anything it created a new id, and the second then
+      // pointed at a key that did not exist.
+      const total = tryFix(plan, { ...fix, apply: becomes(second.plan) }, before, today)
+      if (opensCritical(total)) continue
       if (total.gain > bestGain) {
         bestGain = total.gain
         best = [first, second]
@@ -672,10 +760,16 @@ export function tradeoffs(
   return candidateFixes(plan, options.today)
     .filter((fix) => fix.kind === 'structure')
     .map((fix) => tryFix(plan, fix, before, options.today))
-    .filter((result) =>
-      result.closes.some(
-        (finding) => finding.severity === 'critical' || finding.severity === 'high'
-      )
+    .filter(
+      (result) =>
+        result.closes.some(
+          (finding) => finding.severity === 'critical' || finding.severity === 'high'
+        ) ||
+        result.shifts.some(
+          (pair) =>
+            (pair.before.severity === 'critical' || pair.before.severity === 'high') &&
+            WEIGHT[pair.after.severity] < WEIGHT[pair.before.severity]
+        )
     )
     .sort(
       (a, b) =>

@@ -99,6 +99,15 @@ export function NextMove({ plan }: { plan: Plan }) {
         {closes.length > 4 ? (
           <li className="pl-4 text-xs text-faint">and {closes.length - 4} more</li>
         ) : null}
+        {eased(current.steps.flatMap((step) => step.shifts)).map((pair) => (
+          <li key={pair.before.id} className="flex items-start gap-2 text-xs text-muted">
+            <SeverityDot severity={pair.after.severity} className="mt-[0.35rem]" />
+            <span>
+              <span className="text-ok">eases</span> {pair.before.title}, {pair.before.severity} to{' '}
+              {pair.after.severity}
+            </span>
+          </li>
+        ))}
         {opens.map((finding) => (
           <li key={finding.id} className="flex items-start gap-2 text-xs text-muted">
             <SeverityDot severity={finding.severity} className="mt-[0.35rem]" />
@@ -211,6 +220,17 @@ function Tradeoffs({ plan }: { plan: Plan }) {
                   </span>
                 </li>
               ))}
+              {eased(result.shifts)
+                .slice(0, 2)
+                .map((pair) => (
+                  <li key={pair.before.id} className="flex items-start gap-1.5">
+                    <SeverityDot severity={pair.after.severity} className="mt-[0.3rem]" />
+                    <span>
+                      <span className="text-ok">eases</span> {pair.before.title},{' '}
+                      {pair.before.severity} to {pair.after.severity}
+                    </span>
+                  </li>
+                ))}
               {result.opens.slice(0, 2).map((finding) => (
                 <li key={finding.id} className="flex items-start gap-1.5">
                   <SeverityDot severity={finding.severity} className="mt-[0.3rem]" />
@@ -241,4 +261,11 @@ function Tradeoffs({ plan }: { plan: Plan }) {
       </ul>
     </div>
   )
+}
+
+const RANK = { critical: 4, high: 3, medium: 2, low: 1, info: 0 } as const
+
+/** Findings a change leaves standing but less severe: worth naming, since they are why it helps. */
+function eased(shifts: RankedFix['shifts']): RankedFix['shifts'] {
+  return shifts.filter((pair) => RANK[pair.after.severity] < RANK[pair.before.severity])
 }

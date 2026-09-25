@@ -152,7 +152,15 @@ export function describeActions(before: Plan, after: Plan): PlanAction[] {
   for (const wallet of after.wallets) {
     const was = walletsBefore.get(wallet.id)
     if (!was) {
-      add('wallet', `Set up ${wallet.label} as ${policy(wallet, after)}`)
+      const waits = wallet.paths[0]?.timelockDays ?? 0
+      add(
+        'wallet',
+        `Set up ${wallet.label} as ${policy(wallet, after)}${waits > 0 ? `, opening only after ${waits} days without movement` : ''}${wallet.stake === 'large' && before.wallets.length > 0 ? ', and move most of the balance to it' : ''}`
+      )
+      // A new multisig wallet is unrecoverable without its descriptor, so
+      // writing it down where the plan says is part of setting it up.
+      for (const copy of wallet.configBackups)
+        add('wallet', `Put a copy of ${wallet.label}'s descriptor at ${place(copy.locationId)}`)
       continue
     }
     walletChanges(was, wallet, after, place, add)
