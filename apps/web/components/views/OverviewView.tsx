@@ -92,6 +92,68 @@ export function OverviewView() {
   const top = report.findings.slice(0, 4)
   const gates = runbook?.gates.length ?? 0
 
+  // The checks, where a reader looks first when any are due: at the top on a
+  // phone, where the side column otherwise lands two screens down, and in the
+  // side column on a wide screen.
+  const checks = (className: string) => (
+    <Panel className={cn('p-4', className)}>
+      {/* A plan built a minute ago has checks nobody could have done
+            yet. Calling them overdue, each with a warning, read as a
+            telling-off; they are due, and the late ones say so. */}
+      <SectionHeading
+        title="Checks due"
+        hint="Never done, or done too long ago: each is still an assumption until it is done."
+      />
+      {overdue.length === 0 ? (
+        <p className="text-sm text-muted">
+          {plan.verifications.length === 0
+            ? 'Nothing is scheduled to be checked yet, which means nothing here has been tested.'
+            : 'Everything scheduled is current.'}
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {overdue.slice(0, 5).map((entry) => (
+            <li key={entry.verification.id} className="flex items-start gap-2.5">
+              {entry.lastVerifiedAt === null ? (
+                <Circle className="mt-0.5 size-3.5 flex-none text-faint" aria-hidden />
+              ) : (
+                <TriangleAlert className="mt-0.5 size-3.5 flex-none text-medium" aria-hidden />
+              )}
+              <span className="min-w-0 flex-1 text-sm leading-snug text-body">
+                {VERIFICATION_KIND[entry.verification.kind]}
+                {subjectLabel(entry.verification.subject) ? (
+                  <span className="text-muted"> · {subjectLabel(entry.verification.subject)}</span>
+                ) : null}
+                <span className="block text-xs text-faint">
+                  {entry.lastVerifiedAt === null
+                    ? 'not done yet'
+                    : `${entry.overdueDays} days overdue`}
+                </span>
+              </span>
+              {/* The record, where the reminder is. Going to the checks
+                    step to find the same row and type today's date was the
+                    whole of the chore. */}
+              <Button
+                size="sm"
+                aria-label={`${VERIFICATION_KIND[entry.verification.kind]}: done today`}
+                onClick={() =>
+                  edit((draft) => {
+                    const target = draft.verifications.find(
+                      (check) => check.id === entry.verification.id
+                    )
+                    if (target) target.lastVerifiedAt = today()
+                  })
+                }
+              >
+                Done today
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  )
+
   return (
     <div className={MEASURE.wide}>
       <ViewHeader
@@ -146,35 +208,7 @@ export function OverviewView() {
             </Panel>
           ) : null}
 
-          <Panel className="p-4">
-            <SectionHeading
-              title="Ask Claude"
-              hint="Optional, with your own Anthropic key. Sends the plan's structure and findings, with notes removed, straight to Anthropic. Nothing is sent until you ask."
-            />
-            <AskClaude
-              plan={plan}
-              freeText
-              suggestions={[
-                'Review my plan',
-                'What should I do first, this week?',
-                'Explain my plan to my successor in plain words',
-              ]}
-            />
-          </Panel>
-
-          {plan.wallets.length > 0 && results.length > 0 ? (
-            <Panel className="p-4">
-              <SectionHeading
-                title="Every way it fails"
-                hint="Each world the engine builds, against each wallet. A column of red is one wallet everything reaches; a row of red is one event that takes everything."
-              />
-              <FailureMatrix
-                results={results}
-                wallets={plan.wallets}
-                onPick={(id) => navigate({ view: 'map', section: id })}
-              />
-            </Panel>
-          ) : null}
+          {checks(overdue.length > 0 ? 'lg:hidden' : 'hidden')}
 
           <Panel className="p-4">
             <SectionHeading
@@ -209,6 +243,36 @@ export function OverviewView() {
               </ul>
             )}
           </Panel>
+
+          {plan.wallets.length > 0 && results.length > 0 ? (
+            <Panel className="p-4">
+              <SectionHeading
+                title="Every way it fails"
+                hint="Each world the engine builds, against each wallet. A column of red is one wallet everything reaches; a row of red is one event that takes everything."
+              />
+              <FailureMatrix
+                results={results}
+                wallets={plan.wallets}
+                onPick={(id) => navigate({ view: 'map', section: id })}
+              />
+            </Panel>
+          ) : null}
+
+          <Panel className="p-4">
+            <SectionHeading
+              title="Ask Claude"
+              hint="Optional, with your own Anthropic key. Sends the plan's structure and findings, with notes removed, straight to Anthropic. Nothing is sent until you ask."
+            />
+            <AskClaude
+              plan={plan}
+              freeText
+              suggestions={[
+                'Review my plan',
+                'What should I do first, this week?',
+                'Explain my plan to my successor in plain words',
+              ]}
+            />
+          </Panel>
         </div>
 
         <div className="space-y-4">
@@ -217,68 +281,7 @@ export function OverviewView() {
             <SeverityBar counts={report.counts} />
           </Panel>
 
-          <Panel className="p-4">
-            {/* A plan built a minute ago has checks nobody could have done
-                yet. Calling them overdue, each with a warning, read as a
-                telling-off; they are due, and the late ones say so. */}
-            <SectionHeading
-              title="Checks due"
-              hint="Never done, or done too long ago: each is still an assumption until it is done."
-            />
-            {overdue.length === 0 ? (
-              <p className="text-sm text-muted">
-                {plan.verifications.length === 0
-                  ? 'Nothing is scheduled to be checked yet, which means nothing here has been tested.'
-                  : 'Everything scheduled is current.'}
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {overdue.slice(0, 5).map((entry) => (
-                  <li key={entry.verification.id} className="flex items-start gap-2.5">
-                    {entry.lastVerifiedAt === null ? (
-                      <Circle className="mt-0.5 size-3.5 flex-none text-faint" aria-hidden />
-                    ) : (
-                      <TriangleAlert
-                        className="mt-0.5 size-3.5 flex-none text-medium"
-                        aria-hidden
-                      />
-                    )}
-                    <span className="min-w-0 flex-1 text-sm leading-snug text-body">
-                      {VERIFICATION_KIND[entry.verification.kind]}
-                      {subjectLabel(entry.verification.subject) ? (
-                        <span className="text-muted">
-                          {' '}
-                          · {subjectLabel(entry.verification.subject)}
-                        </span>
-                      ) : null}
-                      <span className="block text-xs text-faint">
-                        {entry.lastVerifiedAt === null
-                          ? 'not done yet'
-                          : `${entry.overdueDays} days overdue`}
-                      </span>
-                    </span>
-                    {/* The record, where the reminder is. Going to the checks
-                        step to find the same row and type today's date was the
-                        whole of the chore. */}
-                    <Button
-                      size="sm"
-                      aria-label={`${VERIFICATION_KIND[entry.verification.kind]}: done today`}
-                      onClick={() =>
-                        edit((draft) => {
-                          const target = draft.verifications.find(
-                            (check) => check.id === entry.verification.id
-                          )
-                          if (target) target.lastVerifiedAt = today()
-                        })
-                      }
-                    >
-                      Done today
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
+          {checks(overdue.length > 0 ? 'hidden lg:block' : '')}
 
           <Panel className="p-4">
             <SectionHeading title="Documents" hint="Print them. They belong on paper." />
