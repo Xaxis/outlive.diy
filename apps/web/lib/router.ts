@@ -98,16 +98,7 @@ function getServerSnapshot() {
 export function useRoute(): [Route, (route: Route, options?: { replace?: boolean }) => void] {
   const hash = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
   const navigate = useCallback((route: Route, options: { replace?: boolean } = {}) => {
-    const next = formatHash(route)
-    if (window.location.hash === next) return
-    // pushState rather than assigning location.hash, so that exactly one event
-    // is dispatched rather than one from the assignment and one from here.
-    if (options.replace) window.history.replaceState(null, '', next)
-    else window.history.pushState(null, '', next)
-    window.dispatchEvent(new HashChangeEvent('hashchange'))
-    // A view change is a page change as far as a reader is concerned. Optional
-    // call, because failing to scroll is never worth throwing over.
-    window.scrollTo?.({ top: 0 })
+    setFragment(formatHash(route), options.replace)
   }, [])
   return [parseHash(hash), navigate]
 }
@@ -135,9 +126,26 @@ export function navigateTo(view: ViewId, section?: string): void {
     )
     return
   }
-  const next = href(view, section)
+  setFragment(href(view, section))
+}
+
+/**
+ * Move to a fragment by assigning it, never through `history.pushState`.
+ *
+ * Next patches pushState and replays every call as a navigation of its own
+ * router, in a transition. Two calls in quick succession, which is what an
+ * agent driving the page does, left the app rendering the first view with the
+ * second in the address bar. Assigning the fragment is invisible to Next. The
+ * event is dispatched here as well as by the browser so the view changes in
+ * this task rather than the next; the router reads the fragment either way,
+ * so the second one changes nothing.
+ */
+function setFragment(next: string, replace = false) {
   if (window.location.hash === next) return
-  window.history.pushState(null, '', next)
+  if (replace) window.location.replace(next)
+  else window.location.hash = next
   window.dispatchEvent(new HashChangeEvent('hashchange'))
+  // A view change is a page change as far as a reader is concerned. Optional
+  // call, because failing to scroll is never worth throwing over.
   window.scrollTo?.({ top: 0 })
 }
