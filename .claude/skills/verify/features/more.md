@@ -6,7 +6,7 @@ Comparing plans, the plan file and storage, and the rules.
 
 ## Sub-features
 
-- compare: findings closed and opened, the world-by-world diff, both drawings with changed boxes tagged; "Use this version" adopts a draft into the original.
+- compare: findings closed and opened, "What you would do" (the change as numbered errands from `describeActions` in `packages/core/src/diff/actions.ts`), the world-by-world diff, both drawings with changed boxes tagged; "Use this version" adopts a draft into the original. The overview's next move folds the same errands under "What that means doing".
 - file: what leaves the browser, where the plan is kept, Claude key settings, plans open, vendor data, everything stored, erase.
 - reasoning: the rules by category, with the assumptions folded above them.
 

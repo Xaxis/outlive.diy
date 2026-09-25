@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { LoaderCircle, Wand2 } from 'lucide-react'
-import { improve, newId, type Plan } from '@outlive/core'
+import { compareReports, improve, newId, type Plan } from '@outlive/core'
+import { reportFor } from '@/lib/analysis.ts'
 import { Button } from '@/components/ui/Button.tsx'
 import { baseName, useStore } from '@/lib/store.ts'
 import { nextMoveFor } from '@/components/findings/NextMove.tsx'
@@ -69,6 +70,7 @@ export function ImproveButton({
             return
           }
           const baseline = plan.id
+          const delta = compareReports(reportFor(plan), reportFor(result.plan))
           addPlan({
             ...result.plan,
             id: newId('plan'),
@@ -79,10 +81,10 @@ export function ImproveButton({
           notify({
             tone: 'ok',
             message: `Draft made with ${result.steps.length} ${result.steps.length === 1 ? 'change' : 'changes'}`,
-            detail: `${netChange(
-              result.steps.reduce((sum, step) => sum + step.closes.length, 0),
-              result.steps.reduce((sum, step) => sum + step.opens.length, 0)
-            )} Your plan is unchanged until you use this version.`,
+            // Counted from the two plans, as the comparison it lands on
+            // counts them. Summing the steps counted a finding one step
+            // opened and the next closed on both sides.
+            detail: `${netChange(delta.resolved.length, delta.introduced.length)} Your plan is unchanged until you use this version.`,
           })
           navigateTo('compare')
         }, 30)

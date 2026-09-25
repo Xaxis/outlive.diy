@@ -84,6 +84,12 @@ claim. Structural changes can be applied in bulk to a draft; a record of
 something done in the world ("I restored this backup today") is offered one at
 a time and never made on the reader's behalf.
 
+**A change is shown as errands.** `diff/actions.ts` turns the difference
+between two plans into what somebody would go and do: take this there, copy
+that, tell somebody. The comparison and the next move both use it. It invents
+nothing: every sentence is a field that differs, in words, and a record of a
+check is marked as a record rather than an errand.
+
 **Templates only add.** `model/presets.ts` and the builder's `planFromShape`
 never replace or delete what a plan holds, use roles for every name, and are
 tested to leave a whole, guard-clean plan. A preset that needs something first

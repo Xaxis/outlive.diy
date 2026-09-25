@@ -34,5 +34,6 @@ export * from './documents/recovery.ts'
 export * from './documents/successor-letter.ts'
 
 export * from './diff/compare.ts'
+export { describeActions, type PlanAction, type ActionSubject } from './diff/actions.ts'
 export * from './vendors/vendors.ts'
 export * from './fixes/fixes.ts'

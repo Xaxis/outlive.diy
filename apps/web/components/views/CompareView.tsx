@@ -1,13 +1,27 @@
 'use client'
 
 import { useMemo } from 'react'
-import { ArrowRight, Check, GitFork, Minus, Plus } from 'lucide-react'
+import {
+  ArrowRight,
+  Check,
+  ClipboardCheck,
+  Cpu,
+  GitFork,
+  KeyRound,
+  MapPin,
+  Minus,
+  Plus,
+  UserRound,
+  Wallet as WalletIcon,
+} from 'lucide-react'
 import {
   analyze,
   baseWorld,
   buildGraph,
   compareReports,
   comparePlans,
+  describeActions,
+  type ActionSubject,
   summariseDelta,
   type Finding,
 } from '@outlive/core'
@@ -19,6 +33,7 @@ import { PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
 import { useActivePlan, useComparePlan, useStore } from '@/lib/store.ts'
 import { useScenarioResults } from '@/lib/analysis.ts'
 import { WorldDiff } from '@/components/graph/WorldDiff.tsx'
+import { cn } from '@/lib/cn.ts'
 
 /**
  * Comparing two plans.
@@ -27,6 +42,15 @@ import { WorldDiff } from '@/components/graph/WorldDiff.tsx'
  * "does moving Key B to the other city close more than it opens". This answers
  * exactly that, by matching findings between the two runs.
  */
+const ACTION_ICON: Record<ActionSubject, typeof MapPin> = {
+  location: MapPin,
+  person: UserRound,
+  device: Cpu,
+  key: KeyRound,
+  wallet: WalletIcon,
+  verification: ClipboardCheck,
+}
+
 export function CompareView() {
   const plan = useActivePlan()
   const other = useComparePlan()
@@ -52,6 +76,7 @@ export function CompareView() {
   }, [plan, other])
 
   const changes = useMemo(() => (plan && other ? comparePlans(other, plan) : []), [plan, other])
+  const actions = useMemo(() => (plan && other ? describeActions(other, plan) : []), [plan, other])
 
   // The two shapes, beside each other. A list of opened and closed findings
   // says what the change cost and what it bought; it does not show what was
@@ -167,6 +192,40 @@ export function CompareView() {
             </div>
           </Panel>
 
+          {/* The change as errands, first: what a reader holding the
+              baseline would have to go and do to end up with this one. The
+              list of fields that differed was true and told nobody anything. */}
+          {actions.length > 0 ? (
+            <Panel className="p-4">
+              <SectionHeading
+                title="What you would do"
+                hint={`To get from ${other.name} to this, in the world rather than on the page.`}
+              />
+              <ol className="space-y-2">
+                {actions.map((action, index) => {
+                  const Icon = ACTION_ICON[action.subject]
+                  return (
+                    <li key={index} className="flex items-start gap-2.5 text-[0.875rem]">
+                      <span className="mono mt-0.5 w-5 flex-none text-right text-xs text-faint">
+                        {index + 1}
+                      </span>
+                      <Icon
+                        className={cn(
+                          'mt-0.5 size-4 flex-none',
+                          action.errand ? 'text-accent' : 'text-faint'
+                        )}
+                        aria-hidden
+                      />
+                      <span className={action.errand ? 'text-body' : 'text-muted'}>
+                        {action.text}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ol>
+            </Panel>
+          ) : null}
+
           {wallets.length > 0 ? (
             <Panel className="p-4">
               <SectionHeading
@@ -225,32 +284,6 @@ export function CompareView() {
                         {finding.title}
                       </span>
                       <span className="mono text-[0.6875rem] text-faint">{finding.rule}</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </Panel>
-          ) : null}
-
-          {changes.length > 0 ? (
-            <Panel className="p-4">
-              <SectionHeading
-                title="What actually changed"
-                hint="In the plan, not in the findings."
-              />
-              <ul className="space-y-1 text-[0.8125rem]">
-                {changes.slice(0, 30).map((change) => (
-                  <li key={`${change.entity}:${change.id}`} className="flex items-start gap-2">
-                    <span className="mono mt-0.5 w-16 flex-none text-[0.6875rem] text-faint">
-                      {change.kind}
-                    </span>
-                    <span className="text-body">
-                      {change.entity} · {change.label}
-                      {change.fields.length > 0 ? (
-                        <span className="mono block text-[0.6875rem] text-faint">
-                          {change.fields.slice(0, 6).join(', ')}
-                        </span>
-                      ) : null}
                     </span>
                   </li>
                 ))}

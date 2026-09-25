@@ -3,7 +3,8 @@
 import { netChange } from '@/lib/net.ts'
 import { useEffect, useState } from 'react'
 import { ArrowRight, Check, LoaderCircle } from 'lucide-react'
-import { improve, type Improvement, type Plan } from '@outlive/core'
+import { describeActions, improve, type Improvement, type Plan } from '@outlive/core'
+import { Disclosure } from '@/components/ui/Disclosure.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { SeverityDot } from '@/components/ui/Severity.tsx'
 import { useStore } from '@/lib/store.ts'
@@ -68,6 +69,7 @@ export function NextMove({ plan }: { plan: Plan }) {
   }
 
   const closes = current.steps.flatMap((step) => step.closes)
+  const errands = describeActions(plan, current.plan).filter((action) => action.errand)
   const opens = current.steps.flatMap((step) => step.opens)
 
   return (
@@ -104,6 +106,21 @@ export function NextMove({ plan }: { plan: Plan }) {
           </li>
         ))}
       </ul>
+      {errands.length > 1 ? (
+        // One sentence can be six trips. The errands are what the reader will
+        // actually do, and they are the same words the comparison uses.
+        <Disclosure
+          size="aside"
+          title={`What that means doing (${errands.length})`}
+          className="mt-2.5"
+        >
+          <ol className="list-decimal space-y-1 pl-5 text-xs leading-relaxed text-body">
+            {errands.map((errand, index) => (
+              <li key={index}>{errand.text}</li>
+            ))}
+          </ol>
+        </Disclosure>
+      ) : null}
       <div className="mt-3">
         <Button
           variant="primary"
