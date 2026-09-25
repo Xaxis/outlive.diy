@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronRight, Network, Wrench } from 'lucide-react'
 import { CATEGORY_LABEL, RULES, type Finding, type Plan, type Ref } from '@outlive/core'
 import { FindingPicture } from '@/components/findings/FindingPicture.tsx'
@@ -26,6 +26,10 @@ export function FindingCard({
   defaultOpen?: boolean
 }) {
   const [open, setOpen] = useState(defaultOpen ?? false)
+  // Once a tested fix is on screen, the general advice above it says the same
+  // thing less exactly. It stays in print, where there are no fix buttons.
+  const [tested, setTested] = useState(false)
+  const onFound = useCallback((count: number) => setTested(count > 0), [])
   const rule = RULES[finding.rule]
   const article = useRef<HTMLElement>(null)
 
@@ -88,12 +92,17 @@ export function FindingCard({
       >
         <p className="text-body">{finding.detail}</p>
 
-        <div className="mt-3 flex gap-2.5 rounded-[var(--radius-control)] border border-line bg-sunken p-3">
+        <div
+          className={cn(
+            'mt-3 flex gap-2.5 rounded-[var(--radius-control)] border border-line bg-sunken p-3',
+            open && tested && 'hidden print:flex'
+          )}
+        >
           <Wrench className="mt-0.5 size-3.5 flex-none text-accent" aria-hidden />
           <p className="text-body">{finding.remediation}</p>
         </div>
 
-        {open && plan ? <FixList plan={plan} findingId={finding.id} /> : null}
+        {open && plan ? <FixList plan={plan} findingId={finding.id} onFound={onFound} /> : null}
         {open && plan ? (
           <AskClaude
             plan={plan}

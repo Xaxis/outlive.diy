@@ -13,7 +13,7 @@ Build a plan by its shape in one screen, or describe it step by step with templa
 - devices: maker and model dropdowns with "Other…" opening a text field; the name follows what it is ("Coinkite Coldcard Q") until the reader types their own in "Name, if you want one"; device shelf with maker bar.
 - keys: "Device it lives on" offers each device by what it is (`deviceChoiceLabel` in `lib/devices.ts`), with the reader's own name when they gave one.
 - choices: up to five short options render as buttons.
-- quorum card: each spend path shows its keys as chips and a keys-needed stepper.
+- quorum card: each spend path is one card, its keys as chips and a keys-needed stepper, with name, purpose and timelock folded inside it.
 - places and roles: tiles with icons; travel presets.
 
 ## How to reach it

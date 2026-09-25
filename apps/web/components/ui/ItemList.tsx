@@ -143,7 +143,9 @@ export function ItemList({
                   <span className="block truncate text-[0.8125rem] font-medium text-strong">
                     {item.title}
                   </span>
-                  <span className="mono block truncate text-[0.6875rem] text-faint">
+                  {/* Prose rather than code, and two lines on a phone rather
+                      than one cut off where the reason starts. */}
+                  <span className="line-clamp-2 block text-xs text-faint sm:line-clamp-1">
                     {item.summary}
                   </span>
                 </span>

@@ -19,15 +19,28 @@ import { useStore } from '@/lib/store.ts'
  * Applying is one undo step. A record ("I restored this today") is labelled
  * as what it is, a statement about the world, and says so on its button.
  */
-export function FixList({ plan, findingId }: { plan: Plan; findingId: string }) {
+export function FixList({
+  plan,
+  findingId,
+  onFound,
+}: {
+  plan: Plan
+  findingId: string
+  /** How many tested fixes there are, once the search is done. */
+  onFound?: (count: number) => void
+}) {
   const applyPlan = useStore((state) => state.applyPlan)
   const notify = useStore((state) => state.notify)
   const [fixes, setFixes] = useState<RankedFix[] | null>(null)
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setFixes(fixesFor(plan, findingId)), 30)
+    const timer = window.setTimeout(() => {
+      const found = fixesFor(plan, findingId)
+      setFixes(found)
+      onFound?.(found.length)
+    }, 30)
     return () => window.clearTimeout(timer)
-  }, [plan, findingId])
+  }, [plan, findingId, onFound])
 
   if (fixes === null) {
     return (
@@ -60,11 +73,18 @@ export function FixList({ plan, findingId }: { plan: Plan; findingId: string }) 
               <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[0.6875rem] text-faint">
                 <span className="text-ok">closes {result.closes.length}</span>
                 {result.opens.length > 0 ? (
-                  <span className="flex items-center gap-1">
-                    opens {result.opens.length}
-                    {result.opens.slice(0, 3).map((finding) => (
-                      <SeverityDot key={finding.id} severity={finding.severity} />
+                  // Named, because "opens 1" is a trade nobody can weigh
+                  // without knowing what the one is.
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                    {result.opens.slice(0, 2).map((finding) => (
+                      <span key={finding.id} className="flex items-center gap-1">
+                        <SeverityDot severity={finding.severity} />
+                        opens {finding.title.charAt(0).toLowerCase() + finding.title.slice(1)}
+                      </span>
                     ))}
+                    {result.opens.length > 2 ? (
+                      <span>and {result.opens.length - 2} more</span>
+                    ) : null}
                   </span>
                 ) : (
                   <span>opens nothing</span>

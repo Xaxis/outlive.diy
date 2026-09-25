@@ -27,6 +27,19 @@ import { cn } from '@/lib/cn.ts'
 
 const DAY_MINUTES = 24 * 60
 
+/**
+ * The order recovery routes are read in, here and in the list under the chart:
+ * no route at all first, then whatever somebody else can spend, then the
+ * longest. One comparator, so a route is never third in the picture and ninth
+ * in the list beneath it.
+ */
+export function worstFirst(a: RecoveryRoute, b: RecoveryRoute): number {
+  const rank = (route: RecoveryRoute) =>
+    !route.possible ? 0 : route.exposedWalletIds.length > 0 ? 1 : 2
+  const days = (route: RecoveryRoute) => (route.timing?.possible ? route.timing.days : 0)
+  return rank(a) - rank(b) || days(b) - days(a)
+}
+
 interface Row {
   route: RecoveryRoute
   waitDays: number
@@ -68,12 +81,7 @@ export function RecoveryChart({
         over: timing.days > toleranceDays,
       }
     })
-    // Worst first: no route at all, then whatever somebody else can spend, then
-    // the longest. The list underneath keeps the engine's order, which is the
-    // order the events are named in; this is the order they should be read in.
-    const rank = (row: Row) =>
-      !row.route.possible ? 0 : row.route.exposedWalletIds.length > 0 ? 1 : 2
-    return out.sort((a, b) => rank(a) - rank(b) || b.span - a.span)
+    return out.sort((a, b) => worstFirst(a.route, b.route) || b.span - a.span)
   }, [routes, toleranceDays])
 
   const longest = Math.max(1, toleranceDays, ...rows.map((row) => row.span))
@@ -106,9 +114,12 @@ export function RecoveryChart({
         </span>
       </figcaption>
 
-      <div className="grid grid-cols-[minmax(0,13rem)_minmax(0,1fr)] gap-x-3 max-sm:grid-cols-[minmax(0,8rem)_minmax(0,1fr)]">
+      {/* On a phone each label sits above its bar at full width, because an
+          eight-rem column cut every route's name off where it said what
+          happened. */}
+      <div className="grid grid-cols-[minmax(0,13rem)_minmax(0,1fr)] gap-x-3 max-sm:grid-cols-[minmax(0,1fr)]">
         {/* The axis, above the bars so it is read before them. */}
-        <span />
+        <span className="max-sm:hidden" />
         <div className="relative mb-1 mt-4 h-4 text-[0.625rem] text-faint" aria-hidden>
           {ticks.map((tick) => (
             <span
@@ -146,7 +157,7 @@ export function RecoveryChart({
               onFocus={() => setHover(row.route.scenarioId)}
               onBlur={() => setHover(null)}
               className={cn(
-                'col-span-2 grid grid-cols-subgrid items-center rounded-[6px] py-[3px] text-left transition-[background-color,opacity]',
+                'col-span-2 grid grid-cols-subgrid items-center rounded-[6px] py-[3px] text-left transition-[background-color,opacity] max-sm:col-span-1 max-sm:gap-y-0.5 max-sm:py-1.5',
                 // The hovered row lights up and the rest stay as they are:
                 // fading them took their labels under 4.5:1.
                 lit && 'bg-[rgb(var(--tint)/0.07)]'
@@ -154,7 +165,10 @@ export function RecoveryChart({
               aria-label={`${row.route.title}: ${label(row)}`}
             >
               <span
-                className={cn('truncate pl-1 text-[0.78rem]', lit ? 'text-strong' : 'text-body')}
+                className={cn(
+                  'truncate pl-1 text-[0.78rem] max-sm:whitespace-normal',
+                  lit ? 'text-strong' : 'text-body'
+                )}
               >
                 {row.route.title}
               </span>

@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import {
   createConfigBackup,
   createSpendPath,
@@ -14,15 +14,7 @@ import {
   type WalletConfigBackup,
   type WalletTier,
 } from '@outlive/core'
-import {
-  ChipSet,
-  Field,
-  GuardedInput,
-  NumberInput,
-  PresetNumber,
-  Select,
-  Toggle,
-} from '@/components/ui/Field.tsx'
+import { Field, GuardedInput, PresetNumber, Select, Toggle } from '@/components/ui/Field.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { ItemList } from '@/components/ui/ItemList.tsx'
 import { Callout, SectionHeading } from '@/components/ui/Surface.tsx'
@@ -49,12 +41,10 @@ const TIMELOCKS = [
 ]
 
 function PathEditor({
-  plan,
   walletId,
   path,
   position,
 }: {
-  plan: Plan
   walletId: string
   path: SpendPath
   position: number
@@ -79,39 +69,15 @@ function PathEditor({
         />
       </Field>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="What it is for">
-          <Select
-            value={path.kind}
-            onChange={(kind) =>
-              patch((entry) => void (entry.kind = (kind ?? 'primary') as SpendPathKind))
-            }
-            options={PATH_KINDS.map((kind) => ({ value: kind, label: PATH_KIND[kind] }))}
-          />
-        </Field>
-        <Field label="Signatures needed">
-          <NumberInput
-            value={path.threshold}
-            min={1}
-            max={32}
-            suffix={`of ${path.keyIds.length}`}
-            onChange={(threshold) => patch((entry) => void (entry.threshold = threshold ?? 1))}
-          />
-        </Field>
-      </div>
-
-      <Field label="Keys on this path">
-        {plan.keys.length === 0 ? (
-          <p className="text-sm text-muted">No keys described yet.</p>
-        ) : (
-          <ChipSet
-            values={path.keyIds}
-            onChange={(keyIds) => patch((entry) => void (entry.keyIds = keyIds))}
-            options={plan.keys.map((key) => ({ value: key.id, label: key.label }))}
-          />
-        )}
+      <Field label="What it is for">
+        <Select
+          value={path.kind}
+          onChange={(kind) =>
+            patch((entry) => void (entry.kind = (kind ?? 'primary') as SpendPathKind))
+          }
+          options={PATH_KINDS.map((kind) => ({ value: kind, label: PATH_KIND[kind] }))}
+        />
       </Field>
-
       <Field
         label="Timelock"
         help="Days of inactivity before this path opens. A timelocked path is the only thing in a custody plan that makes an attacker wait, and the only reason to hold one is that the wait is longer than the danger."
@@ -133,17 +99,6 @@ function PathEditor({
       ) : null}
     </>
   )
-}
-
-/** What a way to spend says when its row is shut. */
-function describePath(path: SpendPath): string {
-  const policy = `${path.threshold} of ${path.keyIds.length}`
-  const when = path.timelockDays > 0 ? `opens after ${path.timelockDays} days` : 'available now'
-  // Most paths are named after their kind, and "Inheritance: inheritance" is a
-  // summary line spending a third of itself saying nothing.
-  const kind = PATH_KIND[path.kind].toLowerCase()
-  const named = kind === path.label.trim().toLowerCase()
-  return [policy, named ? null : kind, when].filter(Boolean).join(' · ')
 }
 
 /** And a configuration copy. */
@@ -233,33 +188,31 @@ export function WalletInspector({ plan, wallet }: { plan: Plan; wallet: Wallet }
           </Callout>
         ) : (
           <>
-            <div className="mb-2 space-y-2">
-              {wallet.paths.map((path) => (
-                <QuorumCard key={path.id} plan={plan} walletId={wallet.id} path={path} />
-              ))}
-            </div>
-            <ItemList
-              items={wallet.paths.map((path, position) => ({
-                id: path.id,
-                title: path.label,
-                summary: describePath(path),
-                removeLabel: `Remove ${path.label}`,
-                // The last way to spend cannot go: a wallet with none is a
-                // description of coins nobody can move, and the editor should
-                // not be the thing that makes one.
-                onRemove:
-                  wallet.paths.length > 1
-                    ? () =>
+            <div className="space-y-2">
+              {wallet.paths.map((path, position) => (
+                <QuorumCard key={path.id} plan={plan} walletId={wallet.id} path={path}>
+                  <PathEditor walletId={wallet.id} path={path} position={position} />
+                  {/* The last way to spend cannot go: a wallet with none is a
+                      description of coins nobody can move, and the editor
+                      should not be the thing that makes one. */}
+                  {wallet.paths.length > 1 ? (
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      icon={<Trash2 className="size-3.5" aria-hidden />}
+                      onClick={() =>
                         edit((draft) => {
                           const target = draft.wallets.find((entry) => entry.id === wallet.id)
                           target?.paths.splice(position, 1)
                         })
-                    : undefined,
-                body: (
-                  <PathEditor plan={plan} walletId={wallet.id} path={path} position={position} />
-                ),
-              }))}
-            />
+                      }
+                    >
+                      Remove {path.label}
+                    </Button>
+                  ) : null}
+                </QuorumCard>
+              ))}
+            </div>
           </>
         )}
       </div>

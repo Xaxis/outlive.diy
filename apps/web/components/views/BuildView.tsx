@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowRight,
   CircleDot,
@@ -68,9 +68,20 @@ const TRAVEL: { value: number; label: string }[] = [
   { value: 1440, label: 'a day' },
 ]
 
+/**
+ * The shape being built, kept for as long as the tab is open. Held in
+ * component state alone, a look at the findings and back threw away every
+ * click. Not in the plan file or browser storage: until it is created it is
+ * not a plan, and a half-built one should not outlive the tab.
+ */
+let kept: Shape | null = null
+
 export function BuildView() {
   const addPlan = useStore((state) => state.addPlan)
-  const [shape, setShape] = useState<Shape>(defaultShape)
+  const [shape, setShape] = useState<Shape>(() => kept ?? defaultShape())
+  useEffect(() => {
+    kept = shape
+  }, [shape])
 
   const plan = useMemo(() => planFromShape(shape), [shape])
   const report = useMemo(() => analyze(plan, { includeScenarios: false }), [plan])
@@ -115,6 +126,7 @@ export function BuildView() {
     })
 
   const create = () => {
+    kept = null
     addPlan(planFromShape(shape))
     navigateTo('overview')
   }
@@ -126,7 +138,7 @@ export function BuildView() {
     <div className={MEASURE.wide}>
       <ViewHeader
         eyebrow="Builder"
-        title="Build a plan"
+        title="Build a new plan"
         question="Describe or click the shape of your setup. The drawing and findings are the real analysis, redrawn on every click, and everything can be refined afterwards in Design."
         actions={
           <Button

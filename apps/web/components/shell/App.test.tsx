@@ -293,7 +293,7 @@ describe('building a plan by its shape', () => {
     render(<App />)
 
     await user.click(await screen.findByRole('button', { name: /build a plan/i }))
-    expect(await screen.findByRole('heading', { name: /^build a plan$/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /^build a new plan$/i })).toBeInTheDocument()
 
     // One key is one click, and the analysis answers straight away.
     await user.click(screen.getByRole('button', { name: /^one key$/i }))
@@ -1682,12 +1682,14 @@ describe('the repeated parts of an entity', () => {
 
     goto('#/design/wallets')
 
-    const everyday = await screen.findByRole('button', { name: /^Everyday/ })
-    expect(everyday).toHaveAttribute('aria-expanded', 'false')
+    // Each way to spend is one card: its quorum open, the rest folded inside
+    // it, and not listed a second time underneath.
+    const everyday = await screen.findByRole('group', { name: 'Everyday: keys needed' })
     expect(everyday).toHaveTextContent(/2 of 3/)
-    expect(screen.getByRole('button', { name: /^Inheritance/ })).toHaveTextContent(
-      /opens after 180 days/
-    )
+    expect(screen.getByRole('group', { name: 'Inheritance: keys needed' })).toBeInTheDocument()
+    expect(screen.getByText(/opens after 180 days/)).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /name, purpose, timelock/i })).toHaveLength(2)
+    expect(screen.queryByRole('button', { name: /^Everyday.*2 of 3/ })).toBeNull()
   })
 
   it('will not offer to remove the only way a wallet can be spent', async () => {

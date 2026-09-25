@@ -4,6 +4,7 @@ import { KeyRound, Minus, Plus } from 'lucide-react'
 import type { Plan, SpendPath } from '@outlive/core'
 import { useStore } from '@/lib/store.ts'
 import { cn } from '@/lib/cn.ts'
+import { Disclosure } from '@/components/ui/Disclosure.tsx'
 
 /**
  * A way to spend, as the thing it is: some keys, and how many of them.
@@ -18,10 +19,13 @@ export function QuorumCard({
   plan,
   walletId,
   path,
+  children,
 }: {
   plan: Plan
   walletId: string
   path: SpendPath
+  /** The rest of the path, folded inside the card rather than listed again below it. */
+  children?: React.ReactNode
 }) {
   const edit = useStore((state) => state.edit)
   const inPath = new Set(path.keyIds)
@@ -121,6 +125,11 @@ export function QuorumCard({
           <span className="text-xs text-faint">No keys yet. Add them on the keys step.</span>
         ) : null}
       </div>
+      {children ? (
+        <Disclosure size="aside" title="Name, purpose, timelock" className="mt-3">
+          <div className="mt-3 space-y-4">{children}</div>
+        </Disclosure>
+      ) : null}
     </div>
   )
 }

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button.tsx'
 import { PrintHeader } from '@/components/shell/PrintHeader.tsx'
 import { Rehearsal } from '@/components/documents/Rehearsal.tsx'
 import { Timeline } from '@/components/documents/Timeline.tsx'
-import { RecoveryChart } from '@/components/documents/RecoveryChart.tsx'
+import { RecoveryChart, worstFirst } from '@/components/documents/RecoveryChart.tsx'
 import { AskClaude } from '@/components/ai/AskClaude.tsx'
 import type { Plan } from '@outlive/core'
 import { MEASURE, ViewHeader } from '@/components/ui/Surface.tsx'
@@ -50,9 +50,11 @@ export function RecoveryView() {
 
   const index = indexPlan(plan)
 
-  const visible = routes.filter((route) =>
-    filter === 'all' ? true : filter === 'possible' ? route.possible : !route.possible
-  )
+  const visible = routes
+    .filter((route) =>
+      filter === 'all' ? true : filter === 'possible' ? route.possible : !route.possible
+    )
+    .sort(worstFirst)
 
   return (
     <div className={MEASURE.read}>
@@ -266,10 +268,9 @@ function summarise(route: RecoveryRoute, walletLabel: (id: string) => string): s
     route.exposedWalletIds.length > 0
       ? `they can spend ${route.exposedWalletIds.map(walletLabel).join(', ')}`
       : null
+  // The badge beside it already says there is no route; the line says why.
   if (!route.possible)
-    return [exposed, `nothing recovers it${route.blockers[0] ? `: ${route.blockers[0]}` : ''}`]
-      .filter(Boolean)
-      .join(' · ')
+    return [exposed, route.blockers[0] ?? 'nothing recovers it'].filter(Boolean).join(' · ')
   const time = route.timing?.possible
     ? describeDuration(route.timing.days, route.timing.travelMinutes)
     : null
