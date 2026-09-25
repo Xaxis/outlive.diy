@@ -69,6 +69,12 @@ export interface Toast {
   tone: 'ok' | 'warn' | 'error'
   message: string
   detail?: string
+  /**
+   * The change this reports is the last undo step, so the toast offers Undo.
+   * A button and not a shortcut in the text: a phone has no Cmd-Z, and hides
+   * the top bar's undo button for room.
+   */
+  undoable?: boolean
 }
 
 interface Snapshot {

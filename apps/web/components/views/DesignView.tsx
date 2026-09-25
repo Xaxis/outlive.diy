@@ -2,7 +2,7 @@
 
 import { useDeferredValue } from 'react'
 import type { PresetStep } from '@outlive/core'
-import { ArrowLeft, ArrowRight, Check, Circle, Plus } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Circle } from 'lucide-react'
 import { MEASURE, ViewHeader } from '@/components/ui/Surface.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { ProfileEditor } from '@/components/plan/ProfileEditor.tsx'
@@ -55,7 +55,6 @@ export function DesignView() {
   const settled = useDeferredValue(plan)
   const settledReport = useReport(settled)
   const select = useStore((state) => state.select)
-  const addEntity = useStore((state) => state.addEntity)
   const [route, navigate] = useRoute()
 
   const index = Math.max(
@@ -84,8 +83,11 @@ export function DesignView() {
         question={section.purpose}
       />
 
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 no-print">
-        <ol className="flex flex-wrap items-center gap-1">
+      {/* One line that scrolls on a phone, rather than three rows with a
+          connector dangling from the end of each. Adding lives under the list
+          it adds to, once, rather than here as well. */}
+      <nav aria-label="Steps" className="-mx-4 mb-6 overflow-x-auto px-4 no-print sm:mx-0 sm:px-0">
+        <ol className="flex w-max items-center gap-1 sm:w-auto sm:flex-wrap">
           {SECTIONS.map((entry, position) => {
             const done = entry.done(plan)
             const current = position === index
@@ -95,6 +97,11 @@ export function DesignView() {
                 <button
                   type="button"
                   onClick={() => go(position)}
+                  ref={
+                    current
+                      ? (node) => node?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+                      : undefined
+                  }
                   aria-current={current ? 'step' : undefined}
                   title={entry.optional ? 'Optional' : undefined}
                   className={cn(
@@ -133,23 +140,7 @@ export function DesignView() {
             )
           })}
         </ol>
-
-        {/* The add button belongs beside the steps, next to the list it adds
-            to, rather than floating at the far edge of the header. */}
-        {section.kind ? (
-          <Button
-            variant="primary"
-            size="sm"
-            icon={<Plus className="size-3.5" aria-hidden />}
-            onClick={() => {
-              const id = addEntity(section.kind!)
-              if (id) select({ type: section.kind!, id })
-            }}
-          >
-            Add {section.singular.toLowerCase()}
-          </Button>
-        ) : null}
-      </div>
+      </nav>
 
       <StepPresets plan={plan} step={STEP_OF[section.id]} />
 
@@ -168,7 +159,7 @@ export function DesignView() {
             </div>
           ) : section.kind === 'device' ? (
             // Devices are about who made them more than where they are, so
-            // this step gets the shelf and the maker count instead.
+            // this step gets the maker count instead of the grid.
             <DeviceShelf plan={settled ?? plan} report={settledReport ?? report} />
           ) : (
             <StepVisual plan={settled ?? plan} preferDrawing={section.kind === 'wallet'} />
@@ -179,26 +170,27 @@ export function DesignView() {
             kind={section.kind}
             singular={section.singular}
             plural={section.label}
-            listed={section.kind !== 'device'}
           />
           <StepEffect plan={settled ?? plan} report={settledReport ?? report} kind={section.kind} />
         </>
       )}
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4 no-print">
-        <Button
-          onClick={() => go(index - 1)}
-          disabled={index === 0}
-          icon={<ArrowLeft className="size-4" aria-hidden />}
-        >
-          Back
-        </Button>
-        <span className="text-xs text-faint">
-          Everything is saved as you type, and these can be taken in any order.
+      {/* One row at every width: back on the left, forward on the right, and
+          forward says where it goes. */}
+      <div className="mt-6 flex items-center justify-between gap-3 border-t border-line pt-4 no-print">
+        {index > 0 ? (
+          <Button onClick={() => go(index - 1)} icon={<ArrowLeft className="size-4" aria-hidden />}>
+            {SECTIONS[index - 1].label}
+          </Button>
+        ) : (
+          <span />
+        )}
+        <span className="hidden text-center text-xs text-faint md:block">
+          Saved as you type. Take the steps in any order.
         </span>
         {index < SECTIONS.length - 1 ? (
           <Button variant="primary" onClick={() => go(index + 1)}>
-            Next
+            Next: {SECTIONS[index + 1].label}
             <ArrowRight className="size-4" aria-hidden />
           </Button>
         ) : (

@@ -411,7 +411,11 @@ function MakerAndModel({ device, set }: { device: Device; set: (patch: Partial<D
               {entry.name}
             </option>
           ))}
-          <option value={OTHER}>Other…</option>
+          {/* Named when there is a name, so a typed maker reads as chosen
+              rather than as a list waiting for an answer. */}
+          <option value={OTHER}>
+            {customMaker && device.vendor ? `Other: ${device.vendor}` : 'Other…'}
+          </option>
         </select>
         {customMaker ? (
           <GuardedInput
@@ -437,7 +441,9 @@ function MakerAndModel({ device, set }: { device: Device; set: (patch: Partial<D
                 {entry.name}
               </option>
             ))}
-            <option value={OTHER}>Other…</option>
+            <option value={OTHER}>
+              {customModel && device.model ? `Other: ${device.model}` : 'Other…'}
+            </option>
           </select>
         )}
         {customModel ? (

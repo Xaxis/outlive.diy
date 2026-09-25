@@ -1,5 +1,6 @@
 'use client'
 
+import { describeDevice } from '@/lib/devices.ts'
 import { useEffect } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import {
@@ -267,9 +268,11 @@ export function summarise(plan: Plan, kind: EntityKind, entity: unknown): string
     }
     case 'device': {
       const device = entity as Device
+      const held = plan.keys.filter((key) => key.deviceId === device.id).map((key) => key.label)
       return [
-        DEVICE_KIND[device.kind],
-        device.vendor ?? 'maker not recorded',
+        describeDevice(device) === device.label ? DEVICE_KIND[device.kind] : describeDevice(device),
+        device.vendor ? null : 'maker not recorded',
+        held.length > 0 ? held.join(', ') : 'holds no key',
         device.airGapped ? 'air-gapped' : null,
         device.pin.storage === 'none' ? 'no PIN' : null,
       ]

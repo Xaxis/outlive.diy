@@ -20,6 +20,7 @@ import { useStore } from '@/lib/store.ts'
 import { navigateTo, type ViewId } from '@/lib/router.ts'
 import { reportFor } from '@/lib/analysis.ts'
 import { toShape } from '@/lib/shape-input.ts'
+import { netChange } from '@/lib/net.ts'
 
 /**
  * The tools a browser's own AI agent can call on this page, through WebMCP.
@@ -86,8 +87,8 @@ function text(value: unknown, field: string): string {
 }
 
 /** Tell the reader what an assistant just did, in the place they would look. */
-function announce(message: string, detail = 'Cmd-Z undoes it.') {
-  useStore.getState().notify({ tone: 'ok', message: `Assistant: ${message}`, detail })
+function announce(message: string, detail?: string, undoable = true) {
+  useStore.getState().notify({ tone: 'ok', message: `Assistant: ${message}`, detail, undoable })
 }
 
 /** A change is its own undo step, never folded into whatever came before. */
@@ -293,7 +294,8 @@ export const AGENT_TOOLS: AgentTool[] = [
       window.dispatchEvent(new CustomEvent(AGENT_KNOCKOUT))
       announce(
         `took away ${items.map((item) => item.label).join(', ')} on the map`,
-        'Nothing in the plan changed.'
+        'Nothing in the plan changed.',
+        false
       )
       const world = without(baseWorld(plan), {
         locations: items.filter((item) => item.kind === 'locations').map((item) => item.id),
@@ -347,7 +349,7 @@ export const AGENT_TOOLS: AgentTool[] = [
         )
       useStore.setState({ lastEditAt: 0 })
       useStore.getState().applyPlan(found.plan)
-      announce(found.fix.label, `Closed ${found.closes.length}. Cmd-Z undoes it.`)
+      announce(found.fix.label, netChange(found.closes.length, found.opens.length))
       return { applied: found.fix.label, closed: found.closes.map((finding) => finding.title) }
     },
   },
@@ -396,7 +398,7 @@ export const AGENT_TOOLS: AgentTool[] = [
       if (blocked) throw new Refused(blocked)
       edit((draft) => preset.apply(draft))
       navigateTo('design', preset.step)
-      announce(preset.label, `${preset.detail} Cmd-Z undoes it.`)
+      announce(preset.label, preset.detail)
       return { applied: preset.label }
     },
   },
@@ -528,7 +530,7 @@ export const AGENT_TOOLS: AgentTool[] = [
     annotations: { consequentialHint: true },
     execute: async () => {
       useStore.getState().undo()
-      announce('undid the last change', '')
+      announce('undid the last change', undefined, false)
       return { undone: true }
     },
   },

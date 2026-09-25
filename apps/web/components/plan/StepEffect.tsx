@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import { ArrowRight, Check } from 'lucide-react'
 import { disasterGroups, type AnalysisReport, type Finding, type Plan } from '@outlive/core'
-import { Panel } from '@/components/ui/Surface.tsx'
+import { Info, Panel } from '@/components/ui/Surface.tsx'
 import { SeverityDot } from '@/components/ui/Severity.tsx'
 import { navigateTo } from '@/lib/router.ts'
 import { useStore, type EntityKind } from '@/lib/store.ts'
@@ -146,8 +146,11 @@ export function StepEffect({
       {mine.length === 0 ? (
         <p className="mt-3 flex items-center gap-2 border-t border-line pt-3 text-sm text-muted">
           <Check className="size-4 flex-none text-ok" aria-hidden />
-          Nothing else in this step matched a rule. That is a smaller claim than it sounds like: it
-          means only that this program has no rule for whatever is wrong.
+          No other rule matched here.
+          <Info label="What that means">
+            A smaller claim than it sounds like: it means only that this program has no rule for
+            whatever is wrong.
+          </Info>
         </p>
       ) : (
         <>

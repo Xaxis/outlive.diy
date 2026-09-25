@@ -215,7 +215,9 @@ export function PlanDiagram({
    * two plans is looking for what moved, and two drawings of forty boxes each
    * are a spot-the-difference puzzle without it.
    */
-  marked?: { ids: ReadonlySet<string>; label: string }
+  /** Boxes to tag, with a word for the tag and, where the word only makes
+   * sense beside the picture, a longer one for a screen reader. */
+  marked?: { ids: ReadonlySet<string>; label: string; spoken?: string }
 }) {
   // Row order for any column the reader has rearranged by hand. Held here and
   // not in the plan file: where a box sits on a screen is not a fact about
@@ -754,7 +756,12 @@ export function PlanDiagram({
                     {node.label}
                   </span>
                 </span>
-                <span className={cn('truncate text-[0.65rem] leading-tight', TONE_DETAIL[tone])}>
+                <span
+                  className={cn('truncate text-[0.65rem] leading-tight', TONE_DETAIL[tone])}
+                  // The box is too small for most reasons; the whole one is a
+                  // hover away here and a click away in the panel below.
+                  title={tone === 'lost' ? (node.blocker ?? undefined) : undefined}
+                >
                   {/* On a box this size the reason is worth more room than the
                       description, so where there is a reason it takes the line. */}
                   {tone === 'lost'
@@ -763,7 +770,9 @@ export function PlanDiagram({
                 </span>
                 <span className="sr-only">
                   {KIND_NOUN[node.kind]}. {state}
-                  {marked && node.ref && marked.ids.has(node.ref.id) ? ` ${marked.label}.` : ''}
+                  {marked && node.ref && marked.ids.has(node.ref.id)
+                    ? ` ${marked.spoken ?? marked.label}.`
+                    : ''}
                 </span>
                 {marked && node.ref && marked.ids.has(node.ref.id) ? (
                   <span

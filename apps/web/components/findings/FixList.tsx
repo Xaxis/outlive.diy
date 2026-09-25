@@ -1,5 +1,6 @@
 'use client'
 
+import { netChange } from '@/lib/net.ts'
 import { useEffect, useState } from 'react'
 import { Check, LoaderCircle, Wand2 } from 'lucide-react'
 import { fixesFor, type Plan, type RankedFix } from '@outlive/core'
@@ -79,7 +80,8 @@ export function FixList({ plan, findingId }: { plan: Plan; findingId: string }) 
                 notify({
                   tone: 'ok',
                   message: result.fix.kind === 'record' ? 'Recorded' : 'Applied',
-                  detail: `Closed ${result.closes.length}. Cmd-Z undoes it.`,
+                  detail: netChange(result.closes.length, result.opens.length),
+                  undoable: true,
                 })
               }}
             >

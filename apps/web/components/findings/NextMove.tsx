@@ -1,5 +1,6 @@
 'use client'
 
+import { netChange } from '@/lib/net.ts'
 import { useEffect, useState } from 'react'
 import { ArrowRight, Check, LoaderCircle } from 'lucide-react'
 import { improve, type Improvement, type Plan } from '@outlive/core'
@@ -103,12 +104,13 @@ export function NextMove({ plan }: { plan: Plan }) {
             applyPlan(current.plan)
             notify({
               tone: 'ok',
-              message: 'Done',
-              detail: `Closed ${closes.length}. Cmd-Z undoes it.`,
+              message: 'Applied',
+              detail: netChange(closes.length, opens.length),
+              undoable: true,
             })
           }}
         >
-          Make this change
+          Apply this change
         </Button>
       </div>
     </div>

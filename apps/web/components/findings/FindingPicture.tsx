@@ -36,7 +36,11 @@ export function FindingPicture({ plan, finding }: { plan: Plan; finding: Finding
   }, [plan, finding.scenarioId])
 
   const marked = useMemo(
-    () => ({ ids: new Set(finding.subjects.map((subject) => subject.id)), label: 'this' }),
+    () => ({
+      ids: new Set(finding.subjects.map((subject) => subject.id)),
+      label: 'this',
+      spoken: 'what this finding is about',
+    }),
     [finding.subjects]
   )
 

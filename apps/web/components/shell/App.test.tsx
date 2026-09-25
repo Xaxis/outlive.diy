@@ -443,7 +443,7 @@ describe('a device, picked rather than typed', () => {
     await user.click(await screen.findByText('Two of three, three sites'))
 
     goto('#/design/devices')
-    await user.selectOptions(await screen.findByRole('combobox', { name: 'Maker' }), 'Other…')
+    await user.selectOptions(await screen.findByRole('combobox', { name: 'Maker' }), '__other')
     await user.type(screen.getByRole('textbox', { name: 'Maker name' }), 'Homebrew')
     await user.type(screen.getByRole('textbox', { name: 'Model name' }), 'Mark 1')
     const device = useStore.getState().plans[0].devices[0]
@@ -524,7 +524,7 @@ describe('the next move', () => {
     goto('#/overview')
     const make = await screen.findByRole(
       'button',
-      { name: /make this change/i },
+      { name: /apply this change/i },
       { timeout: 15000 }
     )
     const before = analyze(useStore.getState().plans[0]).findings.length
@@ -534,6 +534,13 @@ describe('the next move', () => {
 
     await user.keyboard('{Control>}z{/Control}')
     expect(analyze(useStore.getState().plans[0]).findings.length).toBe(before)
+
+    // And from the toast, which is the only undo a phone shows.
+    await user.click(await screen.findByRole('button', { name: /apply this change/i }))
+    expect(analyze(useStore.getState().plans[0]).findings.length).toBeLessThan(before)
+    await user.click(within(screen.getByRole('status')).getByRole('button', { name: 'Undo' }))
+    expect(analyze(useStore.getState().plans[0]).findings.length).toBe(before)
+    expect(screen.getByRole('status')).toHaveTextContent('Undone')
   }, 30000)
 })
 
@@ -1590,7 +1597,7 @@ describe('a finding and its picture', () => {
     const site = within(drawing).getByRole('button', { name: /^Site A\b/ })
     expect(site).toHaveAccessibleName(/not available/i)
     // And tagged as the thing the finding is about.
-    expect(site).toHaveAccessibleName(/\bthis\.$/)
+    expect(site).toHaveAccessibleName(/what this finding is about\.$/)
   })
 
   it('opens the map in the world the finding came out of', async () => {

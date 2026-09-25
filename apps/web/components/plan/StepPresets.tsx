@@ -42,7 +42,8 @@ export function StepPresets({ plan, step }: { plan: Plan; step: PresetStep }) {
               notify({
                 tone: 'ok',
                 message: preset.label,
-                detail: `${preset.detail} Cmd-Z undoes it.`,
+                detail: preset.detail,
+                undoable: true,
               })
             }}
             className={cn(

@@ -63,13 +63,24 @@ export function App() {
   // Once the plan is loaded, so the first call answers about the real plan.
   useEffect(() => (ready ? registerAgentTools() : undefined), [ready])
 
-  // Closing the drawer belongs to navigation, which is an external event, not
-  // to a change in derived state.
+  // The drawer closes whenever the route changes, however it changed: the
+  // sidebar, the palette, a link in a view, the back button or an assistant.
+  // A backdrop left over a view nobody asked to cover swallows every tap.
+  const [drawerRoute, setDrawerRoute] = useState(route)
+  if (drawerRoute.view !== route.view || drawerRoute.section !== route.section) {
+    setDrawerRoute(route)
+    if (drawerOpen) setDrawerOpen(false)
+  }
+
+  // And on Escape, like every other thing that covers the page.
   useEffect(() => {
-    const close = () => setDrawerOpen(false)
-    window.addEventListener('hashchange', close)
-    return () => window.removeEventListener('hashchange', close)
-  }, [])
+    if (!drawerOpen) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setDrawerOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [drawerOpen])
 
   // A view change is a page change. Without this, a keyboard or screen reader
   // user activates a link in the sidebar and their position stays in the
