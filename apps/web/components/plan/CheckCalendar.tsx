@@ -120,7 +120,7 @@ export function CheckCalendar({ plan }: { plan: Plan }) {
                 {check.lastVerifiedAt === null
                   ? 'never done'
                   : overdue
-                    ? `${-days} days late`
+                    ? `${-days} days overdue`
                     : days > SPAN_DAYS
                       ? 'after this year'
                       : `in ${days} days`}
@@ -138,7 +138,7 @@ export function CheckCalendar({ plan }: { plan: Plan }) {
                   className="flex items-center gap-1 rounded border border-line px-1.5 py-0.5 text-body hover:border-accent hover:text-strong"
                 >
                   <Check className="size-3" aria-hidden />
-                  done today
+                  Done today
                 </button>
               ) : null}
             </span>

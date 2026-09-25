@@ -21,6 +21,11 @@ import { useStore } from '@/lib/store.ts'
 
 const cache = new WeakMap<Plan, Improvement>()
 
+/** The next move for a plan if it has already been searched for, or null. */
+export function knownNextMove(plan: Plan): Improvement | null {
+  return cache.get(plan) ?? null
+}
+
 export function NextMove({ plan }: { plan: Plan }) {
   const applyPlan = useStore((state) => state.applyPlan)
   const notify = useStore((state) => state.notify)

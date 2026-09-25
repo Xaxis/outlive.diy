@@ -297,7 +297,9 @@ export function MapView() {
           ref={strip}
           role="group"
           aria-label="Worlds"
-          className="relative flex min-w-0 flex-1 gap-1.5 overflow-x-auto pb-1"
+          // Faded at both ends, so a chip cut by the edge reads as more to
+          // scroll to rather than as a label with its first letters missing.
+          className="relative flex min-w-0 flex-1 gap-1.5 overflow-x-auto px-3 pb-1 [mask-image:linear-gradient(to_right,transparent,black_0.75rem,black_calc(100%-1.5rem),transparent)]"
         >
           <WorldChip
             label="As it stands"
@@ -392,11 +394,10 @@ export function MapView() {
                 <span className="font-medium">{wallet.label}</span>
                 <span className="font-medium">{style.label}</span>
                 {path ? (
-                  <span
-                    className="mono text-[0.6875rem] text-body"
-                    title="keys reachable / keys needed"
-                  >
-                    {path.availableKeyIds.length}/{path.threshold}
+                  // In words, because "1/2" reads as a score and not as one
+                  // key in reach of the two it takes.
+                  <span className="text-[0.6875rem] text-body">
+                    {path.availableKeyIds.length} in reach, {path.threshold} needed
                   </span>
                 ) : null}
               </li>

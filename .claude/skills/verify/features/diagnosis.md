@@ -10,7 +10,7 @@ What breaks, what to do about it, and the map where things are taken away.
 - every way it fails: overview matrix of worlds by wallets; a cell opens that world on the map.
 - overdue: "Done today" per overdue check.
 - fixes: an open finding lists changes found by trying them (`packages/core/src/fixes`), with Apply; records say "Record it".
-- fix what can be fixed: applies every structural fix to a draft and opens compare.
+- fix all in a draft: applies every structural fix to a draft and opens compare.
 - finding picture: an open finding draws its world with its subjects tagged "this".
 - map: click a place, device, backup, key or person to take it away, again to restore; verdict chips above the drawing; worlds strip; full screen; [ and ] step worlds; "Click explains" mode shows the box detail.
 

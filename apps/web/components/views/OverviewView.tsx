@@ -100,7 +100,13 @@ export function OverviewView() {
         question={`Last changed ${plan.updatedAt}. ${plural(plan.keys.length, 'key')}, ${plural(plan.wallets.length, 'wallet')}, ${plural(plan.locations.length, 'place')}, ${plural(plan.people.length, 'person', 'people')}.`}
         actions={
           <>
-            <Button onClick={() => forkAsDraft(plan.id)}>Try a change as a draft</Button>
+            {plan.kind === 'draft' ? (
+              <Button onClick={() => navigate({ view: 'compare', section: null })}>
+                Compare with the plan
+              </Button>
+            ) : (
+              <Button onClick={() => forkAsDraft(plan.id)}>Try a change as a draft</Button>
+            )}
             {report.findings.length > 0 ? <ImproveButton plan={plan} /> : null}
           </>
         }

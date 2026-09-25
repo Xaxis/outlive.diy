@@ -482,7 +482,12 @@ describe('starting a step from a template', () => {
     // A template that needs something first says so instead of half working.
     goto('#/design/wallets')
     const wallets = await screen.findByRole('group', { name: /start from/i })
-    expect(within(wallets).getByRole('button', { name: /two of three vault/i })).toBeDisabled()
+    const vault = within(wallets).getByRole('button', { name: /two of three vault/i })
+    expect(vault).toHaveAttribute('aria-disabled', 'true')
+    const walletsBefore = useStore.getState().plans[0].wallets.length
+    await user.click(vault)
+    expect(useStore.getState().plans[0].wallets).toHaveLength(walletsBefore)
+    expect(screen.getByRole('status')).toHaveTextContent(/needs something first/i)
 
     await user.keyboard('{Control>}z{/Control}')
     expect(useStore.getState().plans[0].locations).toHaveLength(0)
@@ -614,7 +619,7 @@ describe('fixing a finding', () => {
     await user.click(await screen.findByText('Two of three, three sites'))
 
     goto('#/findings')
-    await user.click(await screen.findByRole('button', { name: /fix what can be fixed/i }))
+    await user.click(await screen.findByRole('button', { name: /fix all in a draft/i }))
     await screen.findByRole('heading', { name: /compare plans/i }, { timeout: 10000 })
     const { plans, compareId, activeId } = useStore.getState()
     expect(plans).toHaveLength(2)

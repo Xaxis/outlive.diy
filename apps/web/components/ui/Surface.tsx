@@ -58,8 +58,13 @@ export function Info({ children, label = 'Why' }: { children: ReactNode; label?:
 export const MEASURE = {
   /** Tables, grids and side-by-side panels. The whole column. */
   wide: 'w-full',
-  /** Anything read a line at a time rather than scanned. */
-  read: 'w-full max-w-[52rem]',
+  /**
+   * Anything read a line at a time rather than scanned. The body keeps a
+   * reading measure and the header does not, so a view's actions sit at the
+   * same right edge on every view instead of jumping in as you move between
+   * them.
+   */
+  read: 'w-full [&>*:not(header)]:max-w-[52rem]',
 } as const
 
 export function Panel({ children, className }: { children: ReactNode; className?: string }) {

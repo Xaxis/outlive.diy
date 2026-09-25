@@ -12,7 +12,7 @@ Comparing plans, the plan file and storage, and the rules.
 
 ## How to reach it
 
-- `/app/#/compare`, `/app/#/file`, `/app/#/reasoning`; overview "Try a change as a draft"; "Fix what can be fixed".
+- `/app/#/compare`, `/app/#/file`, `/app/#/reasoning`; overview "Try a change as a draft"; "Fix all in a draft".
 
 ## How to check it
 
@@ -21,7 +21,7 @@ Static: `make test-web` ("drafts", "fixes what can be fixed as a draft", "a chan
 Runtime:
 
 ```sh
-PW=/tmp/outlive-pw node .claude/skills/verify/scripts/drive.mjs --base http://localhost:$PORT --example "Two of three, three sites" --path "/app/#/findings" --do "await p.getByRole('button',{name:/fix what can be fixed/i}).click(); await p.waitForURL(/compare/,{timeout:20000}); await p.getByRole('button',{name:/use this version/i}).click()" --print "p.evaluate(()=>JSON.parse(localStorage.getItem('outlive.diy/plan-file/v1')).plans.length)"
+PW=/tmp/outlive-pw node .claude/skills/verify/scripts/drive.mjs --base http://localhost:$PORT --example "Two of three, three sites" --path "/app/#/findings" --do "await p.getByRole('button',{name:/fix all in a draft/i}).click(); await p.waitForURL(/compare/,{timeout:20000}); await p.getByRole('button',{name:/use this version/i}).click()" --print "p.evaluate(()=>JSON.parse(localStorage.getItem('outlive.diy/plan-file/v1')).plans.length)"
 PW=/tmp/outlive-pw node .claude/skills/verify/scripts/drive.mjs --base http://localhost:$PORT --example "Two of three, three sites" --path "/app/#/file" --print "p.getByText('connect-src https://api.anthropic.com').count()"
 ```
 

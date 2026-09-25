@@ -4,7 +4,9 @@ import { useState } from 'react'
 import { LoaderCircle, Wand2 } from 'lucide-react'
 import { improve, newId, type Plan } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
-import { useStore } from '@/lib/store.ts'
+import { baseName, useStore } from '@/lib/store.ts'
+import { knownNextMove } from '@/components/findings/NextMove.tsx'
+import { netChange } from '@/lib/net.ts'
 import { navigateTo } from '@/lib/router.ts'
 
 /**
@@ -17,7 +19,7 @@ import { navigateTo } from '@/lib/router.ts'
  */
 export function ImproveButton({
   plan,
-  label = 'Fix what can be fixed',
+  label = 'Fix all in a draft',
 }: {
   plan: Plan
   label?: string
@@ -26,6 +28,10 @@ export function ImproveButton({
   const setCompare = useStore((state) => state.setCompare)
   const notify = useStore((state) => state.notify)
   const [busy, setBusy] = useState(false)
+
+  // Where the overview already looked and found nothing structural, a button
+  // promising fixes would only lead to a toast saying there are none.
+  if (knownNextMove(plan)?.steps.length === 0) return null
 
   return (
     <Button
@@ -58,9 +64,17 @@ export function ImproveButton({
             ...result.plan,
             id: newId('plan'),
             kind: 'draft',
-            name: `${plan.name}, fixed`,
+            name: `${baseName(plan.name)}, fixed`,
           })
           setCompare(baseline)
+          notify({
+            tone: 'ok',
+            message: `Draft made with ${result.steps.length} ${result.steps.length === 1 ? 'change' : 'changes'}`,
+            detail: `${netChange(
+              result.steps.reduce((sum, step) => sum + step.closes.length, 0),
+              result.steps.reduce((sum, step) => sum + step.opens.length, 0)
+            )} Your plan is unchanged until you use this version.`,
+          })
           navigateTo('compare')
         }, 30)
       }}

@@ -94,12 +94,14 @@ export function CompareView() {
         question="Which findings a change closes, and which it opens. That trade is the decision; the individual findings are not."
         actions={
           <>
-            <Button
-              icon={<GitFork className="size-3.5" aria-hidden />}
-              onClick={() => forkAsDraft(plan.id)}
-            >
-              Fork this as a draft
-            </Button>
+            {plan.kind === 'draft' ? null : (
+              <Button
+                icon={<GitFork className="size-3.5" aria-hidden />}
+                onClick={() => forkAsDraft(plan.id)}
+              >
+                Try a change as a draft
+              </Button>
+            )}
             {/* The end of the loop: a draft that is better becomes the plan,
                 in one click, rather than by retyping it into the original. */}
             {other && plan.kind === 'draft' ? (

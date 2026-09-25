@@ -1,7 +1,8 @@
 'use client'
 
+import { VERDICT } from '@/lib/verdict.ts'
 import { useMemo } from 'react'
-import { CircleAlert, CircleCheck, CircleSlash, Clock } from 'lucide-react'
+import { CircleCheck, Clock } from 'lucide-react'
 import {
   describeDuration,
   evaluateWallet,
@@ -83,18 +84,21 @@ export function WalletStanding({
               })) ?? [])
           : []
 
-        const exposed = adversary && availability.spendable
-        const lost = !adversary && !availability.spendable
-        const Icon = exposed ? CircleAlert : lost ? CircleSlash : CircleCheck
-        const verdict = adversary
+        // The word, glyph and colour the map's chips and the overview's
+        // matrix use, from the one table, so one wallet is never "survives"
+        // in one place and "spendable" in the next. Somebody else failing to
+        // spend is the one answer that table has no entry for.
+        const tone = adversary
           ? availability.spendable
-            ? 'they can spend it'
-            : 'they cannot spend it'
+            ? 'exposed'
+            : null
           : availability.spendable
             ? availability.margin > 0
-              ? 'spendable'
-              : 'spendable, no spare'
-            : 'unspendable'
+              ? 'safe'
+              : 'degraded'
+            : 'lost'
+        const Icon = tone ? VERDICT[tone].icon : CircleCheck
+        const verdict = tone ? VERDICT[tone].label : 'they cannot spend it'
 
         return (
           <li key={wallet.id} className="bg-surface">
@@ -119,12 +123,15 @@ export function WalletStanding({
               ) : null}
 
               <span
-                className={cn(
-                  'flex items-center gap-1.5 text-[0.8125rem]',
-                  exposed || lost ? 'text-critical' : 'text-ok'
-                )}
+                // Words in the text ramp and colour on the glyph, as on the
+                // map, because amber text on a light ground falls under 4.5:1.
+                className="flex items-center gap-1.5 text-[0.8125rem] text-body"
               >
-                <Icon className="size-4 flex-none" aria-hidden />
+                <Icon
+                  className={cn('size-4 flex-none', tone ? VERDICT[tone].ink : 'text-ok')}
+                  strokeWidth={2.5}
+                  aria-hidden
+                />
                 {verdict}
               </span>
 

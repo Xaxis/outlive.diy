@@ -148,6 +148,12 @@ interface StoreState {
 
 const HISTORY_LIMIT = 60
 
+/** A plan's name without what drafting added to it, so drafts of drafts do
+ * not grow a tail of suffixes. */
+export function baseName(name: string): string {
+  return name.replace(/(?:, fixed| \(draft\))+$/, '')
+}
+
 /**
  * Edits closer together than this are one undo step.
  *
@@ -375,7 +381,8 @@ export const useStore = create<StoreState>()(
       const draft: Plan = {
         ...structuredClone(source),
         id: `${source.id}-draft-${Math.random().toString(36).slice(2, 8)}`,
-        name: `${source.name} (draft)`,
+        // The top bar and the plan menu already say draft; the name stays.
+        name: baseName(source.name),
         kind: 'draft',
         createdAt: today(),
         updatedAt: today(),
