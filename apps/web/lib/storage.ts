@@ -64,6 +64,31 @@ export function writePreferences(preferences: Preferences): void {
   safeWrite(PREFERENCES_KEY, preferences)
 }
 
+/**
+ * Whether what this browser holds has changed since it was last saved to a
+ * file. Kept beside the plan rather than only in memory, because a reload
+ * otherwise made months of unsaved work look saved, and browser storage is
+ * one "clear site data" away from gone.
+ */
+const UNSAVED_KEY = 'outlive.diy/unsaved/v1'
+
+export function readUnsaved(): boolean {
+  return safeRead(UNSAVED_KEY) === true
+}
+
+export function writeUnsaved(unsaved: boolean): void {
+  if (readUnsaved() === unsaved) return
+  if (unsaved) safeWrite(UNSAVED_KEY, true)
+  else {
+    try {
+      window.localStorage.removeItem(UNSAVED_KEY)
+    } catch {
+      // As for any write: storage that refuses is storage that forgets.
+    }
+    invalidate()
+  }
+}
+
 export const UNREADABLE_KEY = 'outlive.diy/unreadable/v1'
 
 export type StoredRead =

@@ -61,6 +61,8 @@ import {
   writeVendorData,
   type Persistence,
   type Preferences,
+  readUnsaved,
+  writeUnsaved,
 } from './storage.ts'
 
 export type EntityKind = 'location' | 'person' | 'device' | 'key' | 'wallet' | 'verification'
@@ -184,6 +186,7 @@ function remember(state: StoreState): void {
 function persist(state: StoreState): void {
   if (state.preferences.persistence !== 'local') return
   writeStoredFile(makeFile(state.plans, state.activeId))
+  if (state.dirty) writeUnsaved(true)
 }
 
 export const useStore = create<StoreState>()(
@@ -213,6 +216,7 @@ export const useStore = create<StoreState>()(
         if (stored.kind === 'ok' && stored.file.plans.length > 0) {
           state.plans = stored.file.plans
           state.activeId = stored.file.activePlanId ?? stored.file.plans[0].id
+          state.dirty = readUnsaved()
         }
         if (parsedVendors?.ok) state.vendorData = parsedVendors.value
       })
@@ -669,6 +673,7 @@ export const useStore = create<StoreState>()(
         set((state) => {
           state.dirty = false
         })
+        writeUnsaved(false)
         get().notify({
           tone: 'ok',
           message: 'Saved',
@@ -720,6 +725,7 @@ export const useStore = create<StoreState>()(
         state.future = []
         state.preferences = defaultPreferences
         state.vendorData = null
+        state.dirty = false
       })
     },
 

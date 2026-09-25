@@ -10,6 +10,8 @@ Comparing plans, the plan file and storage, and the rules.
 - file: what leaves the browser, where the plan is kept, Claude key settings, plans open, vendor data, everything stored, erase.
 - reasoning: the rules by category, with the assumptions folded above them.
 
+- unsaved: the top bar's Save carries a dot, and says "changes not yet saved to a file", while the browser holds changes no file has; the flag (`outlive.diy/unsaved/v1`) survives a reload and clears on a file save.
+
 ## How to reach it
 
 - `/app/#/compare`, `/app/#/file`, `/app/#/reasoning`; overview "Try a change as a draft"; "Fix all in a draft".

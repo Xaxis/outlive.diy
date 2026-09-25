@@ -46,3 +46,15 @@ describe('adding things one step at a time', () => {
     expect(evaluateWallet(current, current.wallets[0], baseWorld(current)).spendable).toBe(true)
   })
 })
+
+describe('knowing what is not in a file yet', () => {
+  it('remembers across a reload that the plan changed since it was saved', () => {
+    useStore.getState().addEntity('location')
+    expect(useStore.getState().dirty).toBe(true)
+    // A reload: the store starts again from what the browser holds.
+    useStore.setState({ ready: false, plans: [], activeId: '', dirty: false })
+    useStore.getState().hydrate()
+    expect(useStore.getState().plans.length).toBeGreaterThan(0)
+    expect(useStore.getState().dirty).toBe(true)
+  })
+})

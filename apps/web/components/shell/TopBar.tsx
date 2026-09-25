@@ -136,6 +136,7 @@ export function TopBar({
   const canUndo = useStore((state) => state.past.length > 0)
   const canRedo = useStore((state) => state.future.length > 0)
   const save = useStore((state) => state.save)
+  const dirty = useStore((state) => state.dirty)
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-canvas/85 backdrop-blur no-print">
@@ -218,13 +219,25 @@ export function TopBar({
                   <Redo2 className="size-4" aria-hidden />
                 </Button>
               </span>
+              {/* A dot while what this browser holds is newer than any file
+                  saved from it: browser storage is one "clear site data" from
+                  gone, and a file is the copy that survives it. */}
               <Button
                 variant="default"
                 size="sm"
                 onClick={() => void save()}
                 icon={<Save className="size-3.5" aria-hidden />}
+                aria-label={dirty ? 'Save: changes not yet saved to a file' : 'Save'}
+                title={dirty ? 'Changes not yet saved to a file' : 'Save to a file'}
+                className="relative"
               >
                 Save
+                {dirty ? (
+                  <span
+                    aria-hidden
+                    className="absolute -right-1 -top-1 size-2.5 rounded-full border-2 border-canvas bg-medium"
+                  />
+                ) : null}
               </Button>
             </>
           ) : null}
