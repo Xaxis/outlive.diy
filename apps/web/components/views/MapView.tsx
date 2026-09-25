@@ -253,6 +253,34 @@ export function MapView() {
     )
   }
 
+  // The same knockout as a click on the box, for a thing named rather than
+  // pointed at: on a phone most of the boxes are off to the right.
+  const toggleThing = (thing: Knockout) => {
+    if (start?.actor === 'adversary') {
+      setComposed(null)
+      setLens(TODAY)
+    }
+    setSelectedId(null)
+    setKnocked((current) =>
+      current.some((entry) => entry.id === thing.id)
+        ? current.filter((entry) => entry.id !== thing.id)
+        : [...current, thing]
+    )
+  }
+  const things: Knockout[] = [
+    ...plan.locations.map((entry) => ({
+      kind: 'locations' as const,
+      id: entry.id,
+      label: entry.label,
+    })),
+    ...plan.devices.map((entry) => ({
+      kind: 'objects' as const,
+      id: entry.id,
+      label: entry.label,
+    })),
+    ...plan.people.map((entry) => ({ kind: 'people' as const, id: entry.id, label: entry.label })),
+  ]
+
   const adversary = world?.actor === 'adversary'
   const verdicts = world
     ? plan.wallets.map((wallet) => {
@@ -408,6 +436,33 @@ export function MapView() {
             )
           })}
         </ul>
+
+        {/* On a phone: every place, device and person as a chip that takes
+            it away, pressed while it is gone. The drawing is too wide for
+            its boxes to be the only way to do it there. */}
+        <div
+          role="group"
+          aria-label="Take something away"
+          className="-mx-4 mb-2 flex gap-1.5 overflow-x-auto px-4 pb-1 no-print sm:hidden"
+        >
+          {things.map((thing) => {
+            const gone = knocked.some((entry) => entry.id === thing.id)
+            return (
+              <button
+                key={thing.id}
+                type="button"
+                aria-pressed={gone}
+                onClick={() => toggleThing(thing)}
+                className={cn(
+                  'chip flex-none transition-colors',
+                  gone ? 'border-critical/60 text-strong line-through' : 'hover:border-line-strong'
+                )}
+              >
+                {thing.label}
+              </button>
+            )
+          })}
+        </div>
 
         {knocked.length > 0 ? (
           <div className="mb-2 flex flex-wrap items-center gap-1.5 no-print">

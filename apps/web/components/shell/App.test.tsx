@@ -816,6 +816,12 @@ describe('composing a failure by hand', () => {
     await user.click(await screen.findByText('Two of three, three sites'))
 
     goto('#/map')
+    // The composer's toggles, not the phone row of chips that names the same
+    // places and is present here because the test has no stylesheet.
+    const toggle = (name: string) =>
+      screen
+        .getAllByRole('button', { name, pressed: false })
+        .find((button) => !button.closest('[aria-label="Take something away"]'))!
 
     // The composer is folded away: clicking boxes is the quick way, and
     // building a whole situation by hand is what you come back for.
@@ -827,12 +833,12 @@ describe('composing a failure by hand', () => {
     // Losing Site B alone is survivable: Key B's device is at Site A, so its
     // backup being unreachable does not take the key with it. The picture is
     // the answer, and it is the picture that changes.
-    await user.click(screen.getByRole('button', { name: 'Site B', pressed: false }))
+    await user.click(toggle('Site B'))
     expect(await screen.findByText(/a situation you composed/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Site B.*Not available/i })).toBeInTheDocument()
 
     // Site A as well, and there is neither a threshold nor a descriptor left.
-    await user.click(screen.getByRole('button', { name: 'Site A', pressed: false }))
+    await user.click(toggle('Site A'))
     expect(await screen.findAllByText(/unspendable/i)).not.toHaveLength(0)
   })
 })
@@ -1919,5 +1925,27 @@ describe('checking in', () => {
     expect(screen.getByText('Could not be done')).toBeInTheDocument()
     expect(screen.queryByText(/well done|great|congrat/i)).toBeNull()
     expect(doneToday()).toBe(1)
+  })
+})
+
+describe('taking things away by name', () => {
+  it('takes a place away from its chip as a click on its box would, and puts it back', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+    goto('#/map')
+    const chips = await screen.findByRole('group', { name: 'Take something away' })
+    const verdicts = () =>
+      screen.getByRole('list', { name: /what happens to each wallet/i }).textContent
+    expect(verdicts()).not.toMatch(/unspendable/)
+    await user.click(within(chips).getByRole('button', { name: 'Site A' }))
+    expect(within(chips).getByRole('button', { name: 'Site A' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    )
+    expect(verdicts()).toMatch(/unspendable/)
+    await user.click(within(chips).getByRole('button', { name: 'Site A' }))
+    expect(verdicts()).not.toMatch(/unspendable/)
   })
 })
