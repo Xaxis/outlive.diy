@@ -1,5 +1,6 @@
 'use client'
 
+import { NotesField } from '@/components/ui/NotesField.tsx'
 import { Briefcase, Eye, Gavel, HeartHandshake, KeyRound, PenTool } from 'lucide-react'
 import { cn } from '@/lib/cn.ts'
 
@@ -126,14 +127,11 @@ export function PersonInspector({ person }: { person: Person }) {
         </Callout>
       ) : null}
 
-      <Field label="Notes" help="No contact details. Those belong in the sealed instructions.">
-        <GuardedInput
-          multiline
-          rows={3}
-          value={person.notes}
-          onCommit={(value) => set({ notes: value })}
-        />
-      </Field>
+      <NotesField
+        value={person.notes}
+        onCommit={(value) => set({ notes: value })}
+        help="No contact details. Those belong in the sealed instructions."
+      />
     </div>
   )
 }

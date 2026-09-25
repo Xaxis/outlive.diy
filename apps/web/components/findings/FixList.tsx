@@ -79,7 +79,7 @@ export function FixList({
                     {result.opens.slice(0, 2).map((finding) => (
                       <span key={finding.id} className="flex items-center gap-1">
                         <SeverityDot severity={finding.severity} />
-                        opens {finding.title.charAt(0).toLowerCase() + finding.title.slice(1)}
+                        opens: {finding.title}
                       </span>
                     ))}
                     {result.opens.length > 2 ? (

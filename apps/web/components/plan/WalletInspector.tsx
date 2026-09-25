@@ -1,5 +1,6 @@
 'use client'
 
+import { NotesField } from '@/components/ui/NotesField.tsx'
 import { Plus, Trash2 } from 'lucide-react'
 import {
   createConfigBackup,
@@ -313,14 +314,7 @@ export function WalletInspector({ plan, wallet }: { plan: Plan; wallet: Wallet }
         </div>
       ) : null}
 
-      <Field label="Notes">
-        <GuardedInput
-          multiline
-          rows={3}
-          value={wallet.notes}
-          onCommit={(value) => set({ notes: value })}
-        />
-      </Field>
+      <NotesField value={wallet.notes} onCommit={(value) => set({ notes: value })} />
     </div>
   )
 }

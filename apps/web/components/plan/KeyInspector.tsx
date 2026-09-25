@@ -1,5 +1,6 @@
 'use client'
 
+import { NotesField } from '@/components/ui/NotesField.tsx'
 import { Plus } from 'lucide-react'
 import {
   createBackup,
@@ -337,14 +338,7 @@ export function KeyInspector({ plan, entity }: { plan: Plan; entity: Key }) {
         ) : null}
       </div>
 
-      <Field label="Notes">
-        <GuardedInput
-          multiline
-          rows={3}
-          value={entity.notes}
-          onCommit={(value) => set({ notes: value })}
-        />
-      </Field>
+      <NotesField value={entity.notes} onCommit={(value) => set({ notes: value })} />
     </div>
   )
 }

@@ -66,6 +66,7 @@ export function GuardedInput({
   id,
   rows,
   ariaLabel,
+  autoFocus,
 }: {
   value: string
   onCommit: (next: string) => void
@@ -75,6 +76,8 @@ export function GuardedInput({
   rows?: number
   /** For the fields that stand outside a Field, such as a row's own name. */
   ariaLabel?: string
+  /** Only for a field the reader has just asked for by pressing a button. */
+  autoFocus?: boolean
 }) {
   const [draft, setDraft] = useState(value)
   const [hits, setHits] = useState<GuardHit[]>([])
@@ -134,6 +137,7 @@ export function GuardedInput({
         )}
         value={draft}
         rows={rows}
+        autoFocus={autoFocus}
         placeholder={placeholder}
         aria-invalid={refusal ? true : undefined}
         aria-describedby={refusal ? `${fieldId}-guard` : undefined}
@@ -456,60 +460,52 @@ export function ChoiceGroup<T extends string | number>({
   /** Groups the radios, so arrow keys move between them and nowhere else. */
   name: string
 }) {
+  const chosen = options.find((option) => option.value === value)
   return (
-    <div role="radiogroup" aria-labelledby={useFieldLabel()} className="grid gap-1.5">
-      {options.map((option) => {
-        const checked = option.value === value
-        return (
-          <label
-            key={String(option.value)}
-            // Only the chosen option says what it commits you to. Five
-            // consequences at once is a paragraph to read before a click; one
-            // is the answer to the click, and the rest are a hover away.
-            title={checked ? undefined : option.consequence}
-            className={cn(
-              'flex cursor-pointer items-start gap-2.5 rounded-[var(--radius-control)] border px-2.5 transition-colors',
-              checked ? 'py-2.5' : 'py-1.5',
-              checked
-                ? 'border-accent bg-accent/[0.07]'
-                : 'border-line hover:border-line-strong hover:bg-[rgb(var(--tint)/0.02)]'
-            )}
-          >
-            <input
-              type="radio"
-              name={name}
-              checked={checked}
-              onChange={() => onChange(option.value)}
-              className="sr-only"
-            />
-            <span
-              aria-hidden
+    <div>
+      {/* The options in their order, as a row that wraps, and what the chosen
+          one commits you to written out underneath. A column of full-width
+          rows made each question a screen tall on a phone, and most of these
+          are scales, where seeing every step at once is the point. */}
+      <div role="radiogroup" aria-labelledby={useFieldLabel()} className="flex flex-wrap gap-1.5">
+        {options.map((option) => {
+          const checked = option.value === value
+          return (
+            <label
+              key={String(option.value)}
+              title={checked ? undefined : option.consequence}
               className={cn(
-                'mt-[0.2rem] size-3.5 flex-none rounded-full border',
-                checked ? 'border-[5px] border-accent bg-canvas' : 'border-line-strong'
+                'flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-[0.8125rem] transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent',
+                checked
+                  ? 'border-accent bg-accent/[0.08] font-medium text-strong'
+                  : 'border-line text-body hover:border-line-strong hover:bg-[rgb(var(--tint)/0.02)]'
               )}
-            />
-            <span className="min-w-0">
+            >
+              <input
+                type="radio"
+                name={name}
+                checked={checked}
+                onChange={() => onChange(option.value)}
+                className="sr-only"
+              />
               <span
+                aria-hidden
                 className={cn(
-                  'block text-[0.8125rem] font-medium',
-                  checked ? 'text-strong' : 'text-body'
+                  'size-3 flex-none rounded-full border',
+                  checked ? 'border-[4px] border-accent bg-canvas' : 'border-line-strong'
                 )}
-              >
-                {option.label}
-              </span>
-              <span
-                className={cn(
-                  'mt-0.5 block text-xs leading-snug text-muted',
-                  !checked && 'sr-only'
-                )}
-              >
-                {option.consequence}
-              </span>
-            </span>
-          </label>
-        )
-      })}
+              />
+              {option.label}
+              <span className="sr-only">. {option.consequence}</span>
+            </label>
+          )
+        })}
+      </div>
+      {chosen ? (
+        <p aria-hidden className="mt-2 text-xs leading-snug text-muted">
+          {chosen.consequence}
+        </p>
+      ) : null}
     </div>
   )
 }

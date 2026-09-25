@@ -8,6 +8,7 @@ import { FixList } from '@/components/findings/FixList.tsx'
 import { AskClaude } from '@/components/ai/AskClaude.tsx'
 import { SeverityDot, SEVERITY_LABEL } from '@/components/ui/Severity.tsx'
 import { navigateTo } from '@/lib/router.ts'
+import { Disclosure } from '@/components/ui/Disclosure.tsx'
 import { cn } from '@/lib/cn.ts'
 
 /** Where an entity is edited, so a finding can send you to the thing it is about. */
@@ -50,7 +51,7 @@ export function FindingCard({
         className="flex w-full items-start gap-3 px-3.5 py-2.5 text-left"
       >
         <SeverityDot severity={finding.severity} className="mt-[0.45rem]" />
-        <span className="min-w-0 flex-1">
+        <span className="basis-full">
           <span className="block text-[0.875rem] font-medium leading-snug text-strong">
             {finding.title}
           </span>
@@ -103,51 +104,65 @@ export function FindingCard({
         </div>
 
         {open && plan ? <FixList plan={plan} findingId={finding.id} onFound={onFound} /> : null}
-        {open && plan ? (
-          <AskClaude
-            plan={plan}
-            className="mt-3"
-            label="Ask Claude about this"
-            question={`Explain the finding "${finding.title}" (${finding.id}) for my plan in plain words: what actually goes wrong, how likely that is for someone like me, and the one or two changes that would fix it, with what each trades off.`}
-          />
-        ) : null}
         {open && plan ? <FindingPicture plan={plan} finding={finding} /> : null}
-
-        {/* A finding names what breaks. The map draws where it breaks, in the
+        {/* Where it is and what it is about, in one row under the picture of
+            it, rather than as two more sections. */}
+        <div className="no-print mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+          {/* A finding names what breaks. The map draws where it breaks, in the
             same world this came out of, and getting between the two should not
             be a search through a dropdown of twenty scenarios. */}
-        {finding.scenarioId ? (
-          <button
-            type="button"
-            onClick={() => navigateTo('map', finding.scenarioId)}
-            className="no-print mt-3 inline-flex items-center gap-1.5 text-[0.75rem] text-accent underline underline-offset-2"
-          >
-            <Network className="size-3.5" aria-hidden />
-            Draw this on the map
-          </button>
-        ) : null}
+          {finding.scenarioId ? (
+            <button
+              type="button"
+              onClick={() => navigateTo('map', finding.scenarioId)}
+              className="inline-flex items-center gap-1.5 text-[0.75rem] text-accent underline underline-offset-2"
+            >
+              <Network className="size-3.5" aria-hidden />
+              Draw this on the map
+            </button>
+          ) : null}
 
-        {finding.subjects.length > 0 ? (
-          <div className="no-print mt-3 flex flex-wrap items-center gap-1.5">
-            <span className="text-[0.6875rem] uppercase tracking-wider text-faint">About</span>
-            {finding.subjects.map((subject) => {
-              const label = labelOf(subject)
-              if (!label) return null
-              return (
-                <button
-                  key={`${subject.type}:${subject.id}`}
-                  type="button"
-                  className="chip transition-colors hover:border-accent hover:text-strong"
-                  onClick={() => onOpenSubject(subject)}
-                >
-                  {label}
-                </button>
-              )
-            })}
-          </div>
-        ) : null}
+          {finding.subjects.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[0.6875rem] uppercase tracking-wider text-faint">About</span>
+              {finding.subjects.map((subject) => {
+                const label = labelOf(subject)
+                if (!label) return null
+                return (
+                  <button
+                    key={`${subject.type}:${subject.id}`}
+                    type="button"
+                    className="chip transition-colors hover:border-accent hover:text-strong"
+                    onClick={() => onOpenSubject(subject)}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          ) : null}
+        </div>
 
-        <p className="mt-3 border-t border-line pt-2.5 text-[0.75rem] leading-relaxed text-faint">
+        {/* Asking about it, and why the rule exists, last and on one line:
+            both are for the reader who wants more, not steps in reading it.
+            The rule's reasoning still prints, where there is no toggle. */}
+        <div className="no-print mt-3 flex flex-wrap items-start gap-2 border-t border-line pt-2.5">
+          {open && plan ? (
+            <AskClaude
+              plan={plan}
+              className="basis-full"
+              label="Ask Claude about this"
+              question={`Explain the finding "${finding.title}" (${finding.id}) for my plan in plain words: what actually goes wrong, how likely that is for someone like me, and the one or two changes that would fix it, with what each trades off.`}
+            />
+          ) : null}
+          <Disclosure size="aside" title="Why this rule" className="basis-full">
+            <p className="text-[0.75rem] leading-relaxed text-faint">
+              <span className="mono">{rule.id}</span> looks for: {rule.looksFor.toLowerCase()}.{' '}
+              {rule.because}
+            </p>
+          </Disclosure>
+        </div>
+        <p className="mt-3 hidden border-t border-line pt-2.5 text-[0.75rem] leading-relaxed text-faint print:block">
           <span className="mono">{rule.id}</span> looks for: {rule.looksFor.toLowerCase()}.{' '}
           {rule.because}
         </p>

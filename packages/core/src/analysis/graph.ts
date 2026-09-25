@@ -298,8 +298,15 @@ export function buildGraph(plan: Plan, world: World, options: GraphOptions = {})
         add({
           id,
           kind: 'config',
-          label: backup.label,
-          detail: `${MEDIUM[backup.medium] ?? backup.medium} · configuration`,
+          // A box a hundred and fifty pixels wide cut "Descriptor at Site A"
+          // and "Printed descriptor" at the word that said which one. It is
+          // the descriptor; the second line says what it is on and where.
+          label: 'Descriptor',
+          detail: [
+            MEDIUM[backup.medium] ?? backup.medium,
+            plan.locations.find((location) => location.id === backup.locationId)?.label ??
+              'place not recorded',
+          ].join(' · '),
           ref: null,
           layer: LAYER.config,
           available,

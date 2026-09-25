@@ -245,7 +245,11 @@ export function MapView() {
     setKnocked((current) =>
       current.some((entry) => entry.id === gone.id)
         ? current.filter((entry) => entry.id !== gone.id)
-        : [...current, { ...gone, label: node.label }]
+        : [
+            ...current,
+            // Every descriptor box says "Descriptor"; the chip says which.
+            { ...gone, label: node.kind === 'config' ? `Descriptor, ${node.detail}` : node.label },
+          ]
     )
   }
 

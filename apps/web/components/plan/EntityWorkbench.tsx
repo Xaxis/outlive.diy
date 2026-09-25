@@ -114,16 +114,17 @@ export function EntityWorkbench({
       )}
     >
       <div className={cn('space-y-2', !listed && 'hidden')}>
-        {/* On a phone this list sits above the form. Left uncapped, switching
-            between keys means scrolling back past the whole of one. */}
+        {/* On a phone this list sits above the form, as one row that scrolls
+            sideways: a stack of cards there pushed the form a screen down,
+            and switching between keys meant scrolling back past all of them. */}
         <ul
           aria-label={plural}
-          className="max-h-[13rem] space-y-2 overflow-y-auto lg:max-h-none lg:overflow-visible"
+          className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:block lg:space-y-2 lg:overflow-visible lg:px-0 lg:pb-0"
         >
           {entities.map((entity) => {
             const severity = worst(entity.id)
             return (
-              <li key={entity.id}>
+              <li key={entity.id} className="w-[13rem] flex-none lg:w-auto">
                 <Card
                   selected={selected?.id === entity.id}
                   severity={severity}

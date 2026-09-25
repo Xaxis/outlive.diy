@@ -1,5 +1,6 @@
 'use client'
 
+import { NotesField } from '@/components/ui/NotesField.tsx'
 import { useState } from 'react'
 
 import {
@@ -291,14 +292,7 @@ export function DeviceInspector({ plan, device }: { plan: Plan; device: Device }
               onCommit={(value) => set({ architecture: value.trim() === '' ? null : value })}
             />
           </Field>
-          <Field label="Notes">
-            <GuardedInput
-              multiline
-              rows={3}
-              value={device.notes}
-              onCommit={(value) => set({ notes: value })}
-            />
-          </Field>
+          <NotesField value={device.notes} onCommit={(value) => set({ notes: value })} />
         </div>
       </Disclosure>
     </div>

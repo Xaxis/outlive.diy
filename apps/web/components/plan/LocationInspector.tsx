@@ -1,5 +1,6 @@
 'use client'
 
+import { NotesField } from '@/components/ui/NotesField.tsx'
 import {
   Briefcase,
   Eye,
@@ -292,14 +293,11 @@ export function LocationInspector({ plan, location }: { plan: Plan; location: Lo
         )}
       </div>
 
-      <Field label="Notes" help="Anything that is not a secret and not an address.">
-        <GuardedInput
-          multiline
-          rows={3}
-          value={location.notes}
-          onCommit={(value) => set({ notes: value })}
-        />
-      </Field>
+      <NotesField
+        value={location.notes}
+        onCommit={(value) => set({ notes: value })}
+        help="Anything that is not a secret and not an address."
+      />
     </div>
   )
 }

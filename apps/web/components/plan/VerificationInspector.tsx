@@ -1,5 +1,6 @@
 'use client'
 
+import { NotesField } from '@/components/ui/NotesField.tsx'
 import {
   DEFAULT_INTERVAL_DAYS,
   daysBetween,
@@ -9,7 +10,7 @@ import {
   type Verification,
   type VerificationKind,
 } from '@outlive/core'
-import { Field, GuardedInput, PresetNumber, Select, useFieldLabel } from '@/components/ui/Field.tsx'
+import { Field, PresetNumber, Select, useFieldLabel } from '@/components/ui/Field.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { Callout } from '@/components/ui/Surface.tsx'
 import { useEntityUpdater } from '@/lib/edit.ts'
@@ -180,14 +181,7 @@ export function VerificationInspector({
         </Callout>
       ) : null}
 
-      <Field label="Notes">
-        <GuardedInput
-          multiline
-          rows={3}
-          value={verification.notes}
-          onCommit={(value) => set({ notes: value })}
-        />
-      </Field>
+      <NotesField value={verification.notes} onCommit={(value) => set({ notes: value })} />
     </div>
   )
 }
