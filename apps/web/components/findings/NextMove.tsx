@@ -3,11 +3,20 @@
 import { netChange } from '@/lib/net.ts'
 import { useEffect, useState } from 'react'
 import { ArrowRight, Check, LoaderCircle } from 'lucide-react'
-import { describeActions, improve, type Improvement, type Plan } from '@outlive/core'
+import {
+  describeActions,
+  improve,
+  newId,
+  tradeoffs,
+  type Improvement,
+  type Plan,
+  type RankedFix,
+} from '@outlive/core'
+import { navigateTo } from '@/lib/router.ts'
 import { Disclosure } from '@/components/ui/Disclosure.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { SeverityDot } from '@/components/ui/Severity.tsx'
-import { useStore } from '@/lib/store.ts'
+import { baseName, useStore } from '@/lib/store.ts'
 
 /**
  * The one thing to do next, found rather than suggested.
@@ -59,14 +68,7 @@ export function NextMove({ plan }: { plan: Plan }) {
     )
   }
 
-  if (current.steps.length === 0) {
-    return (
-      <p className="text-sm text-muted">
-        No single change this program can make closes more than it opens. What is left needs a
-        decision only you can make, or a check only you can do; the list below is the work.
-      </p>
-    )
-  }
+  if (current.steps.length === 0) return <Tradeoffs plan={plan} />
 
   const closes = current.steps.flatMap((step) => step.closes)
   const errands = describeActions(plan, current.plan).filter((action) => action.errand)
@@ -138,6 +140,105 @@ export function NextMove({ plan }: { plan: Plan }) {
           Apply this change
         </Button>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Where no change wins outright, the trades that do most against the worst
+ * findings, each with its cost beside it. Tried against the whole analysis
+ * like any fix, and never applied here: a trade opens as a draft to compare.
+ */
+function Tradeoffs({ plan }: { plan: Plan }) {
+  const addPlan = useStore((state) => state.addPlan)
+  const setCompare = useStore((state) => state.setCompare)
+  const [offered, setOffered] = useState<{ plan: Plan; list: RankedFix[] } | null>(null)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setOffered({ plan, list: tradeoffs(plan) }), 60)
+    return () => window.clearTimeout(timer)
+  }, [plan])
+
+  const intro = <p className="text-sm text-muted">No single change closes more than it opens.</p>
+  if (!offered || offered.plan !== plan)
+    return (
+      <div className="space-y-2">
+        {intro}
+        <p className="flex items-center gap-2 text-xs text-faint">
+          <LoaderCircle className="size-3.5 animate-spin" aria-hidden />
+          Looking for trades worth making…
+        </p>
+      </div>
+    )
+  if (offered.list.length === 0)
+    return (
+      <div>
+        <p className="text-sm text-muted">
+          No change this program can make closes more than it opens. What is left needs a decision
+          only you can make, or a check only you can do.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button size="sm" variant="primary" onClick={() => navigateTo('checkin')}>
+            Do the checks
+          </Button>
+          <Button size="sm" onClick={() => navigateTo('findings')}>
+            Read what is left
+          </Button>
+        </div>
+      </div>
+    )
+
+  return (
+    <div>
+      {intro}
+      <p className="mt-1 text-sm text-body">
+        These each close something serious and cost something else. Which is worth it is yours to
+        weigh:
+      </p>
+      <ul className="mt-3 space-y-2.5">
+        {offered.list.map((result) => (
+          <li
+            key={result.fix.id}
+            className="rounded-[var(--radius-control)] border border-line p-3"
+          >
+            <p className="text-[0.875rem] leading-snug text-strong">{result.fix.label}</p>
+            <ul className="mt-1.5 space-y-0.5 text-xs text-muted">
+              {result.closes.slice(0, 2).map((finding) => (
+                <li key={finding.id} className="flex items-start gap-1.5">
+                  <SeverityDot severity={finding.severity} className="mt-[0.3rem]" />
+                  <span>
+                    <span className="text-ok">closes</span> {finding.title}
+                  </span>
+                </li>
+              ))}
+              {result.opens.slice(0, 2).map((finding) => (
+                <li key={finding.id} className="flex items-start gap-1.5">
+                  <SeverityDot severity={finding.severity} className="mt-[0.3rem]" />
+                  <span>
+                    <span className="text-medium">opens</span> {finding.title}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <Button
+              size="sm"
+              className="mt-2"
+              onClick={() => {
+                addPlan({
+                  ...result.plan,
+                  id: newId('plan'),
+                  kind: 'draft',
+                  name: `${baseName(plan.name)}, trade`,
+                })
+                setCompare(plan.id)
+                navigateTo('compare')
+              }}
+            >
+              Try it as a draft
+            </Button>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

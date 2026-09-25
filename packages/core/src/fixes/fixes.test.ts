@@ -3,7 +3,7 @@ import { analyze } from '../analysis/analyze.ts'
 import { exampleById } from '../model/examples.ts'
 import { referentialProblems } from '../model/schema.ts'
 import { inspectDeep } from '../guard/guard.ts'
-import { candidateFixes, fixesFor, improve, tryFix } from './fixes.ts'
+import { candidateFixes, fixesFor, improve, tradeoffs, tryFix } from './fixes.ts'
 import { defaultShape, planFromShape } from '../model/shape.ts'
 
 const TODAY = '2026-03-01'
@@ -99,5 +99,23 @@ describe('fixes, found by trying them', () => {
     const result = tryFix(plan, upgrade, before, TODAY)
     expect(result.opens.map((finding) => finding.rule)).not.toContain('R003')
     expect(improve(plan, { maxSteps: 1, today: TODAY }).steps).toHaveLength(1)
+  })
+})
+
+describe('the trades on offer when nothing wins outright', () => {
+  it('offers changes that close something serious, and says what each opens', () => {
+    // A single key whose only backup is beside it: every real fix costs something.
+    const plan = exampleById('one-signer')!
+    const offered = tradeoffs(plan, { today: TODAY })
+    expect(offered.length).toBeGreaterThan(0)
+    expect(offered.length).toBeLessThanOrEqual(3)
+    for (const result of offered) {
+      expect(result.closes.some((finding) => ['critical', 'high'].includes(finding.severity))).toBe(
+        true
+      )
+      expect(result.fix.kind).toBe('structure')
+    }
+    // And offering is not applying.
+    expect(exampleById('one-signer')).toEqual(plan)
   })
 })

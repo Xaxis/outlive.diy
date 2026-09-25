@@ -651,3 +651,37 @@ function lookahead(
   }
   return best
 }
+
+/**
+ * The trades on offer when no change wins outright.
+ *
+ * "Nothing closes more than it opens" was where the next move stopped, often
+ * with criticals still standing, which is exactly when a reader needs help
+ * choosing. Every structural change that closes something critical or high is
+ * tried against the whole analysis, as for any fix, and the few that do most
+ * against the worst findings are offered with what they cost stated beside
+ * them. Nothing here is applied: a trade is the reader's to make.
+ */
+export function tradeoffs(
+  plan: Plan,
+  options: { limit?: number; today?: string } = {}
+): RankedFix[] {
+  const before = analyze(plan, { includeScenarios: false, today: options.today }).findings
+  const count = (findings: Finding[], severity: Severity) =>
+    findings.filter((finding) => finding.severity === severity).length
+  return candidateFixes(plan, options.today)
+    .filter((fix) => fix.kind === 'structure')
+    .map((fix) => tryFix(plan, fix, before, options.today))
+    .filter((result) =>
+      result.closes.some(
+        (finding) => finding.severity === 'critical' || finding.severity === 'high'
+      )
+    )
+    .sort(
+      (a, b) =>
+        count(b.closes, 'critical') -
+          count(b.opens, 'critical') -
+          (count(a.closes, 'critical') - count(a.opens, 'critical')) || b.gain - a.gain
+    )
+    .slice(0, options.limit ?? 3)
+}
