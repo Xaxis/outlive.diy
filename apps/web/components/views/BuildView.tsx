@@ -237,7 +237,7 @@ export function BuildView() {
                   </span>
                   <select
                     aria-label={`${placeLabel(index)}: what it is`}
-                    className="select min-w-0 flex-1 py-1 text-xs max-sm:basis-[calc(100%-4rem)]"
+                    className="select min-w-[11rem] flex-1 py-1 text-xs max-sm:basis-[calc(100%-4rem)]"
                     value={entry.kind}
                     onChange={(event) => {
                       const kind = event.target.value as LocationKind
