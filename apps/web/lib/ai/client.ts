@@ -1,6 +1,19 @@
 'use client'
 
-import Anthropic from '@anthropic-ai/sdk'
+import type AnthropicSdk from '@anthropic-ai/sdk'
+
+type Sdk = typeof AnthropicSdk
+
+/**
+ * Loaded on the first question, not with the page. Almost nobody who opens
+ * this program will enter a key, and the SDK was over half of what every
+ * visitor downloaded before seeing anything.
+ */
+let sdk: Sdk | null = null
+async function load(): Promise<Sdk> {
+  if (!sdk) sdk = (await import('@anthropic-ai/sdk')).default
+  return sdk
+}
 
 /**
  * The one place this application talks to anything.
@@ -31,6 +44,7 @@ export interface Ask {
 export class ClaudeRefused extends Error {}
 
 export async function askClaude(ask: Ask): Promise<string> {
+  const Anthropic = await load()
   const client = new Anthropic({
     apiKey: ask.apiKey,
     // The key is the reader's own, held in their own browser, and sent only
@@ -66,12 +80,16 @@ export async function askClaude(ask: Ask): Promise<string> {
 
 /** Anthropic said the key is not a key. It is dropped, and asked for again. */
 export function isBadKey(error: unknown): boolean {
-  return error instanceof Anthropic.AuthenticationError
+  return sdk !== null && error instanceof sdk.AuthenticationError
 }
 
 /** A sentence a reader can act on, for anything the request threw. */
 export function explainError(error: unknown): string {
   if (error instanceof ClaudeRefused) return error.message
+  // Any error from a request came after the SDK loaded; before that, there
+  // is nothing it could be but ours.
+  const Anthropic = sdk
+  if (!Anthropic) return error instanceof Error ? error.message : 'Something went wrong.'
   if (error instanceof Anthropic.AuthenticationError)
     return 'Anthropic did not accept that key. Check it and enter it again.'
   if (error instanceof Anthropic.PermissionDeniedError)
