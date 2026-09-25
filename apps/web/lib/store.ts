@@ -260,12 +260,16 @@ export const useStore = create<StoreState>()(
       persist(get())
     },
 
-    setActive: (id) =>
+    setActive: (id) => {
       set((state) => {
         state.activeId = id
         state.selection = null
         if (state.compareId === id) state.compareId = null
-      }),
+      })
+      // Remembered, so the app reopens on the plan you had open, and so the
+      // landing page can hand a choice of plan to the app document.
+      persist(get())
+    },
 
     setCompare: (id) =>
       set((state) => {
@@ -278,6 +282,9 @@ export const useStore = create<StoreState>()(
       }),
 
     startPlan: (name) => {
+      // Never write over what is stored without reading it first. The
+      // landing page can start a plan before anything has hydrated.
+      if (!get().ready) get().hydrate()
       const plan = createPlan({ name: name ?? 'My plan' })
       set((state) => {
         remember(state as StoreState)
@@ -290,6 +297,9 @@ export const useStore = create<StoreState>()(
     },
 
     addPlan: (plan) => {
+      // Never write over what is stored without reading it first. The
+      // landing page can start a plan before anything has hydrated.
+      if (!get().ready) get().hydrate()
       set((state) => {
         remember(state as StoreState)
         state.plans.push(plan)
@@ -335,6 +345,9 @@ export const useStore = create<StoreState>()(
     },
 
     openExample: (exampleId) => {
+      // Never write over what is stored without reading it first. The
+      // landing page can start a plan before anything has hydrated.
+      if (!get().ready) get().hydrate()
       const example = exampleById(exampleId)
       if (!example) return
       // A fresh id every time, so opening the same example twice gives two

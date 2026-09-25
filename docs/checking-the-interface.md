@@ -21,7 +21,8 @@ npx playwright install chromium
 ## What to look at
 
 **Every view, both themes, two widths.** Desktop at 1440 and a phone at 390.
-The views are the fragments listed in `apps/web/lib/router.ts`.
+The views are the fragments of `/app/` listed in `apps/web/lib/router.ts`, plus
+the landing page at `/` and the terms at `/terms/`.
 
 **A plan that describes nothing.** Every derived screen has to say so rather
 than go quiet, and there is a test for each, but the empty states are also the
@@ -55,7 +56,8 @@ of the above. A Playwright run can assert it by listening on `request` and
 failing on any URL that is not same-origin.
 
 **The copy that needs no server.** `make offline` then open
-`apps/web/out/index.html` as a file. It should behave identically and report no
+`apps/web/out/index.html` as a file, open an example, and go home again; the
+app is `app/index.html` beside it. It should behave identically and report no
 failed requests. If a font or the icon 404s, something is asking for an absolute
 path that only a web server can answer.
 

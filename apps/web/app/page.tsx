@@ -1,12 +1,10 @@
-import { App } from '@/components/shell/App.tsx'
+import { Landing } from '@/components/shell/Landing.tsx'
 
 /**
- * One route, one document.
- *
- * Views are fragments rather than pages, so the application never requests
- * anything after it has loaded, which is what lets the security policy forbid
- * connecting anywhere but Anthropic, for a reader who asks Claude.
+ * `/`, always the landing page. The app is a separate document at `/app/`, and
+ * moving between them is a page load rather than a client-side fetch, which is
+ * what lets the security policy allow connecting to Anthropic and nothing else.
  */
 export default function Page() {
-  return <App />
+  return <Landing />
 }

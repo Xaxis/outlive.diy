@@ -16,7 +16,7 @@ import { cn } from '@/lib/cn.ts'
 import { Button } from '@/components/ui/Button.tsx'
 import { PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
 import { useStore } from '@/lib/store.ts'
-import { href } from '@/lib/router.ts'
+import { href, navigateTo } from '@/lib/router.ts'
 import { OpenFileButton } from '@/components/file/OpenFileButton.tsx'
 
 /**
@@ -103,7 +103,7 @@ export function Welcome() {
                   icon={<ArrowRight className="size-3.5" aria-hidden />}
                   onClick={() => {
                     setActive(entry.id)
-                    window.location.hash = href('overview').slice(1)
+                    navigateTo('overview')
                   }}
                 >
                   Continue
@@ -118,7 +118,7 @@ export function Welcome() {
         <Button
           variant="primary"
           onClick={() => {
-            window.location.hash = href('build').slice(1)
+            navigateTo('build')
           }}
           icon={<ArrowRight className="size-4" aria-hidden />}
         >
@@ -128,7 +128,7 @@ export function Welcome() {
           variant="ghost"
           onClick={() => {
             startPlan()
-            window.location.hash = href('design').slice(1)
+            navigateTo('design')
           }}
         >
           Describe one by hand
@@ -234,7 +234,7 @@ export function Welcome() {
                 type="button"
                 onClick={() => {
                   openExample(example.id)
-                  window.location.hash = href('findings').slice(1)
+                  navigateTo('findings')
                 }}
                 className="group flex w-full items-baseline gap-4 py-3 text-left"
               >

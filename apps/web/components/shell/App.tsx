@@ -10,9 +10,9 @@ import { Toast } from './Toast.tsx'
 import { ScopeNotice } from './ScopeNotice.tsx'
 import { CommandPalette } from './CommandPalette.tsx'
 import { ViewBoundary } from './ViewBoundary.tsx'
+import { goTo } from '@/lib/site.ts'
 import { Welcome } from '@/components/views/Welcome.tsx'
 import { BuildView } from '@/components/views/BuildView.tsx'
-import { TermsView } from '@/components/views/TermsView.tsx'
 import { OverviewView } from '@/components/views/OverviewView.tsx'
 import { DesignView } from '@/components/views/DesignView.tsx'
 import { FindingsView } from '@/components/views/FindingsView.tsx'
@@ -87,13 +87,20 @@ export function App() {
   // visitor sees, and it is the only part of this application worth indexing.
   // The landing page is somewhere to go back to, not only somewhere to start:
   // the logo leads here, and with plans open it leads with them.
-  if (!ready || !hasPlans || !plan || route.view === 'home' || route.view === 'terms') {
+  // Nothing is drawn until storage has been read: the document is prerendered
+  // with nothing in it, so a returning visitor sees their plan and not a flash
+  // of a page that is not theirs.
+  if (!ready) return <main id="main" className="min-h-dvh" />
+
+  // The landing page and the terms are documents of their own now. A fragment
+  // that still names one of them is an old link; follow it.
+  if (route.view === 'home' || route.view === 'terms') return <Redirect to={route.view} />
+
+  if (!hasPlans || !plan) {
     return (
       <>
         <TopBar onToggleSidebar={() => setDrawerOpen((value) => !value)} />
-        {route.view === 'terms' ? (
-          <TermsView />
-        ) : ready && route.view === 'build' ? (
+        {route.view === 'build' ? (
           <main id="main" className="mx-auto w-full max-w-[74rem] px-4 py-6 lg:px-8 lg:py-8">
             <BuildView />
           </main>
@@ -104,7 +111,6 @@ export function App() {
       </>
     )
   }
-
   return (
     <>
       <TopBar onToggleSidebar={() => setDrawerOpen((value) => !value)} />
@@ -156,6 +162,13 @@ export function App() {
       <Toast />
     </>
   )
+}
+
+function Redirect({ to }: { to: 'home' | 'terms' }) {
+  useEffect(() => {
+    goTo(to)
+  }, [to])
+  return null
 }
 
 function View() {

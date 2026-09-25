@@ -11,6 +11,8 @@ window.scrollTo = () => {}
 
 beforeEach(() => {
   window.localStorage.clear()
+  // The suite drives the app document, which lives at /app/.
+  window.history.replaceState(null, '', '/app/')
   window.location.hash = ''
 })
 

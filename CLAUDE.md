@@ -25,7 +25,7 @@ nowhere else; `make no-network` fails the build if the SDK is imported by any
 other file, if any other source gains a way to reach the network, or if the
 deployed `Content-Security-Policy` allows any `connect-src` but that one host.
 The key is never part of the plan store, the plan file or undo history. This is
-also why the app is one route with fragment routing: navigation between
+also why each document is one route with fragment routing: navigation between
 prerendered pages would need `connect-src 'self'`.
 
 If a change would weaken either of these, it is wrong even if the feature is
@@ -64,6 +64,17 @@ Neither suite can see the interface. `docs/checking-the-interface.md` says how
 to point a browser at it, which is how the defects that mattered were found.
 
 ## Things that will bite you
+
+**Three documents, joined by page loads.** `/` is always the landing page,
+listing whatever plans this browser holds; `/app/` is the application, every
+view a fragment of it; `/terms/` is the terms. Links between them are plain
+anchors and `lib/site.ts`, never the framework's client-side navigation, which
+would fetch. Hosted links are absolute so server and browser render the same
+thing; `make offline` rewrites them relative and gives each nested document its
+own `_next`, because chunks loaded later resolve against the document's own
+folder. The landing page can start a plan, so every store action that writes
+hydrates first: writing before reading would save a file holding only the new
+plan. Old `/#/view` links forward to `/app/#/view`.
 
 **Every analysis is one question in a different world.** `analysis/availability.ts`
 answers "given who can reach what, can this wallet be spent". Loss, compromise,

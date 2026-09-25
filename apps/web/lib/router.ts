@@ -13,6 +13,7 @@
  */
 
 import { useCallback, useSyncExternalStore } from 'react'
+import { currentDocument, goTo, sitePath } from './site.ts'
 
 export type ViewId =
   | 'home'
@@ -111,8 +112,14 @@ export function useRoute(): [Route, (route: Route, options?: { replace?: boolean
   return [parseHash(hash), navigate]
 }
 
+/**
+ * A link to a view. The landing page and the terms are documents of their
+ * own, and any view linked from outside the app document is a link into it.
+ */
 export function href(view: ViewId, section?: string): string {
-  return formatHash({ view, section: section ?? null })
+  if (view === 'home' || view === 'terms') return sitePath(view)
+  const fragment = formatHash({ view, section: section ?? null })
+  return currentDocument() === 'app' ? fragment : sitePath('app', fragment)
 }
 
 /**
@@ -121,6 +128,13 @@ export function href(view: ViewId, section?: string): string {
  * down to it buys nothing: the fragment is global state either way.
  */
 export function navigateTo(view: ViewId, section?: string): void {
+  if (view === 'home' || view === 'terms' || currentDocument() !== 'app') {
+    goTo(
+      view === 'home' || view === 'terms' ? view : 'app',
+      view === 'home' || view === 'terms' ? '' : formatHash({ view, section: section ?? null })
+    )
+    return
+  }
   const next = href(view, section)
   if (window.location.hash === next) return
   window.history.pushState(null, '', next)

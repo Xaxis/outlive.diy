@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
    * send it to, and the only other host the policy allows is Anthropic.
    */
   output: 'export',
+  // Each document is a folder with an index, so `/app/` and `/terms/` are
+  // served as themselves by any static host and open from a disk as folders.
+  trailingSlash: true,
   reactStrictMode: true,
   // The engine is consumed as TypeScript source rather than a build artefact,
   // so that a change to it is one edit rather than an edit and a rebuild.

@@ -44,7 +44,7 @@ export default function NotFound() {
           pretend it already has it. */}
       <p className="mt-7">
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a href="/#/overview" className="btn btn-primary no-underline">
+        <a href="/app/#/overview" className="btn btn-primary no-underline">
           Go to the app
         </a>
       </p>

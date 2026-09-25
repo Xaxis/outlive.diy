@@ -1,9 +1,14 @@
-import { describe, expect, it } from 'vitest'
-import { act, render, screen, within } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import { act, cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { App } from './App.tsx'
+import { Landing } from './Landing.tsx'
+import { TermsView } from '@/components/views/TermsView.tsx'
+
 import { useStore } from '@/lib/store.ts'
 import { analyze, exampleById } from '@outlive/core'
+
+const originalLocation = window.location
 
 /** Navigate the fragment router the way the address bar would. */
 function goto(hash: string) {
@@ -336,36 +341,78 @@ describe('asking Claude', () => {
 })
 
 describe('the terms', () => {
-  it('say who is responsible, and can be read before anything is stored', async () => {
+  it('are a page of their own, linked from the app, saying who is responsible', async () => {
     reset()
-    const user = userEvent.setup()
     render(<App />)
-    await user.click(await screen.findByRole('link', { name: /terms and disclaimer/i }))
+    const link = await screen.findByRole('link', { name: /terms and disclaimer/i })
+    expect(link).toHaveAttribute('href', '/terms/')
+
+    cleanup()
+    window.history.replaceState(null, '', '/terms/')
+    render(<TermsView />)
     expect(
-      await screen.findByRole('heading', { name: /terms of use and disclaimer/i })
+      screen.getByRole('heading', { name: /terms of use and disclaimer/i })
     ).toBeInTheDocument()
     expect(screen.getByText(/you are responsible for your bitcoin/i)).toBeInTheDocument()
     expect(screen.getByText(/not responsible or liable for any loss/i)).toBeInTheDocument()
-    expect(useStore.getState().plans).toHaveLength(0)
+    expect(screen.getByRole('link', { name: /back to outlive\.diy/i })).toHaveAttribute('href', '/')
   })
 })
 
 describe('the way home', () => {
-  it('goes back to the landing page from inside a plan, and back into the plan', async () => {
+  it('links home from inside a plan, and home lists the plan with a way back in', async () => {
     reset()
     const user = userEvent.setup()
     render(<App />)
     await user.click(await screen.findByText('Two of three, three sites'))
     await screen.findByRole('heading', { name: 'Findings' })
+    // A page load to /, not a fragment: the landing page is its own document.
+    expect(screen.getByRole('link', { name: /outlive\.diy, home/i })).toHaveAttribute('href', '/')
 
-    await user.click(screen.getByRole('link', { name: /outlive\.diy, home/i }))
-    expect(
-      await screen.findByRole('heading', { name: /design a bitcoin custody plan/i })
-    ).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /continue/i }))
-    expect(
-      await screen.findByRole('heading', { name: 'Two of three, three sites' })
-    ).toBeInTheDocument()
+    cleanup()
+    window.history.replaceState(null, '', '/')
+    const assign = vi.fn()
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...window.location, assign, pathname: '/', hash: '', protocol: 'http:' },
+    })
+    try {
+      render(<Landing />)
+      expect(
+        await screen.findByRole('heading', { name: /design a bitcoin custody plan/i })
+      ).toBeInTheDocument()
+      expect(await screen.findByText('Your plans')).toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: /continue/i }))
+      expect(assign).toHaveBeenCalledWith('/app/#/overview')
+    } finally {
+      Object.defineProperty(window, 'location', { configurable: true, value: originalLocation })
+    }
+  })
+
+  it('reads what is stored before it can write, so it never overwrites saved plans', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+    const saved = window.localStorage.getItem('outlive.diy/plan-file/v1')
+    expect(saved).toContain('Two of three, three sites')
+
+    // A fresh landing page, as a new tab would load it, with nothing in memory.
+    cleanup()
+    useStore.setState({ ready: false, plans: [], activeId: '' })
+    const assign = vi.fn()
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...window.location, assign, pathname: '/', hash: '', protocol: 'http:' },
+    })
+    try {
+      useStore.getState().openExample('one-signer')
+      const stored = window.localStorage.getItem('outlive.diy/plan-file/v1') ?? ''
+      expect(stored).toContain('Two of three, three sites')
+      expect(stored).toContain('One signer, one backup')
+    } finally {
+      Object.defineProperty(window, 'location', { configurable: true, value: originalLocation })
+    }
   })
 })
 

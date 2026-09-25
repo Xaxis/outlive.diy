@@ -16,6 +16,7 @@ import {
   Undo2,
 } from 'lucide-react'
 import { OPEN_PALETTE } from './CommandPalette.tsx'
+import { sitePath } from '@/lib/site.ts'
 import type { Plan } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
 import { Wordmark } from '@/components/brand/Logo.tsx'
@@ -119,7 +120,14 @@ function ThemeToggle() {
   )
 }
 
-export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
+export function TopBar({
+  onToggleSidebar,
+  landing = false,
+}: {
+  onToggleSidebar?: () => void
+  /** Outside the app: a way home, a way in, and the theme. */
+  landing?: boolean
+}) {
   const plans = useStore((state) => state.plans)
   const activeId = useStore((state) => state.activeId)
   const persistence = useStore((state) => state.preferences.persistence)
@@ -132,21 +140,23 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-canvas/85 backdrop-blur no-print">
       <div className="flex min-w-0 items-center gap-2 px-3 py-2 sm:gap-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="lg:hidden"
-          aria-label="Toggle navigation"
-          onClick={onToggleSidebar}
-        >
-          <Menu className="size-4" aria-hidden />
-        </Button>
+        {onToggleSidebar ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="lg:hidden"
+            aria-label="Toggle navigation"
+            onClick={onToggleSidebar}
+          >
+            <Menu className="size-4" aria-hidden />
+          </Button>
+        ) : null}
 
         <a href={href('home')} className="no-underline" aria-label="outlive.diy, home">
           <Wordmark />
         </a>
 
-        {plans.length > 0 ? (
+        {plans.length > 0 && !landing ? (
           <>
             <span className="hidden h-4 w-px bg-line sm:block" />
             <PlanSwitcher plans={plans} activeId={activeId} />
@@ -154,7 +164,14 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
         ) : null}
 
         <div className="ml-auto flex items-center gap-1">
-          {plans.length > 0 ? (
+          {landing ? (
+            <a
+              href={sitePath('app', plans.length > 0 ? '#/overview' : '#/build')}
+              className="btn btn-primary mr-1 no-underline"
+            >
+              {plans.length > 0 ? 'Open your plan' : 'Open the app'}
+            </a>
+          ) : plans.length > 0 ? (
             <>
               <button
                 type="button"

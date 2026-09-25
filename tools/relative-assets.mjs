@@ -15,7 +15,7 @@
  * runs it; the hosted build wants the absolute paths.
  */
 
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { extname, join, relative } from 'node:path'
 
 const OUT = new URL('../apps/web/out/', import.meta.url).pathname
@@ -57,6 +57,15 @@ for (const file of walk(OUT)) {
     })
     // The not-found page's way back. It is the one link in the build that
     // points at the application by path rather than by fragment.
+    // The site's documents, linked by absolute path in the hosted build.
+    after = after.replace(/href="\/(app|terms)\//g, (_, document) => {
+      links += 1
+      return `href="${upTo(file)}${document}/index.html`
+    })
+    after = after.replace(/href="\/"/g, () => {
+      links += 1
+      return `href="${upTo(file)}index.html"`
+    })
     after = after.replace(/href="\/#/g, () => {
       links += 1
       return `href="${upTo(file)}index.html#`
@@ -64,6 +73,19 @@ for (const file of walk(OUT)) {
   }
 
   if (after !== before) writeFileSync(file, after)
+}
+
+/**
+ * The documents one level down. Their `./_next` is resolved against their own
+ * folder, by the page and by every chunk loaded later, and no rewrite of the
+ * HTML reaches the second of those. So each gets the assets beside it: a
+ * disk copy is bigger, and it opens.
+ */
+for (const document of ['app', 'terms']) {
+  const dir = join(OUT, document)
+  if (!existsSync(dir)) continue
+  cpSync(join(OUT, '_next'), join(dir, '_next'), { recursive: true })
+  cpSync(join(OUT, 'fonts'), join(dir, 'fonts'), { recursive: true })
 }
 
 if (fonts === 0) {
