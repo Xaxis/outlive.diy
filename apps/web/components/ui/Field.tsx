@@ -66,7 +66,6 @@ export function GuardedInput({
   id,
   rows,
   ariaLabel,
-  combo,
 }: {
   value: string
   onCommit: (next: string) => void
@@ -76,20 +75,6 @@ export function GuardedInput({
   rows?: number
   /** For the fields that stand outside a Field, such as a row's own name. */
   ariaLabel?: string
-  /**
-   * For a control built on this one, such as a combobox: what is being typed,
-   * focus, keys, and the attributes that make it announce itself. The guard
-   * still decides what is stored.
-   */
-  combo?: {
-    onDraft: (text: string) => void
-    onFocus: (event: React.FocusEvent<HTMLInputElement>) => void
-    onBlur: () => void
-    onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void
-    /** ARIA and autocomplete attributes, set on the input as given. */
-    attributes: Record<string, string | boolean | undefined>
-    className?: string
-  }
 }) {
   const [draft, setDraft] = useState(value)
   const [hits, setHits] = useState<GuardHit[]>([])
@@ -128,7 +113,6 @@ export function GuardedInput({
 
   const handle = (next: string) => {
     setDraft(next)
-    combo?.onDraft(next)
     const result = inspect(next)
     setHits(result.hits)
     if (result.ok) onCommit(next)
@@ -146,7 +130,6 @@ export function GuardedInput({
         aria-labelledby={ariaLabel ? undefined : labelledBy}
         className={cn(
           multiline ? 'textarea' : 'input',
-          combo?.className,
           refusal && 'border-critical bg-critical/[0.06]'
         )}
         value={draft}
@@ -154,15 +137,11 @@ export function GuardedInput({
         placeholder={placeholder}
         aria-invalid={refusal ? true : undefined}
         aria-describedby={refusal ? `${fieldId}-guard` : undefined}
-        {...(combo?.attributes ?? {})}
         onChange={(event) => handle(event.target.value)}
-        onKeyDown={combo?.onKeyDown as React.KeyboardEventHandler<HTMLElement> | undefined}
-        onFocus={(event) => {
+        onFocus={() => {
           baseline.current = value
-          combo?.onFocus(event as React.FocusEvent<HTMLInputElement>)
         }}
         onBlur={() => {
-          combo?.onBlur()
           if (!refusal) return
           setDraft(baseline.current)
           setHits([])

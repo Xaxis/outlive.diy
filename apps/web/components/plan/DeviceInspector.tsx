@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+
 import {
   Cloud,
   Cpu,
@@ -19,7 +21,6 @@ import {
   type SupplyChain,
 } from '@outlive/core'
 import { Field, GuardedInput, Segmented, Select } from '@/components/ui/Field.tsx'
-import { Combo } from '@/components/ui/Combo.tsx'
 import { Disclosure } from '@/components/ui/Disclosure.tsx'
 import { Callout, Info } from '@/components/ui/Surface.tsx'
 import { useEntityUpdater } from '@/lib/edit.ts'
@@ -65,69 +66,12 @@ export function DeviceInspector({ plan, device }: { plan: Plan; device: Device }
   const vendorData = useStore((state) => state.vendorData)
   const set = (patch: Partial<Device>) => update(device.id, patch)
   const vendorEntry = vendorData ? lookupVendor(vendorData, device.vendor) : null
-  const maker = makerNamed(device.vendor)
   const keys = plan.keys.filter((key) => key.deviceId === device.id)
   const place = (id: string | null) => plan.locations.find((entry) => entry.id === id)?.label
 
   return (
     <div className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Maker">
-          <Combo
-            value={device.vendor ?? ''}
-            placeholder="Pick or type"
-            options={DEVICE_CATALOG.map((entry) => ({
-              value: entry.name,
-              hint:
-                entry.models.length === 1 ? entry.models[0].name : `${entry.models.length} models`,
-            }))}
-            onCommit={(value) => set({ vendor: value.trim() === '' ? null : value })}
-            onPick={(value) => {
-              const picked = makerNamed(value)
-              // A maker with one model means the model too.
-              const only = picked && picked.models.length === 1 ? picked.models[0] : null
-              set({
-                vendor: value,
-                ...(only
-                  ? {
-                      model: only.name,
-                      kind: only.kind,
-                      airGapped: only.airGapOnly ?? device.airGapped,
-                    }
-                  : modelNamed(value, device.model)
-                    ? {}
-                    : { model: null }),
-              })
-            }}
-          />
-        </Field>
-        <Field label="Model">
-          <Combo
-            value={device.model ?? ''}
-            placeholder={maker ? 'Pick or type' : 'Type, or pick a maker first'}
-            options={(maker?.models ?? DEVICE_CATALOG.flatMap((entry) => entry.models)).map(
-              (model) => ({ value: model.name, hint: DEVICE_KIND[model.kind] })
-            )}
-            onCommit={(value) => set({ model: value.trim() === '' ? null : value })}
-            onPick={(value) => {
-              const owner =
-                maker ??
-                DEVICE_CATALOG.find((entry) =>
-                  entry.models.some((model) => model.name === value)
-                ) ??
-                null
-              const model = owner?.models.find((entry) => entry.name === value)
-              set({
-                model: value,
-                ...(owner && !device.vendor ? { vendor: owner.name } : {}),
-                ...(model
-                  ? { kind: model.kind, airGapped: model.airGapOnly ?? device.airGapped }
-                  : {}),
-              })
-            }}
-          />
-        </Field>
-      </div>
+      <MakerAndModel device={device} set={set} />
 
       <div>
         <p className="label mb-1.5">What it is</p>
@@ -362,5 +306,120 @@ function Pill({
       <span className={on ? 'text-accent' : 'text-faint'}>{icon}</span>
       {children}
     </button>
+  )
+}
+
+const OTHER = '__other'
+
+/**
+ * Maker and model: a list of the known ones, and "Other" for everything else.
+ *
+ * A dropdown alone cannot hold the device nobody put on the list, and a text
+ * box alone gets "Trezor" and "trezor " as two makers, which the analysis then
+ * counts as two. So each is a dropdown with "Other…" at the end, and choosing
+ * it opens a field for the name. A name already typed that is not on the list
+ * shows as Other with its field filled. Typed names go through the guard like
+ * every other field.
+ */
+function MakerAndModel({ device, set }: { device: Device; set: (patch: Partial<Device>) => void }) {
+  // Which fields the reader has switched to Other, for this device only.
+  const [other, setOther] = useState({ id: device.id, maker: false, model: false })
+  if (other.id !== device.id) setOther({ id: device.id, maker: false, model: false })
+
+  const maker = makerNamed(device.vendor)
+  const customMaker = other.maker || (device.vendor !== null && maker === null)
+  const models = maker?.models ?? []
+  const listedModel = modelNamed(device.vendor, device.model)
+  const customModel = other.model || customMaker || (device.model !== null && listedModel === null)
+
+  const pickMaker = (value: string) => {
+    if (value === OTHER) {
+      setOther({ ...other, maker: true, model: true })
+      set({ vendor: null, model: null })
+      return
+    }
+    setOther({ ...other, maker: false, model: false })
+    if (value === '') {
+      set({ vendor: null, model: null })
+      return
+    }
+    const picked = makerNamed(value)
+    // A maker with one model means the model too.
+    const only = picked && picked.models.length === 1 ? picked.models[0] : null
+    set({
+      vendor: value,
+      model: only?.name ?? null,
+      ...(only ? { kind: only.kind, airGapped: only.airGapOnly ?? device.airGapped } : {}),
+    })
+  }
+
+  const pickModel = (value: string) => {
+    if (value === OTHER) {
+      setOther({ ...other, model: true })
+      set({ model: null })
+      return
+    }
+    setOther({ ...other, model: false })
+    const model = models.find((entry) => entry.name === value)
+    set({
+      model: value === '' ? null : value,
+      ...(model ? { kind: model.kind, airGapped: model.airGapOnly ?? device.airGapped } : {}),
+    })
+  }
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      <Field label="Maker">
+        <select
+          aria-label="Maker"
+          className="select"
+          value={customMaker ? OTHER : (maker?.name ?? '')}
+          onChange={(event) => pickMaker(event.target.value)}
+        >
+          <option value="">Choose a maker</option>
+          {DEVICE_CATALOG.map((entry) => (
+            <option key={entry.name} value={entry.name}>
+              {entry.name}
+            </option>
+          ))}
+          <option value={OTHER}>Other…</option>
+        </select>
+        {customMaker ? (
+          <GuardedInput
+            ariaLabel="Maker name"
+            placeholder="Type the maker"
+            value={device.vendor ?? ''}
+            onCommit={(value) => set({ vendor: value.trim() === '' ? null : value })}
+          />
+        ) : null}
+      </Field>
+      <Field label="Model">
+        {customMaker ? null : (
+          <select
+            aria-label="Model"
+            className="select"
+            disabled={!maker}
+            value={customModel ? OTHER : (listedModel?.name ?? '')}
+            onChange={(event) => pickModel(event.target.value)}
+          >
+            <option value="">{maker ? 'Choose a model' : 'Choose a maker first'}</option>
+            {models.map((entry) => (
+              <option key={entry.name} value={entry.name}>
+                {entry.name}
+              </option>
+            ))}
+            <option value={OTHER}>Other…</option>
+          </select>
+        )}
+        {customModel ? (
+          <GuardedInput
+            ariaLabel="Model name"
+            placeholder="Type the model"
+            value={device.model ?? ''}
+            onCommit={(value) => set({ model: value.trim() === '' ? null : value })}
+          />
+        ) : null}
+      </Field>
+    </div>
   )
 }

@@ -424,13 +424,8 @@ describe('a device, picked rather than typed', () => {
     await user.click(await screen.findByText('Two of three, three sites'))
 
     goto('#/design/devices')
-    const maker = await screen.findByRole('combobox', { name: 'Maker' })
-    const model = screen.getByRole('combobox', { name: 'Model' })
-    await user.clear(maker)
-    await user.type(maker, 'found')
-    await user.click(screen.getByRole('option', { name: /^Foundation/ }))
-    await user.click(model)
-    await user.click(screen.getByRole('option', { name: /^Passport Prime/ }))
+    await user.selectOptions(await screen.findByRole('combobox', { name: 'Maker' }), 'Foundation')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Model' }), 'Passport Prime')
 
     const device = useStore.getState().plans[0].devices.find((entry) => entry.label === 'Signer A')!
     expect(device.vendor).toBe('Foundation')
@@ -440,19 +435,32 @@ describe('a device, picked rather than typed', () => {
     expect(device.kind).toBe('air-gapped-signer')
   })
 
-  it('keeps whatever is typed that is not on the list', async () => {
+  it('takes a maker that is not on the list through Other', async () => {
     reset()
     const user = userEvent.setup()
     render(<App />)
     await user.click(await screen.findByText('Two of three, three sites'))
 
     goto('#/design/devices')
-    const maker = await screen.findByRole('combobox', { name: 'Maker' })
-    await user.clear(maker)
-    await user.type(maker, 'Homebrew')
-    await user.tab()
+    await user.selectOptions(await screen.findByRole('combobox', { name: 'Maker' }), 'Other…')
+    await user.type(screen.getByRole('textbox', { name: 'Maker name' }), 'Homebrew')
+    await user.type(screen.getByRole('textbox', { name: 'Model name' }), 'Mark 1')
     const device = useStore.getState().plans[0].devices.find((entry) => entry.label === 'Signer A')!
     expect(device.vendor).toBe('Homebrew')
+    expect(device.model).toBe('Mark 1')
+    // And it reads back as Other, with the name in its field.
+    expect(screen.getByRole('combobox', { name: 'Maker' })).toHaveValue('__other')
+  })
+
+  it('shows a maker typed before the list existed as Other, with its name', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+    goto('#/design/devices')
+    // The example's makers are "Vendor One" and "Vendor Two", which no list has.
+    expect(await screen.findByRole('combobox', { name: 'Maker' })).toHaveValue('__other')
+    expect(screen.getByRole('textbox', { name: 'Maker name' })).toHaveValue('Vendor One')
   })
 })
 

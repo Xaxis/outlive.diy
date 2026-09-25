@@ -43,7 +43,6 @@ export default function NotFound() {
           fetch the application, not to ask a router that is not running here to
           pretend it already has it. */}
       <p className="mt-7">
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         <a href="/app/#/overview" className="btn btn-primary no-underline">
           Go to the app
         </a>
