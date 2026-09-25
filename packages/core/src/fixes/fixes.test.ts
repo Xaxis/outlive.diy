@@ -3,7 +3,8 @@ import { analyze } from '../analysis/analyze.ts'
 import { exampleById } from '../model/examples.ts'
 import { referentialProblems } from '../model/schema.ts'
 import { inspectDeep } from '../guard/guard.ts'
-import { candidateFixes, fixesFor, improve } from './fixes.ts'
+import { candidateFixes, fixesFor, improve, tryFix } from './fixes.ts'
+import { defaultShape, planFromShape } from '../model/shape.ts'
 
 const TODAY = '2026-03-01'
 
@@ -82,5 +83,21 @@ describe('fixes, found by trying them', () => {
     const records = candidateFixes(plan, TODAY).filter((fix) => fix.kind === 'record')
     expect(records.length).toBeGreaterThan(0)
     expect(records.every((fix) => /^(I |.+ rehearsed)/.test(fix.label))).toBe(true)
+  })
+
+  it('upgrades a key whose backup is already far away without putting two keys in one region', () => {
+    // Key A's device at home and its steel plate with somebody far away: a new
+    // key beside either of those is a quorum in one region.
+    const plan = planFromShape({
+      ...defaultShape(),
+      threshold: 1,
+      keys: 1,
+      placement: [{ device: 0, backup: 1 }],
+    })
+    const before = analyze(plan, { includeScenarios: false, today: TODAY }).findings
+    const upgrade = candidateFixes(plan, TODAY).find((fix) => fix.id.startsWith('upgrade:'))!
+    const result = tryFix(plan, upgrade, before, TODAY)
+    expect(result.opens.map((finding) => finding.rule)).not.toContain('R003')
+    expect(improve(plan, { maxSteps: 1, today: TODAY }).steps).toHaveLength(1)
   })
 })

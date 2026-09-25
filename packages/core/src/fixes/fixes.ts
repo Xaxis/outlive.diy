@@ -220,14 +220,51 @@ export function candidateFixes(plan: Plan, today = todayDate()): Fix[] {
         label: `Make ${wallet.label} two of three: add ${first} and ${second}, each in a region of its own, with the descriptor kept in every one`,
         apply: (draft) => {
           // Three keys need three regions, or the quorum sits in one of them.
-          const regions = new Map<string, Id>()
-          for (const entry of draft.locations)
-            if (!regions.has(entry.disasterGroup ?? entry.id))
-              regions.set(entry.disasterGroup ?? entry.id, entry.id)
-          const spread = [...regions.values()]
-          if (spread.length < 3)
-            for (const id of farPlaces(draft, 3 - spread.length + ours(draft).length))
-              if (!spread.includes(id)) spread.push(id)
+          // The key already there may keep its device in one region and its
+          // backup in another, and a new key in either of those is two of
+          // three in one place. So the new keys go where it is not.
+          const region = (id: Id | null) => {
+            const entry = draft.locations.find((location) => location.id === id)
+            return entry ? (entry.disasterGroup ?? entry.id) : null
+          }
+          const existing = draft.wallets.find((entry) => entry.id === wallet.id)?.paths[0]
+          const occupied = new Set<string>()
+          for (const key of draft.keys)
+            if (existing?.keyIds.includes(key.id))
+              for (const at of [key.deviceLocationId, ...key.backups.map((b) => b.locationId)]) {
+                const found = region(at)
+                if (found) occupied.add(found)
+              }
+          const free: Id[] = []
+          for (const entry of draft.locations) {
+            const group = entry.disasterGroup ?? entry.id
+            if (occupied.has(group)) continue
+            occupied.add(group)
+            free.push(entry.id)
+          }
+          while (free.length < 2) {
+            const label = nextLetter(
+              draft.locations.map((entry) => entry.label),
+              'Site'
+            )
+            const created = createLocation({
+              label,
+              kind: 'other',
+              travelMinutes: 180,
+              disasterGroup: `Area ${label.slice(-1)}`,
+            })
+            draft.locations.push(created)
+            free.push(created.id)
+          }
+          const spread = [
+            ...new Set(
+              draft.keys
+                .filter((key) => existing?.keyIds.includes(key.id))
+                .map((key) => key.deviceLocationId)
+                .filter((id): id is Id => id !== null)
+            ),
+            ...free.slice(0, 2),
+          ]
           const target = draft.wallets.find((entry) => entry.id === wallet.id)
           const path = target?.paths[0]
           if (!target || !path) return
@@ -235,7 +272,7 @@ export function candidateFixes(plan: Plan, today = todayDate()): Fix[] {
             const device = createDevice({ label: `Signer ${label.slice(-1)}` })
             // One key's material per region: losing a region loses one key
             // and leaves two, and standing in one holds one key and not two.
-            const at = spread[(index + 1) % spread.length]
+            const at = free[index]
             const backupAt = at
             draft.devices.push(device)
             const key = createKey({
