@@ -9,6 +9,7 @@ import { TopBar } from './TopBar.tsx'
 import { Toast } from './Toast.tsx'
 import { ScopeNotice } from './ScopeNotice.tsx'
 import { CommandPalette } from './CommandPalette.tsx'
+import { ViewBoundary } from './ViewBoundary.tsx'
 import { Welcome } from '@/components/views/Welcome.tsx'
 import { BuildView } from '@/components/views/BuildView.tsx'
 import { TermsView } from '@/components/views/TermsView.tsx'
@@ -144,7 +145,10 @@ export function App() {
               heading are in the same place whichever one you are on. */}
           <div className="mx-auto w-full max-w-[74rem]">
             <ScopeNotice />
-            <View />
+            {/* Keyed by the view, so moving to another one tries again. */}
+            <ViewBoundary key={route.view}>
+              <View />
+            </ViewBoundary>
           </div>
         </main>
       </div>
