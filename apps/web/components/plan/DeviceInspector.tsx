@@ -27,7 +27,13 @@ import { useEntityUpdater } from '@/lib/edit.ts'
 import { useStore } from '@/lib/store.ts'
 import { href } from '@/lib/router.ts'
 import { DEVICE_KIND, SUPPLY_CHAIN } from '@/lib/describe.ts'
-import { DEVICE_CATALOG, makerNamed, modelNamed } from '@/lib/devices.ts'
+import {
+  DEVICE_CATALOG,
+  isPlaceholderName,
+  makerNamed,
+  modelNamed,
+  nameFromWhatItIs,
+} from '@/lib/devices.ts'
 import { cn } from '@/lib/cn.ts'
 
 /**
@@ -37,8 +43,10 @@ import { cn } from '@/lib/cn.ts'
  * them, which put the label first and the thing that decides the analysis,
  * the maker, fourth. Now the device reads like a device: what it is, picked
  * from a list or typed, then the handful of yes-or-no facts about how it is
- * used, each one a click. The label and the rarely-known architecture sit in
- * a fold, because most people never need to touch them.
+ * used, each one a click. Its name follows from what it is until the reader
+ * gives it one of their own, so a finding says "Coinkite Coldcard Q" rather
+ * than a letter the program made up. The rarely-known architecture and notes
+ * sit in a fold.
  */
 
 export const DEVICE_ICON: Record<DeviceKind, typeof Cpu> = {
@@ -68,10 +76,31 @@ export function DeviceInspector({ plan, device }: { plan: Plan; device: Device }
   const vendorEntry = vendorData ? lookupVendor(vendorData, device.vendor) : null
   const keys = plan.keys.filter((key) => key.deviceId === device.id)
   const place = (id: string | null) => plan.locations.find((entry) => entry.id === id)?.label
+  const derived = nameFromWhatItIs(device, plan.devices)
+
+  // Saying what the device is renames it, unless the reader named it: a name
+  // the program made up, or the one it derived last time, follows along.
+  const setWhat = (patch: Partial<Device>) => {
+    const follows = isPlaceholderName(device.label) || device.label === derived
+    set(
+      follows ? { ...patch, label: nameFromWhatItIs({ ...device, ...patch }, plan.devices) } : patch
+    )
+  }
 
   return (
     <div className="space-y-5">
-      <MakerAndModel device={device} set={set} />
+      <MakerAndModel device={device} set={setWhat} />
+
+      <Field
+        label="Name, if you want one"
+        help="Left blank, the device is called what it is, and follows along when you change the maker or model."
+      >
+        <GuardedInput
+          placeholder={derived}
+          value={device.label === derived ? '' : device.label}
+          onCommit={(value) => set({ label: value.trim() === '' ? derived : value })}
+        />
+      </Field>
 
       <div>
         <p className="label mb-1.5">What it is</p>
@@ -90,7 +119,10 @@ export function DeviceInspector({ plan, device }: { plan: Plan; device: Device }
                 role="radio"
                 aria-checked={on}
                 onClick={() =>
-                  set({ kind, airGapped: kind === 'air-gapped-signer' ? true : device.airGapped })
+                  setWhat({
+                    kind,
+                    airGapped: kind === 'air-gapped-signer' ? true : device.airGapped,
+                  })
                 }
                 className={cn(
                   'flex flex-col items-center gap-1.5 rounded-[var(--radius-control)] border px-1 py-2.5 text-center text-[0.6875rem] leading-tight transition-colors',
@@ -248,11 +280,8 @@ export function DeviceInspector({ plan, device }: { plan: Plan; device: Device }
         </div>
       ) : null}
 
-      <Disclosure size="aside" title="Name, architecture, notes">
+      <Disclosure size="aside" title="Architecture, notes">
         <div className="mt-3 space-y-4">
-          <Field label="Name in this plan">
-            <GuardedInput value={device.label} onCommit={(value) => set({ label: value })} />
-          </Field>
           <Field
             label="Architecture"
             help="Shared silicon or a shared firmware lineage crosses brand boundaries, so two different logos can still be one failure. Leave blank if you do not know."

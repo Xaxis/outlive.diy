@@ -1,4 +1,5 @@
-import type { DeviceKind } from '@outlive/core'
+import type { Device, DeviceKind } from '@outlive/core'
+import { DEVICE_KIND } from './describe.ts'
 
 /**
  * Makers and models to pick from, so nobody types "Trezor" three ways.
@@ -78,4 +79,57 @@ export function modelNamed(maker: string | null, model: string | null): CatalogM
   if (!model) return null
   const wanted = model.trim().toLowerCase()
   return makerNamed(maker)?.models.find((entry) => entry.name.toLowerCase() === wanted) ?? null
+}
+
+/**
+ * What a device is, in words: "Coinkite Coldcard Q", "Trezor hardware
+ * signer", or only its kind when nothing more was said. This is what a reader
+ * recognises on a shelf, where "Signer A" is a name the program made up.
+ */
+export function describeDevice(device: Pick<Device, 'vendor' | 'model' | 'kind'>): string {
+  const vendor = device.vendor?.trim() || null
+  const model = device.model?.trim() || null
+  if (vendor && model)
+    return model.toLowerCase().startsWith(vendor.toLowerCase()) ? model : `${vendor} ${model}`
+  if (model) return model
+  if (vendor) return `${vendor} ${DEVICE_KIND[device.kind].toLowerCase()}`
+  return DEVICE_KIND[device.kind]
+}
+
+/** The names the program gives a device before the reader says what it is. */
+export function isPlaceholderName(label: string): boolean {
+  return label.trim() === '' || /^Signer [A-Z]{1,2}$/.test(label.trim())
+}
+
+/**
+ * The name a device gets from what it is, told apart from the other devices
+ * in the plan by a number when two are the same thing. Two Coldcards are
+ * "Coinkite Coldcard Q" and "Coinkite Coldcard Q 2", not two of one name that
+ * a finding cannot tell apart.
+ */
+export function nameFromWhatItIs(
+  device: Pick<Device, 'id' | 'vendor' | 'model' | 'kind'>,
+  others: Pick<Device, 'id' | 'label'>[]
+): string {
+  const base = describeDevice(device)
+  const taken = new Set(
+    others.filter((entry) => entry.id !== device.id).map((entry) => entry.label)
+  )
+  if (!taken.has(base)) return base
+  let index = 2
+  while (taken.has(`${base} ${index}`)) index += 1
+  return `${base} ${index}`
+}
+
+/**
+ * How a device is offered where a key is put on one: what it is first, and the
+ * reader's own name for it after, when they gave it one that says something
+ * the description does not.
+ */
+export function deviceChoiceLabel(device: Device, all: Device[]): string {
+  const what = describeDevice(device)
+  const named = !isPlaceholderName(device.label) && !device.label.startsWith(what)
+  const ambiguous = all.some((entry) => entry.id !== device.id && describeDevice(entry) === what)
+  if (named) return `${device.label} · ${what}`
+  return ambiguous ? `${what} · ${device.label}` : what
 }

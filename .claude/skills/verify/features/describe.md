@@ -10,7 +10,8 @@ Build a plan by its shape in one screen, or describe it step by step with templa
 - describe in words: a sentence becomes a shape through Claude (see claude.md).
 - templates: each design step has a "Start from" row from `packages/core/src/model/presets.ts`; they only add, and are one undo.
 - step visual: "What goes where" grid, "Drawing" or "Hide"; the checks step shows "The year ahead" calendar instead.
-- devices: maker and model dropdowns with "Other…" opening a text field; device shelf with maker bar.
+- devices: maker and model dropdowns with "Other…" opening a text field; the name follows what it is ("Coinkite Coldcard Q") until the reader types their own in "Name, if you want one"; device shelf with maker bar.
+- keys: "Device it lives on" offers each device by what it is (`deviceChoiceLabel` in `lib/devices.ts`), with the reader's own name when they gave one.
 - choices: up to five short options render as buttons.
 - quorum card: each spend path shows its keys as chips and a keys-needed stepper.
 - places and roles: tiles with icons; travel presets.

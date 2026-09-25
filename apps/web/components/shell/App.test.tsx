@@ -427,7 +427,8 @@ describe('a device, picked rather than typed', () => {
     await user.selectOptions(await screen.findByRole('combobox', { name: 'Maker' }), 'Foundation')
     await user.selectOptions(screen.getByRole('combobox', { name: 'Model' }), 'Passport Prime')
 
-    const device = useStore.getState().plans[0].devices.find((entry) => entry.label === 'Signer A')!
+    const device = useStore.getState().plans[0].devices[0]
+    expect(device.label).toBe('Foundation Passport Prime')
     expect(device.vendor).toBe('Foundation')
     expect(device.model).toBe('Passport Prime')
     // An air-gap-only model is air-gapped: it cannot be anything else.
@@ -445,9 +446,11 @@ describe('a device, picked rather than typed', () => {
     await user.selectOptions(await screen.findByRole('combobox', { name: 'Maker' }), 'Other…')
     await user.type(screen.getByRole('textbox', { name: 'Maker name' }), 'Homebrew')
     await user.type(screen.getByRole('textbox', { name: 'Model name' }), 'Mark 1')
-    const device = useStore.getState().plans[0].devices.find((entry) => entry.label === 'Signer A')!
+    const device = useStore.getState().plans[0].devices[0]
     expect(device.vendor).toBe('Homebrew')
     expect(device.model).toBe('Mark 1')
+    // Named for what it is now, since the reader never named it.
+    expect(device.label).toBe('Homebrew Mark 1')
     // And it reads back as Other, with the name in its field.
     expect(screen.getByRole('combobox', { name: 'Maker' })).toHaveValue('__other')
   })

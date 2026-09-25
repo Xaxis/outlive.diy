@@ -22,6 +22,7 @@ import { ItemList } from '@/components/ui/ItemList.tsx'
 import { Callout, SectionHeading } from '@/components/ui/Surface.tsx'
 import { useEntityUpdater, usePlanEdit } from '@/lib/edit.ts'
 import { BACKUP_MEDIUM, BACKUP_MEDIUM_NOTE } from '@/lib/describe.ts'
+import { deviceChoiceLabel } from '@/lib/devices.ts'
 
 const MEDIA = Object.keys(BACKUP_MEDIUM) as BackupMedium[]
 
@@ -163,7 +164,7 @@ export function KeyInspector({ plan, entity }: { plan: Plan; entity: Key }) {
           onChange={(deviceId) => set({ deviceId })}
           options={plan.devices.map((candidate) => ({
             value: candidate.id,
-            label: candidate.label,
+            label: deviceChoiceLabel(candidate, plan.devices),
           }))}
         />
       </Field>

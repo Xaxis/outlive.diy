@@ -6,6 +6,7 @@ import { DEVICE_ICON } from '@/components/plan/DeviceInspector.tsx'
 import { SeverityDot } from '@/components/ui/Severity.tsx'
 import { useStore } from '@/lib/store.ts'
 import { DEVICE_KIND } from '@/lib/describe.ts'
+import { describeDevice } from '@/lib/devices.ts'
 import { cn } from '@/lib/cn.ts'
 
 /** The rules that are about who made the devices, rather than where they are. */
@@ -59,10 +60,12 @@ export function DeviceShelf({ plan, report }: { plan: Plan; report: AnalysisRepo
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-strong">
-                    {[device.vendor, device.model].filter(Boolean).join(' ') || device.label}
+                    {device.label}
                   </span>
                   <span className="block truncate text-[0.6875rem] text-faint">
-                    {device.label} · {DEVICE_KIND[device.kind]}
+                    {describeDevice(device) === device.label
+                      ? DEVICE_KIND[device.kind]
+                      : describeDevice(device)}
                     {device.airGapped ? ' · air-gapped' : ''}
                   </span>
                   <span className="mt-1.5 flex flex-wrap gap-1">

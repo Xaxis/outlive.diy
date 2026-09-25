@@ -100,11 +100,14 @@ function addDevices(
   specs: { vendor: string; model: string; kind?: DeviceKind; airGapped?: boolean }[]
 ): Device[] {
   return specs.map((spec) => {
+    // Named for what it is, which is what the reader will see on the shelf,
+    // and numbered only when the plan already has one of the same.
+    const base = spec.model.startsWith(spec.vendor) ? spec.model : `${spec.vendor} ${spec.model}`
+    const taken = new Set(plan.devices.map((entry) => entry.label))
+    let label = base
+    for (let index = 2; taken.has(label); index += 1) label = `${base} ${index}`
     const device = createDevice({
-      label: next(
-        plan.devices.map((entry) => entry.label),
-        'Signer'
-      ),
+      label,
       vendor: spec.vendor,
       model: spec.model,
       kind: spec.kind ?? 'hardware-signer',
