@@ -38,6 +38,8 @@ export function Welcome() {
     [plans]
   )
   const due = (entry: { id: string }) => dueCounts.get(entry.id) ?? 0
+  const waiting = (entry: { changes: { doneAt: string | null }[] }) =>
+    entry.changes.filter((change) => change.doneAt === null).length
   const setActive = useStore((state) => state.setActive)
   const openExample = useStore((state) => state.openExample)
 
@@ -110,9 +112,15 @@ export function Welcome() {
                         · {due(entry)} {due(entry) === 1 ? 'check' : 'checks'} due
                       </span>
                     ) : null}
+                    {waiting(entry) > 0 ? (
+                      <span className="text-muted">
+                        {' '}
+                        · {waiting(entry)} {waiting(entry) === 1 ? 'change' : 'changes'} to make
+                      </span>
+                    ) : null}
                   </span>
                 </span>
-                {due(entry) > 0 ? (
+                {due(entry) + waiting(entry) > 0 ? (
                   <Button
                     size="sm"
                     onClick={() => {

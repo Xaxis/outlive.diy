@@ -11,6 +11,8 @@ The build runbook, recovery routes and successor letter, on screen and on paper.
 - letter: one per successor, containing nothing worth stealing.
 - print: every one prints whole, with interactive panels hidden.
 
+- changes to make: the runbook opens with "Changes to make" when an applied fix or adopted draft left errands in `plan.changes`; each ticks off with a date, "Clear the done ones" removes them, and they print.
+
 ## How to reach it
 
 - `/app/#/runbook`, `/app/#/recovery`, `/app/#/letter`; each has a Print button.

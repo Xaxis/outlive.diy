@@ -7,6 +7,7 @@ import {
   setStepDone,
   stepDone,
   today,
+  type PendingChange,
   type RunbookStep,
 } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
@@ -104,6 +105,23 @@ export function RunbookView() {
           <div className="mono text-xs text-faint no-print">{plan.name}</div>
         </div>
       </Panel>
+
+      {plan.changes.length > 0 ? (
+        <PendingChanges
+          changes={plan.changes}
+          onToggle={(id) =>
+            edit((draft) => {
+              const target = draft.changes.find((entry) => entry.id === id)
+              if (target) target.doneAt = target.doneAt ? null : today()
+            })
+          }
+          onClear={() =>
+            edit((draft) => {
+              draft.changes = draft.changes.filter((entry) => entry.doneAt === null)
+            })
+          }
+        />
+      ) : null}
 
       {runbook.gates.length > 0 ? (
         <Panel className="mb-6 border-accent/30 p-4 print-block">
@@ -259,5 +277,68 @@ export function RunbookView() {
         ))}
       </div>
     </div>
+  )
+}
+
+/**
+ * What the changes made to the plan ask somebody to go and do, and which of
+ * it is done. Above the gates, because a fix applied in the app is the plan
+ * running ahead of the world, and this is the list that catches it up.
+ */
+function PendingChanges({
+  changes,
+  onToggle,
+  onClear,
+}: {
+  changes: PendingChange[]
+  onToggle: (id: string) => void
+  onClear: () => void
+}) {
+  const open = changes.filter((entry) => entry.doneAt === null)
+  const done = changes.filter((entry) => entry.doneAt !== null)
+  return (
+    <Panel className="mb-6 border-medium/40 p-4 print-block">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold text-strong">
+          Changes to make{' '}
+          <span className="font-normal text-muted">
+            {open.length} open{done.length > 0 ? `, ${done.length} done` : ''}
+          </span>
+        </h2>
+        {done.length > 0 ? (
+          <Button size="sm" variant="ghost" className="no-print" onClick={onClear}>
+            Clear the done ones
+          </Button>
+        ) : null}
+      </div>
+      <p className="mb-3 text-sm leading-relaxed text-muted">
+        The plan already says these are done. Until they are done in the world, the analysis is
+        describing a setup you do not have yet.
+      </p>
+      <ul className="space-y-1.5">
+        {[...open, ...done].map((entry) => (
+          <li key={entry.id}>
+            <button
+              type="button"
+              aria-pressed={entry.doneAt !== null}
+              onClick={() => onToggle(entry.id)}
+              className="flex w-full items-start gap-2 text-left text-[0.875rem]"
+            >
+              {entry.doneAt ? (
+                <CheckCircle2 className="mt-0.5 size-4 flex-none text-ok" aria-hidden />
+              ) : (
+                <Circle className="mt-0.5 size-4 flex-none text-faint" aria-hidden />
+              )}
+              <span className={cn(entry.doneAt ? 'text-faint line-through' : 'text-body')}>
+                {entry.text}
+                <span className="ml-1.5 text-xs text-faint no-underline">
+                  {entry.doneAt ? `done ${entry.doneAt}` : `added ${entry.addedAt}`}
+                </span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </Panel>
   )
 }

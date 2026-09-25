@@ -357,6 +357,23 @@ export interface Plan {
    * else, or to open on another machine.
    */
   progress: Record<string, IsoDate>
+  /**
+   * Errands a change to the plan asks for and the world has not caught up
+   * with. Applying a fix changes the plan in one click and the backups not at
+   * all, and the list of what to go and do vanished with the click. Kept in
+   * the plan for the same reason as progress: it is weeks of work, and
+   * handing it over half done is a state worth saving.
+   */
+  changes: PendingChange[]
+}
+
+export interface PendingChange {
+  id: Id
+  /** One sentence, imperative, written by the engine from the two plans. */
+  text: string
+  subject: 'location' | 'person' | 'device' | 'key' | 'wallet' | 'verification'
+  addedAt: IsoDate
+  doneAt: IsoDate | null
 }
 
 /** A saved file holds the plan the user runs and any candidates beside it. */

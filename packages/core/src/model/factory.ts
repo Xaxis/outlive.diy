@@ -234,6 +234,7 @@ export function createPlan(overrides: Partial<Plan> = {}): Plan {
     wallets: [],
     verifications: [],
     progress: {},
+    changes: [],
     ...overrides,
   }
 }

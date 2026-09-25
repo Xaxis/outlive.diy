@@ -35,6 +35,7 @@ export function OverviewView() {
   const edit = useStore((state) => state.edit)
   const [, navigate] = useRoute()
 
+  const pending = plan?.changes.filter((entry) => entry.doneAt === null).length ?? 0
   const overdue = useMemo(() => (plan ? checksDue(createContext(plan)) : []), [plan])
   const index = useMemo(() => (plan ? indexPlan(plan) : null), [plan])
   const world = useMemo(() => (plan ? baseWorld(plan) : null), [plan])
@@ -223,6 +224,25 @@ export function OverviewView() {
               />
             )}
           </Panel>
+
+          {/* The plan ran ahead of the world: say so above the next move,
+              which would otherwise suggest a fourth change before the first
+              three have been made. */}
+          {pending > 0 ? (
+            <Panel className="border-medium/40 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-body">
+                  <span className="font-medium text-strong">
+                    {pending} {pending === 1 ? 'change' : 'changes'} to make in the world.
+                  </span>{' '}
+                  The plan says they are done; the backups do not know yet.
+                </p>
+                <Button size="sm" onClick={() => navigate({ view: 'runbook', section: null })}>
+                  See the list
+                </Button>
+              </div>
+            </Panel>
+          ) : null}
 
           {report.findings.length > 0 ? (
             <Panel className="border-accent/40 p-4">

@@ -88,7 +88,11 @@ a time and never made on the reader's behalf.
 between two plans into what somebody would go and do: take this there, copy
 that, tell somebody. The comparison and the next move both use it. It invents
 nothing: every sentence is a field that differs, in words, and a record of a
-check is marked as a record rather than an errand.
+check is marked as a record rather than an errand. Applying a change or
+adopting a draft appends its errands to `plan.changes`, measured from the plan
+being replaced so a draft's own history is not counted twice; the runbook,
+the overview, the landing card and the check-in show the open ones, because a
+fix applied in one click is the plan running ahead of the world.
 
 **Templates only add.** `model/presets.ts` and the builder's `planFromShape`
 never replace or delete what a plan holds, use roles for every name, and are

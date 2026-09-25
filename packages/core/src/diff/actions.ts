@@ -11,8 +11,11 @@
  * that differs between the two, in words. Places and people stay roles.
  */
 
+import { newId } from '../model/factory.ts'
 import type {
   BackupMedium,
+  IsoDate,
+  PendingChange,
   Device,
   Id,
   Key,
@@ -263,4 +266,21 @@ function walletChanges(
         `Move the copy of ${wallet.label}'s descriptor from ${place(old.locationId)} to ${place(copy.locationId)}`
       )
   }
+}
+
+/**
+ * The errands a change asks for, as things to tick off in the plan: what
+ * `applyPlan` and adopting a draft append to `changes`. Records of checks are
+ * left out, since a check recorded is already done.
+ */
+export function pendingChanges(before: Plan, after: Plan, date: IsoDate): PendingChange[] {
+  return describeActions(before, after)
+    .filter((action) => action.errand)
+    .map((action) => ({
+      id: newId('chg'),
+      text: action.text,
+      subject: action.subject,
+      addedAt: date,
+      doneAt: null,
+    }))
 }

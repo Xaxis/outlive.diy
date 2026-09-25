@@ -249,6 +249,18 @@ export const planSchema = z.object({
   wallets: z.array(walletSchema).default([]),
   verifications: z.array(verificationSchema).default([]),
   progress: z.record(z.string().max(120), isoDate).default({}),
+  changes: z
+    .array(
+      z.object({
+        id,
+        text: z.string().max(400),
+        subject: z.enum(['location', 'person', 'device', 'key', 'wallet', 'verification']),
+        addedAt: isoDate,
+        doneAt: isoDate.nullable().default(null),
+      })
+    )
+    .max(500)
+    .default([]),
 })
 
 export const planFileSchema = z.object({

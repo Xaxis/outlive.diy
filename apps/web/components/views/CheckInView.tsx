@@ -2,7 +2,14 @@
 
 import { useMemo, useState } from 'react'
 import { ArrowRight, Check, Clock, X } from 'lucide-react'
-import { checksDue, createContext, createVerification, indexPlan, today } from '@outlive/core'
+import {
+  checksDue,
+  createContext,
+  createVerification,
+  indexPlan,
+  today,
+  type Plan,
+} from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
 import { MEASURE, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { useActivePlan, useStore } from '@/lib/store.ts'
@@ -31,14 +38,17 @@ export function CheckInView() {
   // The list is fixed when the sitting starts, so recording one does not
   // reshuffle the rest under the reader.
   const [due] = useState(() => (plan ? checksDue(createContext(plan)) : []))
+  // Changes the plan is waiting for come first: a check of a setup that has
+  // not been changed yet tests the old one.
+  const [changes] = useState(() =>
+    plan ? plan.changes.filter((entry) => entry.doneAt === null) : []
+  )
   const [answers, setAnswers] = useState<Answer[]>([])
   const index = useMemo(() => (plan ? indexPlan(plan) : null), [plan])
 
   // The shell shows the start screen when there is no plan.
   if (!plan || !index) return null
 
-  const at = answers.length
-  const current = due[at]
   const label = (subject: { type: string; id: string }) => {
     const found =
       subject.type === 'key'
@@ -55,21 +65,53 @@ export function CheckInView() {
     return found?.label ?? null
   }
 
-  const answer = (value: Answer) => {
-    if (!current) return
-    if (value === 'done')
-      edit((draft) => {
-        const target = draft.verifications.find((check) => check.id === current.verification.id)
+  interface Item {
+    id: string
+    eyebrow: string
+    title: string
+    subject: string | null
+    how: string
+    record: (draft: Plan) => void
+  }
+  const items: Item[] = [
+    ...changes.map((change) => ({
+      id: change.id,
+      eyebrow: `a change to make, added ${change.addedAt}`,
+      title: change.text,
+      subject: null,
+      how: 'The plan already says this is done. Mark it done once it is done in the world as well.',
+      record: (draft: Plan) => {
+        const target = draft.changes.find((entry) => entry.id === change.id)
+        if (target) target.doneAt = today()
+      },
+    })),
+    ...due.map((entry) => ({
+      id: entry.verification.id,
+      eyebrow: entry.lastVerifiedAt === null ? 'never done' : `${entry.overdueDays} days overdue`,
+      title: VERIFICATION_KIND[entry.verification.kind],
+      subject: label(entry.verification.subject),
+      how: VERIFICATION_HOW[entry.verification.kind],
+      record: (draft: Plan) => {
+        const target = draft.verifications.find((check) => check.id === entry.verification.id)
         if (target) target.lastVerifiedAt = today()
         else
           draft.verifications.push(
             createVerification({
-              kind: current.verification.kind,
-              subject: current.verification.subject,
+              kind: entry.verification.kind,
+              subject: entry.verification.subject,
               lastVerifiedAt: today(),
             })
           )
-      })
+      },
+    })),
+  ]
+
+  const at = answers.length
+  const current = items[at]
+
+  const answer = (value: Answer) => {
+    if (!current) return
+    if (value === 'done') edit(current.record)
     setAnswers((list) => [...list, value])
   }
 
@@ -81,14 +123,14 @@ export function CheckInView() {
     />
   )
 
-  if (due.length === 0)
+  if (items.length === 0)
     return (
       <div className={MEASURE.read}>
         {header}
         <Panel className="p-5">
           <p className="text-sm text-body">
-            Nothing is due. That means every check this program knows about has a recent date, not
-            that the plan works: it only knows what you have told it.
+            Nothing is due and no change is waiting. That means every check this program knows about
+            has a recent date, not that the plan works: it only knows what you have told it.
           </p>
           <Button className="mt-4" onClick={() => navigateTo('overview')}>
             Back to the overview
@@ -98,13 +140,10 @@ export function CheckInView() {
     )
 
   if (!current) {
-    const done = due.filter((_, position) => answers[position] === 'done')
-    const couldnt = due.filter((_, position) => answers[position] === 'couldnt')
-    const later = due.filter((_, position) => answers[position] === 'later')
-    const line = (entry: (typeof due)[number]) => {
-      const subject = label(entry.verification.subject)
-      return `${VERIFICATION_KIND[entry.verification.kind]}${subject ? ` · ${subject}` : ''}`
-    }
+    const done = items.filter((_, position) => answers[position] === 'done')
+    const couldnt = items.filter((_, position) => answers[position] === 'couldnt')
+    const later = items.filter((_, position) => answers[position] === 'later')
+    const line = (entry: Item) => `${entry.title}${entry.subject ? ` · ${entry.subject}` : ''}`
     return (
       <div className={MEASURE.read}>
         {header}
@@ -118,7 +157,7 @@ export function CheckInView() {
               <p className="label mb-1.5">Could not be done</p>
               <ul className="space-y-1 text-sm text-body">
                 {couldnt.map((entry) => (
-                  <li key={entry.verification.id} className="flex items-start gap-2">
+                  <li key={entry.id} className="flex items-start gap-2">
                     <X className="mt-0.5 size-4 flex-none text-critical" aria-hidden />
                     {line(entry)}
                   </li>
@@ -143,14 +182,13 @@ export function CheckInView() {
     )
   }
 
-  const subject = label(current.verification.subject)
   return (
     <div className={MEASURE.read}>
       {header}
       <div className="mb-3 flex gap-1" aria-hidden>
-        {due.map((entry, position) => (
+        {items.map((entry, position) => (
           <span
-            key={entry.verification.id}
+            key={entry.id}
             className={
               position < at
                 ? answers[position] === 'done'
@@ -167,18 +205,13 @@ export function CheckInView() {
       </div>
       <Panel className="p-5">
         <p className="eyebrow">
-          {at + 1} of {due.length}
-          {current.lastVerifiedAt === null
-            ? ' · never done'
-            : ` · ${current.overdueDays} days overdue`}
+          {at + 1} of {items.length} · {current.eyebrow}
         </p>
         <h2 className="mt-1 text-lg font-semibold text-strong">
-          {VERIFICATION_KIND[current.verification.kind]}
-          {subject ? <span className="text-muted"> · {subject}</span> : null}
+          {current.title}
+          {current.subject ? <span className="text-muted"> · {current.subject}</span> : null}
         </h2>
-        <p className="mt-3 text-[0.9375rem] leading-relaxed text-body">
-          {VERIFICATION_HOW[current.verification.kind]}
-        </p>
+        <p className="mt-3 text-[0.9375rem] leading-relaxed text-body">{current.how}</p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Button
             variant="primary"

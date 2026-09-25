@@ -48,6 +48,7 @@ derived from a plan keeps its object ids, so findings match exactly.
 | `wallets`       | Thresholds over keys, plus where the descriptor is backed up      |
 | `verifications` | What has been checked, when, and how often it should be           |
 | `progress`      | Build runbook steps completed, by step id and date                |
+| `changes`       | Errands an applied change asks for, and when each was done        |
 
 The full shape, with the reasoning behind each field, is in
 `packages/core/src/model/types.ts`. It is written to be read.

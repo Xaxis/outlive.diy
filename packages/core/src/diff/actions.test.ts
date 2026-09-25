@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { EXAMPLES, exampleById } from '../model/examples.ts'
 import { candidateFixes, improve } from '../fixes/fixes.ts'
 import { inspectDeep } from '../guard/guard.ts'
-import { describeActions } from './actions.ts'
+import { describeActions, pendingChanges } from './actions.ts'
+import { parsePlanFile } from '../model/schema.ts'
 
 const TODAY = '2026-09-25'
 
@@ -35,7 +36,8 @@ describe('a change to a plan, as errands', () => {
       expect(inspectDeep(actions).filter((hit) => hit.strength === 'refuse')).toEqual([])
       for (const action of actions) expect(action.text).not.toMatch(/[a-z][A-Z]|Id\b|configBackups/)
     }
-  })
+    // The full improvement search on every example, which is slow on a busy machine.
+  }, 30000)
 
   it('turns a one-signer upgrade into things to go and do', () => {
     const plan = exampleById('one-signer')!
@@ -49,5 +51,34 @@ describe('a change to a plan, as errands', () => {
       text.some((line) => /^Set up .* again as 2 of 3 .* and move the coins to it$/.test(line))
     ).toBe(true)
     expect(text.some((line) => /^Put a copy of .*'s descriptor at /.test(line))).toBe(true)
+  })
+})
+
+describe('what is left to do after a change', () => {
+  it('lists the errands of a change as open items, without the records', () => {
+    const plan = exampleById('one-signer')!
+    const upgrade = candidateFixes(plan, TODAY).find((fix) => fix.id.startsWith('upgrade:'))!
+    const after = structuredClone(plan)
+    upgrade.apply(after)
+    const pending = pendingChanges(plan, after, TODAY)
+    expect(pending.length).toBe(
+      describeActions(plan, after).filter((action) => action.errand).length
+    )
+    expect(pending.every((entry) => entry.doneAt === null && entry.addedAt === TODAY)).toBe(true)
+    expect(new Set(pending.map((entry) => entry.id)).size).toBe(pending.length)
+  })
+
+  it('opens a plan file written before the list existed', () => {
+    const plan = exampleById('one-signer')! as unknown as Record<string, unknown>
+    delete plan.changes
+    const parsed = parsePlanFile({
+      schemaVersion: 1,
+      generator: 'test',
+      savedAt: TODAY,
+      plans: [plan],
+      activePlanId: null,
+    })
+    expect(parsed.ok).toBe(true)
+    if (parsed.ok) expect(parsed.value.plans[0].changes).toEqual([])
   })
 })

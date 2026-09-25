@@ -32,6 +32,7 @@ import {
   numberLabel,
   parsePlanFile,
   parseVendorData,
+  pendingChanges,
   today,
   type Device,
   type Id,
@@ -329,7 +330,11 @@ export const useStore = create<StoreState>()(
       })
       get().edit((draft) => {
         const { id, name, kind, createdAt } = draft
-        Object.assign(draft, structuredClone(next), { id, name, kind, createdAt })
+        const before = structuredClone(original(draft) ?? draft) as Plan
+        // The plan changes in one click and the world does not: what the
+        // change asks somebody to go and do is kept, to be ticked off.
+        const changes = [...before.changes, ...pendingChanges(before, next, today())]
+        Object.assign(draft, structuredClone(next), { id, name, kind, createdAt, changes })
       })
     },
 
@@ -340,12 +345,17 @@ export const useStore = create<StoreState>()(
         if (!draft || !baseline) return
         remember(state as StoreState)
         const { id, name, kind, createdAt } = baseline
-        Object.assign(baseline, structuredClone(original(draft) ?? draft), {
+        const from = structuredClone(original(baseline) ?? baseline) as Plan
+        const to = structuredClone(original(draft) ?? draft) as Plan
+        Object.assign(baseline, to, {
           id,
           name,
           kind,
           createdAt,
           updatedAt: today(),
+          // Measured from the plan being replaced, so errands the draft
+          // collected on the way are not counted twice.
+          changes: [...from.changes, ...pendingChanges(from, to, today())],
         })
         state.plans = state.plans.filter((plan) => plan.id !== draftId)
         state.activeId = baselineId

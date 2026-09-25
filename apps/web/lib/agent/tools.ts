@@ -155,6 +155,8 @@ function summary(plan: Plan) {
         label(copy.locationId, plan.locations)
       ),
     })),
+    // Changes applied to the plan that the world has not caught up with.
+    changesToMake: plan.changes.filter((entry) => entry.doneAt === null).map((entry) => entry.text),
   }
 }
 

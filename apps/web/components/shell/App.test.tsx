@@ -1949,3 +1949,35 @@ describe('taking things away by name', () => {
     expect(verdicts()).not.toMatch(/unspendable/)
   })
 })
+
+describe('the plan running ahead of the world', () => {
+  it('keeps what an applied change asks for, and ticks it off in the runbook', async () => {
+    reset()
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByText('Two of three, three sites'))
+    goto('#/overview')
+    await user.click(
+      await screen.findByRole('button', { name: /apply this change/i }, { timeout: 15000 })
+    )
+
+    const open = () => useStore.getState().plans[0].changes.filter((entry) => entry.doneAt === null)
+    expect(open().length).toBeGreaterThan(0)
+
+    // Undoing the change takes its errands with it, and redoing brings them back.
+    await user.keyboard('{Control>}z{/Control}')
+    expect(useStore.getState().plans[0].changes).toHaveLength(0)
+    await user.keyboard('{Control>}{Shift>}z{/Shift}{/Control}')
+    expect(open().length).toBeGreaterThan(0)
+    expect(await screen.findByText(/to make in the world/)).toBeInTheDocument()
+
+    goto('#/runbook')
+    const first = open()[0]
+    await user.click(
+      await screen.findByRole('button', { name: new RegExp(first.text.slice(0, 20)) })
+    )
+    expect(
+      useStore.getState().plans[0].changes.find((entry) => entry.id === first.id)?.doneAt
+    ).toBe(today())
+  }, 30000)
+})
