@@ -60,19 +60,32 @@ Findings are ranked by severity with one concrete remediation each. There is no
 score, no grade and no progress bar, because a custody plan that gets a B is not
 a thing.
 
-## What it produces
+## How you use it
 
-A diagram of the whole plan on a surface you can move around in: wallets, the
-keys each threshold needs, every object those keys exist as, the places those
-objects sit in, and the people who can open the doors. Drag to move, scroll or
-pinch to zoom, hover a box to light the chain it belongs to, click one to read
-what the engine knows about it.
+**Build a plan in one screen.** Pick a shape (one key, 2 of 3, 3 of 5, or 2 of 3
+with a cosigning service), the places, and click what sits where. The drawing,
+the findings and every way it can fail are the real analysis, rerun on every
+click. Or describe the setup in a sentence and let Claude fill the builder in.
+Every step of describing a plan by hand also starts from a template: a home, a
+relative and a second home; three signers from three makers; a key on every
+signer with a steel backup; a two of three vault; the standard check schedule.
 
-Beside it is every world the engine can build, with what each one costs. Pick
-one and the picture is redrawn in it, so you take one thing away and watch what
-stops working; compose one by hand when several things go at once, which is how
-things actually go. The same quorum arithmetic is underneath as a table, for
-when you need the exact fraction rather than the shape.
+**Let it find the fixes.** For every finding the engine tries every small change
+it knows how to make, runs the whole analysis on each, and offers the ones that
+close the finding without opening anything as bad, with a button that makes the
+change. The overview leads with the single best next move. "Fix what can be
+fixed" applies them in order to a draft and shows the before and after.
+
+**Take things away on the map.** A drawing of the whole plan: wallets, the keys
+each threshold needs, every object those keys exist as, the places those
+objects sit in, and the people who can open the doors. Click a place, device,
+backup or person to take it away and watch every wallet's verdict change;
+click again to put it back; take several at once. Every world the engine
+enumerates is a strip above it, and a table of every world against every
+wallet is on the overview.
+
+**See it as time.** Each recovery route is a bar on one scale, against the time
+you said you could wait. Checks sit on the year ahead, late ones in red.
 
 Then a build runbook with the verification gates called out, a recovery route
 for each way it fails with how long each one takes, and a successor letter

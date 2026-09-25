@@ -76,6 +76,24 @@ folder. The landing page can start a plan, so every store action that writes
 hydrates first: writing before reading would save a file holding only the new
 plan. Old `/#/view` links forward to `/app/#/view`.
 
+**A fix is found by trying it, never by reasoning about it.**
+`packages/core/src/fixes` proposes every small concrete change, runs `analyze`
+on each, and offers only those that close the finding without opening anything
+as severe. That is what makes "this closes three findings" a fact rather than a
+claim. Structural changes can be applied in bulk to a draft; a record of
+something done in the world ("I restored this backup today") is offered one at
+a time and never made on the reader's behalf.
+
+**Templates only add.** `model/presets.ts` and the builder's `planFromShape`
+never replace or delete what a plan holds, use roles for every name, and are
+tested to leave a whole, guard-clean plan. A preset that needs something first
+says what instead of doing half of it.
+
+**A short choice is a row of buttons.** `Select` renders up to five short
+options as buttons, with "not recorded" as a button of its own, and a longer
+list as a dropdown. Do not wrap it back into a dropdown for one field: seeing
+every option is the point.
+
 **Every analysis is one question in a different world.** `analysis/availability.ts`
 answers "given who can reach what, can this wallet be spent". Loss, compromise,
 succession and coercion are all that function with a different `World`. Do not
