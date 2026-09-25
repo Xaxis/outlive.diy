@@ -29,6 +29,7 @@ import {
   type Shape,
 } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
+import { Segmented } from '@/components/ui/Field.tsx'
 import { MEASURE, Panel, ViewHeader } from '@/components/ui/Surface.tsx'
 import { PlanDiagram } from '@/components/graph/PlanDiagram.tsx'
 import { FailureMatrix } from '@/components/graph/FailureMatrix.tsx'
@@ -75,6 +76,10 @@ const TRAVEL: { value: number; label: string }[] = [
  * not a plan, and a half-built one should not outlive the tab.
  */
 let kept: Shape | null = null
+
+/** Places a successor can open by default: every place but where you live. */
+const inheritablePlaces = (count: number) =>
+  count > 1 ? Array.from({ length: count - 1 }, (_, index) => index + 1) : count === 1 ? [0] : []
 
 export function BuildView() {
   const addPlan = useStore((state) => state.addPlan)
@@ -209,6 +214,56 @@ export function BuildView() {
                 />
                 plus a phone wallet for spending
               </label>
+            </div>
+          </Panel>
+
+          {/* Two questions that change what the plan is for rather than how
+              it is laid out. Asked here, because answering them afterwards
+              meant five screens: the people step, a template, the letter. */}
+          <Panel className="space-y-3 p-4">
+            <div>
+              <p className="label mb-1.5">Is this already built?</p>
+              <Segmented
+                value={shape.alreadyBuilt ? 'built' : 'new'}
+                onChange={(value) => update({ alreadyBuilt: value === 'built' })}
+                options={[
+                  { value: 'new', label: 'Setting it up' },
+                  { value: 'built', label: 'I already have it' },
+                ]}
+              />
+              {shape.alreadyBuilt ? (
+                <p className="mt-1.5 text-xs text-muted">
+                  The runbook starts at proving it works, not at buying devices.
+                </p>
+              ) : null}
+            </div>
+            <div>
+              <p className="label mb-1.5">If you die</p>
+              <Segmented
+                value={
+                  shape.successorPlaces.length === 0
+                    ? 'nobody'
+                    : shape.executor
+                      ? 'both'
+                      : 'successor'
+                }
+                onChange={(value) =>
+                  update({
+                    successorPlaces:
+                      value === 'nobody'
+                        ? []
+                        : shape.successorPlaces.length > 0
+                          ? shape.successorPlaces
+                          : inheritablePlaces(shape.places.length),
+                    executor: value === 'both',
+                  })
+                }
+                options={[
+                  { value: 'nobody', label: 'Nobody' },
+                  { value: 'successor', label: 'A successor' },
+                  { value: 'both', label: 'Successor and executor' },
+                ]}
+              />
             </div>
           </Panel>
 

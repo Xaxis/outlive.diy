@@ -4,6 +4,7 @@ import { parsePlanFile, referentialProblems } from './schema.ts'
 import { inspectDeep } from '../guard/guard.ts'
 import { analyze } from '../analysis/analyze.ts'
 import { baseWorld, evaluateWallet } from '../analysis/availability.ts'
+import { buildRunbook } from '../documents/runbook.ts'
 
 const shapes: Record<string, Shape> = {
   default: defaultShape(),
@@ -89,5 +90,21 @@ describe('a plan from its shape', () => {
     expect(plan.verifications.length).toBeGreaterThan(0)
     expect(plan.verifications.every((check) => check.lastVerifiedAt === null)).toBe(true)
     expect(plan.verifications.map((check) => check.kind)).toContain('config-backup-restore')
+  })
+})
+
+describe('a shape somebody already has', () => {
+  it('starts its runbook at the gates rather than at buying devices', () => {
+    const fresh = planFromShape(defaultShape())
+    const built = planFromShape({ ...defaultShape(), alreadyBuilt: true })
+    expect(Object.keys(fresh.progress)).toHaveLength(0)
+    const runbook = buildRunbook(built)
+    const done = (step: { id: string }) => Boolean(built.progress[step.id])
+    // Nothing that builds it is left, and no gate is marked passed for it.
+    expect(runbook.steps.filter((step) => step.phase === 'prepare' && !step.gate).every(done)).toBe(
+      true
+    )
+    expect(runbook.gates.some(done)).toBe(false)
+    expect(runbook.steps.find((step) => !done(step))?.gate).toBe(true)
   })
 })

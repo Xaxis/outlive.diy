@@ -16,6 +16,7 @@
  */
 
 import type { Key, LocationKind, Person, Plan, Verification } from './types.ts'
+import { buildRunbook, type RunbookPhase } from '../documents/runbook.ts'
 import {
   createBackup,
   createConfigBackup,
@@ -27,6 +28,7 @@ import {
   createSpendPath,
   createVerification,
   createWallet,
+  today,
 } from './factory.ts'
 
 export interface ShapePlace {
@@ -58,6 +60,14 @@ export interface Shape {
   successorPlaces: number[]
   /** A small single-key wallet on a phone, for spending. */
   hotWallet: boolean
+  /**
+   * The reader already has this, rather than setting it up. Somebody checking
+   * a two of three they built last year was handed a runbook that began
+   * "Acquire 3 signing devices".
+   */
+  alreadyBuilt?: boolean
+  /** Somebody who deals with the estate, beside the successor who inherits. */
+  executor?: boolean
 }
 
 /** What each kind of place usually is, when nothing else is known. */
@@ -167,6 +177,17 @@ export function planFromShape(shape: Shape): Plan {
       place.access = [{ personId: successor.id, condition: 'after-death', delayDays: 0 }]
     }
   }
+
+  if (shape.executor)
+    people.push(
+      createPerson({
+        label: 'Executor',
+        role: 'executor',
+        technicalSkill: 'none',
+        knowsPlanExists: true,
+        availability: 'weeks',
+      })
+    )
 
   const devices: Plan['devices'] = []
   const keys: Key[] = []
@@ -278,7 +299,7 @@ export function planFromShape(shape: Shape): Plan {
       ),
   ]
 
-  return createPlan({
+  const plan = createPlan({
     name: shape.name.trim() || 'My plan',
     locations: places,
     people,
@@ -287,4 +308,15 @@ export function planFromShape(shape: Shape): Plan {
     wallets,
     verifications,
   })
+  // Built already: the steps that build it are behind the reader. The gates
+  // are not, because a thing having been built is not evidence that it
+  // works, and they are the part of the runbook worth doing either way.
+  if (shape.alreadyBuilt) {
+    const date = today()
+    for (const step of buildRunbook(plan).steps)
+      if (BUILDING.has(step.phase) && !step.gate) plan.progress[step.id] = date
+  }
+  return plan
 }
+
+const BUILDING = new Set<RunbookPhase>(['prepare', 'generate', 'record', 'distribute', 'assemble'])

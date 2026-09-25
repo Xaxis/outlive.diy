@@ -6,7 +6,7 @@ Build a plan by its shape in one screen, or describe it step by step with templa
 
 ## Sub-features
 
-- builder: shape presets (one key, 2 of 3, 3 of 5, collaborative), places, what-goes-where grid, live drawing, findings and failure matrix; "Create this plan".
+- builder: shape presets (one key, 2 of 3, 3 of 5, collaborative), "Is this already built?" (marks the building steps of the runbook done, never the gates), "If you die" (nobody, a successor, successor and executor), places, what-goes-where grid, live drawing, findings and failure matrix; "Create this plan".
 - describe in words: a sentence becomes a shape through Claude (see claude.md).
 - templates: each design step has a "Start from" row from `packages/core/src/model/presets.ts`; they only add, and are one undo.
 - step visual: "What goes where" grid, "Drawing" or "Hide"; the checks step shows "The year ahead" calendar instead.
