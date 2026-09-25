@@ -755,8 +755,8 @@ describe('rehearsing a recovery', () => {
     await user.click(buttons[0])
 
     // Not offered until the whole route has been walked.
-    const partial = screen.getByRole('button', { name: /0 of \d+ done/i })
-    expect(partial).toBeDisabled()
+    expect(screen.getByText(/^0 of \d+ done$/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /record this as done/i })).toBeNull()
 
     for (const step of screen.getAllByRole('button', { pressed: false })) {
       await user.click(step)

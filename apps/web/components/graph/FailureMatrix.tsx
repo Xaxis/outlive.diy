@@ -155,7 +155,9 @@ export function FailureMatrix({
                           onMouseEnter={() => setHover({ row: result.scenario.id, col: null })}
                           onFocus={() => setHover({ row: result.scenario.id, col: null })}
                           className={cn(
-                            'block w-full truncate rounded-[4px] px-1 text-left text-[0.8125rem] leading-7 transition-colors',
+                            // Wrapped on a phone rather than cut off at the
+                            // name of the thing that failed.
+                            'block w-full rounded-[4px] px-1 py-1 text-left text-[0.8125rem] leading-snug transition-colors sm:truncate sm:py-0 sm:leading-7',
                             rowLit ? 'text-strong' : 'text-body'
                           )}
                           title={result.scenario.label}

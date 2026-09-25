@@ -109,7 +109,36 @@ export function RunbookView() {
             These produce evidence rather than progress. Nothing after them is safe until they pass,
             and each one converts the largest assumption in the plan into a fact.
           </p>
-          <ul className="space-y-1.5">
+          {/* On screen, each gate jumps to its step below, where it is
+              done; the full list again here was a screen of repetition on a
+              phone. On paper nothing jumps, so the list is written out. */}
+          <ul className="flex flex-wrap gap-1.5 print:hidden">
+            {runbook.gates.map((gate) => (
+              <li key={gate.id} className="min-w-0 max-w-full">
+                <button
+                  type="button"
+                  onClick={() => {
+                    document
+                      .getElementById(stepAnchor(gate))
+                      ?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+                  }}
+                  className={cn(
+                    'flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors hover:border-accent',
+                    done(gate) ? 'border-ok/40 text-muted' : 'border-line-strong text-body'
+                  )}
+                >
+                  {done(gate) ? (
+                    <CheckCircle2 className="size-3.5 flex-none text-ok" aria-hidden />
+                  ) : (
+                    <Circle className="size-3.5 flex-none text-faint" aria-hidden />
+                  )}
+                  <span className="truncate">{gate.title}</span>
+                  <span className="sr-only">{done(gate) ? ', done' : ', not done'}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <ul className="hidden space-y-1.5 print:block">
             {runbook.gates.map((gate) => (
               <li key={gate.id} className="flex items-start gap-2 text-[0.8125rem]">
                 {done(gate) ? (
@@ -130,7 +159,7 @@ export function RunbookView() {
 
       <div className="space-y-8">
         {runbook.phases.map((group, phaseIndex) => (
-          <section key={group.phase} id={phaseAnchor(group.phase)} className="scroll-mt-44">
+          <section key={group.phase} id={phaseAnchor(group.phase)} className="scroll-mt-52">
             <header className="mb-3 flex break-inside-avoid break-after-avoid items-end justify-between gap-3 border-b border-line pb-2">
               <div>
                 <p className="eyebrow">Phase {phaseIndex + 1}</p>
@@ -170,7 +199,7 @@ export function RunbookView() {
                   ) : null}
                   <ol className="space-y-2">
                     {run.map((step) => (
-                      <li key={step.id} id={stepAnchor(step)} className="scroll-mt-44">
+                      <li key={step.id} id={stepAnchor(step)} className="scroll-mt-52">
                         <div
                           className={cn(
                             'card flex gap-3 p-3.5 print-block',

@@ -56,7 +56,9 @@ export function PhaseRail({
   return (
     <nav
       aria-label="Phases"
-      className="sticky top-[2.75rem] z-20 -mx-2 mb-6 rounded-[var(--radius-card)] border border-line bg-surface/90 px-3 py-3 shadow-[var(--shadow-panel)] backdrop-blur no-print"
+      // Below the top bar rather than under its edge, and the width of the
+      // column it sits over rather than wider.
+      className="sticky top-[3.55rem] z-20 mb-6 rounded-[var(--radius-card)] border border-line bg-surface/90 px-3 py-3 shadow-[var(--shadow-panel)] backdrop-blur no-print"
     >
       <ol className="flex gap-1.5">
         {runbook.phases.map((group, position) => {

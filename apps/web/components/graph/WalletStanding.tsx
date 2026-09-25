@@ -106,7 +106,7 @@ export function WalletStanding({
               type="button"
               disabled={!onSelect}
               onClick={() => onSelect?.(wallet.id)}
-              className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 p-3 text-left transition-colors enabled:hover:bg-[rgb(var(--tint)/0.03)] disabled:cursor-default"
+              className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 p-3 text-left transition-colors enabled:hover:bg-[rgb(var(--tint)/0.03)] disabled:cursor-default max-sm:flex-col max-sm:items-start"
             >
               <span className="min-w-[8rem] flex-1">
                 <span className="block text-[0.8125rem] font-medium text-strong">
@@ -122,32 +122,37 @@ export function WalletStanding({
                 <QuorumBar path={best} keyLabels={keyLabels} />
               ) : null}
 
-              <span
-                // Words in the text ramp and colour on the glyph, as on the
-                // map, because amber text on a light ground falls under 4.5:1.
-                className="flex items-center gap-1.5 text-[0.8125rem] text-body"
-              >
-                <Icon
-                  className={cn('size-4 flex-none', tone ? VERDICT[tone].ink : 'text-ok')}
-                  strokeWidth={2.5}
-                  aria-hidden
-                />
-                {verdict}
-              </span>
-
-              {/* Time only means anything when the answer is that you can get
-                  there. For an adversary it is not a comfort worth printing. */}
-              {!adversary && timing.possible ? (
-                <span className="flex items-center gap-1.5 text-[0.75rem] text-muted">
-                  <Clock className="size-3.5 flex-none text-faint" aria-hidden />
-                  {describeDuration(timing.days, timing.travelMinutes)}
-                  {/* Separated, because the duration ends in a clause: "no
-                      travel at least" says something else entirely. */}
-                  {timing.unknowns.length > 0 ? (
-                    <span className="text-faint">· at least</span>
-                  ) : null}
+              {/* Verdict and time stacked in one column of fixed width, so
+                  every row wraps the same way instead of one wallet's time
+                  sitting inline and the next one's on a line of its own. */}
+              <span className="flex flex-col gap-0.5 sm:w-48">
+                <span
+                  // Words in the text ramp and colour on the glyph, as on the
+                  // map, because amber text on a light ground falls under 4.5:1.
+                  className="flex items-center gap-1.5 text-[0.8125rem] text-body"
+                >
+                  <Icon
+                    className={cn('size-4 flex-none', tone ? VERDICT[tone].ink : 'text-ok')}
+                    strokeWidth={2.5}
+                    aria-hidden
+                  />
+                  {verdict}
                 </span>
-              ) : null}
+
+                {/* Time only means anything when the answer is that you can get
+                  there. For an adversary it is not a comfort worth printing. */}
+                {!adversary && timing.possible ? (
+                  <span className="flex items-center gap-1.5 text-[0.75rem] text-muted">
+                    <Clock className="size-3.5 flex-none text-faint" aria-hidden />
+                    {describeDuration(timing.days, timing.travelMinutes)}
+                    {/* Separated, because the duration ends in a clause: "no
+                      travel at least" says something else entirely. */}
+                    {timing.unknowns.length > 0 ? (
+                      <span className="text-faint">· at least</span>
+                    ) : null}
+                  </span>
+                ) : null}
+              </span>
             </button>
           </li>
         )

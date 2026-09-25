@@ -107,10 +107,18 @@ export function Rehearsal({ route }: { route: RecoveryRoute }) {
           )
         })}
       </ul>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Button variant="primary" size="sm" disabled={!complete} onClick={record}>
-          {complete ? 'Record this as done today' : `${done.size} of ${route.steps.length} done`}
-        </Button>
+      {/* A count is not a button. The one thing to press appears when there
+          is something to record. */}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {complete ? (
+          <Button variant="primary" size="sm" onClick={record}>
+            Record this as done today
+          </Button>
+        ) : (
+          <span className="text-xs text-muted" aria-live="polite">
+            {done.size} of {route.steps.length} done
+          </span>
+        )}
         <Button
           variant="ghost"
           size="sm"

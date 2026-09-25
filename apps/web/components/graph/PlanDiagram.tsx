@@ -108,6 +108,15 @@ const MAX_SCALE = 2
  * surface is panned instead, which is what a surface is for.
  */
 const MIN_FIT_SCALE = 0.6
+
+/**
+ * On a phone the whole drawing never fits across, and fitting it anyway put
+ * box text at about seven pixels. There the fit stops at a size that can be
+ * read, starts at the wallets, and the rest is a drag away.
+ */
+const NARROW = 640
+const NARROW_FIT_SCALE = 0.85
+const fitFloor = (width: number) => (width < NARROW ? NARROW_FIT_SCALE : MIN_FIT_SCALE)
 /** Room left around the drawing when it is fitted to the viewport. */
 const FIT_PADDING = 20
 /** How far a press has to travel before it is a drag rather than a click. */
@@ -252,7 +261,8 @@ export function PlanDiagram({
   const natural =
     available > 0
       ? Math.ceil(
-          layout.height * clamp((available - FIT_PADDING * 2) / layout.width, MIN_FIT_SCALE, 1) +
+          layout.height *
+            clamp((available - FIT_PADDING * 2) / layout.width, fitFloor(available), 1) +
             FIT_PADDING * 2
         )
       : null
@@ -275,7 +285,7 @@ export function PlanDiagram({
         (height - FIT_PADDING * 2) / layout.height,
         1
       ),
-      MIN_FIT_SCALE,
+      fitFloor(width),
       1
     )
     moved.current = false
