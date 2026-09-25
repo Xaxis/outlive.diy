@@ -305,7 +305,10 @@ describe('building a plan by its shape', () => {
       'true'
     )
 
-    await user.click(screen.getByRole('button', { name: /create this plan/i }))
+    // At the top and again where the editing ends.
+    const creates = screen.getAllByRole('button', { name: /create this plan/i })
+    expect(creates).toHaveLength(2)
+    await user.click(creates[1])
     const plan = useStore.getState().plans[0]
     expect(plan.keys).toHaveLength(3)
     expect(plan.wallets[0].paths[0].threshold).toBe(2)

@@ -116,7 +116,15 @@ const MIN_FIT_SCALE = 0.6
  */
 const NARROW = 640
 const NARROW_FIT_SCALE = 0.85
-const fitFloor = (width: number) => (width < NARROW ? NARROW_FIT_SCALE : MIN_FIT_SCALE)
+const OVERVIEW_FIT_SCALE = 0.4
+// The screen's width, not the drawing's: a narrow panel beside the builder on
+// a desktop is not a phone, and reading it as one cropped the drawing there.
+const fitFloor = (overview = false) =>
+  typeof window !== 'undefined' && window.innerWidth < NARROW
+    ? NARROW_FIT_SCALE
+    : overview
+      ? OVERVIEW_FIT_SCALE
+      : MIN_FIT_SCALE
 /** Room left around the drawing when it is fitted to the viewport. */
 const FIT_PADDING = 20
 /** How far a press has to travel before it is a drag rather than a click. */
@@ -189,6 +197,7 @@ export function PlanDiagram({
   minHeight,
   onHeight,
   marked,
+  overview = false,
 }: {
   graph: PlanGraph
   /** Clicking a box hands back what it stands for. For jumping somewhere. */
@@ -220,13 +229,19 @@ export function PlanDiagram({
    */
   onHeight?: (px: number) => void
   /**
-   * Plan ids to tag on the drawing, and the word to tag them with. Comparing
-   * two plans is looking for what moved, and two drawings of forty boxes each
-   * are a spot-the-difference puzzle without it.
+   * Boxes to tag, with a word for the tag and, where the word only makes sense
+   * beside the picture, a longer one for a screen reader. Comparing two plans
+   * is looking for what moved, and two drawings of forty boxes each are a
+   * spot-the-difference puzzle without it.
    */
-  /** Boxes to tag, with a word for the tag and, where the word only makes
-   * sense beside the picture, a longer one for a screen reader. */
   marked?: { ids: ReadonlySet<string>; label: string; spoken?: string }
+  /**
+   * A picture of the whole shape beside the thing that edits it, rather than
+   * a drawing to read box by box. On a wide screen it fits whole, even small,
+   * because the column being edited was the one cropped off the edge. A phone
+   * still gets a size it can read.
+   */
+  overview?: boolean
 }) {
   // Row order for any column the reader has rearranged by hand. Held here and
   // not in the plan file: where a box sits on a screen is not a fact about
@@ -262,7 +277,7 @@ export function PlanDiagram({
     available > 0
       ? Math.ceil(
           layout.height *
-            clamp((available - FIT_PADDING * 2) / layout.width, fitFloor(available), 1) +
+            clamp((available - FIT_PADDING * 2) / layout.width, fitFloor(overview), 1) +
             FIT_PADDING * 2
         )
       : null
@@ -285,7 +300,7 @@ export function PlanDiagram({
         (height - FIT_PADDING * 2) / layout.height,
         1
       ),
-      fitFloor(width),
+      fitFloor(overview),
       1
     )
     moved.current = false
@@ -298,7 +313,7 @@ export function PlanDiagram({
       x: spare >= 0 ? spare / 2 : FIT_PADDING,
       y: (height - layout.height * scale) / 2,
     })
-  }, [layout.width, layout.height, available])
+  }, [layout.width, layout.height, available, overview])
 
   // Before paint, so the drawing is never seen at the wrong scale for a frame.
   // A layout effect during the static render would only warn that it does

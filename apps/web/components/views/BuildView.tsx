@@ -422,6 +422,11 @@ export function BuildView() {
                       className="whitespace-nowrap py-1.5 pr-3 text-left font-medium text-body"
                     >
                       Successor opens
+                      {/* The one row filled in for the reader rather than by
+                          them, so it says it is an assumption. */}
+                      <span className="block text-[0.6875rem] font-normal text-faint">
+                        assumed; untick if none
+                      </span>
                     </th>
                     {shape.places.map((_, at) => (
                       <td key={at} className="px-1 py-1.5">
@@ -460,6 +465,18 @@ export function BuildView() {
               ) : null}
             </p>
           </Panel>
+          {/* Again where the editing ends. At the top alone, a phone reader
+              configured everything below it and then scrolled back up to
+              finish. */}
+          <div className="flex justify-end">
+            <Button
+              variant="primary"
+              onClick={create}
+              icon={<ArrowRight className="size-4" aria-hidden />}
+            >
+              Create this plan
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-4 xl:sticky xl:top-16 xl:self-start">
@@ -468,7 +485,7 @@ export function BuildView() {
               <h2 className="text-sm font-semibold text-strong">What the analysis says, live</h2>
               <SeverityBar counts={report.counts} />
             </div>
-            <PlanDiagram graph={graph} height="20rem" />
+            <PlanDiagram graph={graph} height="20rem" overview />
             {top.length > 0 ? (
               <ul className="mt-3 space-y-1.5" aria-live="polite">
                 {top.map((finding) => (

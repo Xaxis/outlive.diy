@@ -89,6 +89,7 @@ export function LiveDrawing({ plan }: { plan: Plan }) {
       <PlanDiagram
         graph={graph}
         height="18rem"
+        overview
         selectedId={selectedId}
         onSelectNode={(id) => {
           const ref = owner(id)

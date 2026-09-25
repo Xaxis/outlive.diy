@@ -36,8 +36,12 @@ interface Entry {
   group: string
   label: string
   hint?: string
+  /** Breaks ties between equally good matches: a critical before a medium. */
+  rank?: number
   run: () => void
 }
+
+const SEVERITY_RANK = { critical: 0, high: 1, medium: 2, low: 3, info: 4 } as const
 
 /** How many results are listed before the rest are left to a longer query. */
 const LIMIT = 40
@@ -76,6 +80,10 @@ function Palette({
   onClose: () => void
 }) {
   const select = useStore((state) => state.select)
+  const save = useStore((state) => state.save)
+  const undo = useStore((state) => state.undo)
+  const theme = useStore((state) => state.preferences.theme)
+  const setTheme = useStore((state) => state.setTheme)
   const [query, setQuery] = useState('')
   const [cursor, setCursor] = useState(0)
   const input = useRef<HTMLInputElement>(null)
@@ -100,6 +108,20 @@ function Palette({
         out.push({ id: `view:${item.view}`, group: 'Go to', label: item.label, run: go(item.view) })
       }
     }
+    // The things people open a palette to do, not only places to go.
+    const actions: [string, string, () => void][] = [
+      ['build', 'Build a new plan', go('build')],
+      ['save', 'Save this plan to a file', () => void save()],
+      ['print', 'Print this view', () => window.setTimeout(() => window.print(), 50)],
+      ['undo', 'Undo the last change', undo],
+      [
+        'theme',
+        theme === 'light' ? 'Switch to the dark theme' : 'Switch to the light theme',
+        () => setTheme(theme === 'light' ? 'dark' : 'light'),
+      ],
+    ]
+    for (const [id, label, run] of actions) out.push({ id: `do:${id}`, group: 'Do', label, run })
+
     SECTIONS.forEach((section, position) => {
       out.push({
         id: `step:${section.id}`,
@@ -149,15 +171,17 @@ function Palette({
         group: 'Findings',
         label: finding.title,
         hint: `${finding.rule} · ${SEVERITY_LABEL[finding.severity]}`,
+        rank: SEVERITY_RANK[finding.severity],
         run: go('findings', finding.id),
       })
     }
     return out
-  }, [plan, report, select])
+  }, [plan, report, select, save, undo, theme, setTheme])
 
   const results = useMemo(() => {
     const words = query.toLowerCase().split(/\s+/).filter(Boolean)
-    if (words.length === 0) return entries.filter((entry) => entry.group === 'Go to')
+    if (words.length === 0)
+      return entries.filter((entry) => entry.group === 'Go to' || entry.group === 'Do')
     // Every word typed has to begin a word of the entry, so "site a" finds
     // Site A and not every entry with an a in it. The group's name counts too,
     // so "world" or "finding" narrows to one kind, but only for a word long
@@ -176,7 +200,8 @@ function Palette({
         const score =
           (label.startsWith(query.trim().toLowerCase()) ? 0 : label.startsWith(words[0]) ? 1 : 2) *
             1000 +
-          label.length
+          (entry.rank ?? 0) * 100 +
+          Math.min(label.length, 99)
         return { entry, score }
       })
       .filter((item): item is { entry: Entry; score: number } => item !== null)

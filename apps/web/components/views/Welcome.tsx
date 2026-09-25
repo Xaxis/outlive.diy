@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ArrowRight, FileUp, ShieldCheck, WifiOff } from 'lucide-react'
+import { ArrowRight, FileUp, PenLine, ShieldCheck, WifiOff } from 'lucide-react'
 import {
   baseWorld,
   buildGraph,
@@ -124,8 +124,10 @@ export function Welcome() {
         >
           Build a plan
         </Button>
+        {/* The second way in, and it has to look like one: as a ghost button
+            it read as a line of text beside two buttons. */}
         <Button
-          variant="ghost"
+          icon={<PenLine className="size-4" aria-hidden />}
           onClick={() => {
             startPlan()
             navigateTo('design')

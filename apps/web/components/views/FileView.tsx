@@ -59,6 +59,44 @@ export function FileView() {
       />
 
       <div className="space-y-5">
+        {/* The buttons people come here for first, the account of what
+            leaves the browser second. */}
+        <Panel className="p-4">
+          <SectionHeading
+            title="Where this plan is kept"
+            hint="Change this if you are on a machine you do not fully trust."
+          />
+          <Segmented
+            value={persistence}
+            onChange={setPersistence}
+            options={[
+              { value: 'local', label: 'In this browser' },
+              { value: 'memory', label: 'In memory only' },
+            ]}
+          />
+          <p className="mt-3 text-[0.875rem] leading-relaxed text-muted">
+            {persistence === 'local'
+              ? 'The plan is written to this browser’s local storage for this site only. It survives closing the tab, it is not synced anywhere, and anybody with this browser profile can read it.'
+              : 'Nothing is being written. The plan lasts exactly as long as this tab does, so save it to a file before you close it.'}
+          </p>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button
+              variant="primary"
+              icon={<FileDown className="size-3.5" aria-hidden />}
+              onClick={() => void save()}
+            >
+              Save to a file
+            </Button>
+            <OpenFileButton icon={<FileUp className="size-3.5" aria-hidden />}>
+              Open a file
+            </OpenFileButton>
+            <Button icon={<Plus className="size-3.5" aria-hidden />} onClick={() => startPlan()}>
+              New plan
+            </Button>
+          </div>
+        </Panel>
+
         <Panel className="p-4">
           <SectionHeading
             title="What leaves this browser"
@@ -101,42 +139,6 @@ export function FileView() {
               ten seconds.
             </li>
           </ul>
-        </Panel>
-
-        <Panel className="p-4">
-          <SectionHeading
-            title="Where this plan is kept"
-            hint="Change this if you are on a machine you do not fully trust."
-          />
-          <Segmented
-            value={persistence}
-            onChange={setPersistence}
-            options={[
-              { value: 'local', label: 'In this browser' },
-              { value: 'memory', label: 'In memory only' },
-            ]}
-          />
-          <p className="mt-3 text-[0.875rem] leading-relaxed text-muted">
-            {persistence === 'local'
-              ? 'The plan is written to this browser’s local storage for this site only. It survives closing the tab, it is not synced anywhere, and anybody with this browser profile can read it.'
-              : 'Nothing is being written. The plan lasts exactly as long as this tab does, so save it to a file before you close it.'}
-          </p>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button
-              variant="primary"
-              icon={<FileDown className="size-3.5" aria-hidden />}
-              onClick={() => void save()}
-            >
-              Save to a file
-            </Button>
-            <OpenFileButton icon={<FileUp className="size-3.5" aria-hidden />}>
-              Open a file
-            </OpenFileButton>
-            <Button icon={<Plus className="size-3.5" aria-hidden />} onClick={() => startPlan()}>
-              New plan
-            </Button>
-          </div>
         </Panel>
 
         <ClaudeSettings />

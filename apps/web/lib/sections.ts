@@ -41,7 +41,7 @@ export const SECTIONS: SectionDefinition[] = [
     singular: 'Purpose',
     kind: null,
     purpose:
-      'None of this suppresses a finding. It decides which ones you read first, because a list that treats every risk as equally urgent is a list nobody finishes.',
+      'What you are protecting against, and how long this has to last. None of it suppresses a finding; it decides which you read first, because a list that treats every risk as equally urgent is a list nobody finishes.',
     done: (plan) => plan.profile.concerns.length > 0,
   },
   {
@@ -50,7 +50,7 @@ export const SECTIONS: SectionDefinition[] = [
     singular: 'Place',
     kind: 'location',
     purpose:
-      'Give each place a role label and, more importantly, say what it would fail together with. Two sites in one flood plain are one site as far as fire and flood are concerned.',
+      'Every place a device, backup or copy is kept, and how far away it is. Say what each would fail together with: two sites in one flood plain are one site to a fire or a flood.',
     done: (plan) => plan.locations.length > 0,
   },
   {
@@ -59,7 +59,7 @@ export const SECTIONS: SectionDefinition[] = [
     singular: 'Person',
     kind: 'person',
     purpose:
-      'Roles, never names. Who could act if you could not, and the other question: who could act while you still can. This is the step most people skip and later regret.',
+      'Who could act for you if you could not, by role and never by name. And the other question: who could act while you still can. This is the step most people skip and later regret.',
     done: (plan) => plan.people.length > 0,
     optional: true,
   },
@@ -69,7 +69,7 @@ export const SECTIONS: SectionDefinition[] = [
     singular: 'Device',
     kind: 'device',
     purpose:
-      'What signs. The maker matters structurally even when the model does not, because two keys behind one maker are one decision. A key that exists only as a written backup needs no device here.',
+      'Each device that signs, by maker and model. The maker matters even when the model does not, because two keys behind one maker are one decision. A key that exists only on paper needs no device here.',
     done: (plan) => plan.devices.length > 0 || plan.keys.length > 0,
   },
   {
@@ -78,7 +78,7 @@ export const SECTIONS: SectionDefinition[] = [
     singular: 'Key',
     kind: 'key',
     purpose:
-      'One signing key, the device it lives on, and separately everything it can be rebuilt from. Those last two being in the same place is the single most common flaw this program finds.',
+      'One entry per seed: the device it lives on, and every backup it can be rebuilt from. Those two being in the same place is the most common flaw this program finds.',
     done: (plan) => plan.keys.length > 0,
   },
   {
@@ -87,7 +87,7 @@ export const SECTIONS: SectionDefinition[] = [
     singular: 'Wallet',
     kind: 'wallet',
     purpose:
-      'A threshold over keys. For anything multisig, say where the descriptor lives too: a threshold of seeds without it restores nothing.',
+      'Each wallet, and how many of which keys it takes to spend. For anything multisig, say where the descriptor lives too: a threshold of seeds without it restores nothing.',
     done: (plan) => plan.wallets.length > 0,
   },
   {
@@ -96,7 +96,7 @@ export const SECTIONS: SectionDefinition[] = [
     singular: 'Check',
     kind: 'verification',
     purpose:
-      'What has been proved rather than assumed, and when it was last true. This is the section that decides whether the rest is worth anything.',
+      'What you have actually tested, and when it was last true. This is the section that decides whether the rest is worth anything.',
     done: (plan) => plan.verifications.length > 0,
   },
 ]

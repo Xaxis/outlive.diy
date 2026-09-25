@@ -48,6 +48,19 @@ import {
  * One implementation for all six kinds, because a place and a key differ in
  * what they are made of and not at all in how they are chosen from a list.
  */
+const FIRST_ONE: Record<EntityKind, string> = {
+  location:
+    'A place is anywhere a device, a backup or a descriptor copy is kept: home, a bank box, a relative\u2019s house.',
+  person:
+    'A person is a role: a successor, an executor, a co-signing service. Skip this if nobody else is involved.',
+  device:
+    'A device is anything that signs: a hardware wallet, a phone wallet, a service that co-signs.',
+  key: 'A key is one seed. Add one for each seed you hold or mean to create.',
+  wallet: 'A wallet holds the coins, and says how many of which keys it takes to spend them.',
+  verification:
+    'A check is something you test on a schedule, such as restoring a backup and seeing it match.',
+}
+
 export function EntityWorkbench({
   plan,
   report,
@@ -86,9 +99,9 @@ export function EntityWorkbench({
     return (
       <EmptyState
         title={`No ${plural.toLowerCase()} yet`}
-        // The step above already says what this section is for. What an empty
-        // one needs to say is that empty is not the same as fine.
-        body="Nothing recorded is not the same as nothing wrong. The analysis has nothing to read here, and says so rather than going quiet."
+        // What one of these is, in words a newcomer can act on, and then that
+        // empty is not the same as fine.
+        body={`${FIRST_ONE[kind]} Nothing recorded is not the same as nothing wrong.`}
         action={
           <Button variant="primary" icon={<Plus className="size-4" aria-hidden />} onClick={add}>
             Add the first one
