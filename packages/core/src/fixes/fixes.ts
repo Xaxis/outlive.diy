@@ -160,10 +160,17 @@ export function candidateFixes(plan: Plan, today = todayDate()): Fix[] {
       fixes.push({
         id: `add-backup:${key.id}:${location.id}`,
         kind: 'structure',
-        label: `Add a second steel backup of ${key.label} at ${location.label}`,
+        // "A second" only when there is a first: the same fix is offered to a
+        // key with no backup at all, and there it is the first.
+        label: `Add a ${key.backups.length === 0 ? '' : 'second '}steel backup of ${key.label} at ${location.label}`,
         apply: (draft) => {
           keyOf(draft, key.id).backups.push(
-            createBackup({ label: 'Steel plate 2', medium: 'steel', locationId: location.id })
+            createBackup({
+              label:
+                key.backups.length === 0 ? 'Steel plate' : `Steel plate ${key.backups.length + 1}`,
+              medium: 'steel',
+              locationId: location.id,
+            })
           )
         },
       })

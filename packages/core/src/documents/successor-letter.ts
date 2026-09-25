@@ -102,7 +102,12 @@ export function successorLetter(ctx: AnalysisContext, person: Person): Successor
       )
     }
     sections.push({
-      heading: 'Two things that will look like failures and are not',
+      // Counted, because this page is printed and kept, and "two things" over
+      // one is the kind of mistake that makes a reader doubt the rest.
+      heading:
+        points.length === 1
+          ? 'One thing that will look like a failure and is not'
+          : 'Two things that will look like failures and are not',
       paragraphs: points,
     })
   }

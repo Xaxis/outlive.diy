@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { ArrowRight, Check } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { disasterGroups, type AnalysisReport, type Finding, type Plan } from '@outlive/core'
 import { Info, Panel } from '@/components/ui/Surface.tsx'
 import { SeverityDot } from '@/components/ui/Severity.tsx'
@@ -145,7 +145,8 @@ export function StepEffect({
 
       {mine.length === 0 ? (
         <p className="mt-3 flex items-center gap-2 border-t border-line pt-3 text-sm text-muted">
-          <Check className="size-4 flex-none text-ok" aria-hidden />
+          {/* No tick: findings about the selected thing may sit just above,
+              and a green mark under three criticals reads as an all-clear. */}
           No other rule matched here.
           <Info label="What that means">
             A smaller claim than it sounds like: it means only that this program has no rule for

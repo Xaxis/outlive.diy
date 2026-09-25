@@ -960,15 +960,16 @@ describe('a plan built from nothing', () => {
     render(<App />)
     await user.click(await screen.findByRole('button', { name: /describe one by hand/i }))
 
-    // A place and a key and nothing joining them to a wallet yet, which is
-    // where the seven steps put you after five of them.
+    // A place and a key and nothing joining the key to a wallet. A wallet
+    // added after its keys starts with them; one added first does not, and a
+    // key added after it is on nothing.
     goto('#/design/locations')
     await user.click(await screen.findByRole('button', { name: /add the first one/i }))
     await user.clear(screen.getByLabelText('Label'))
     await user.type(screen.getByLabelText('Label'), 'Home')
-    goto('#/design/keys')
-    await user.click(await screen.findByRole('button', { name: /add the first one/i }))
     goto('#/design/wallets')
+    await user.click(await screen.findByRole('button', { name: /add the first one/i }))
+    goto('#/design/keys')
     await user.click(await screen.findByRole('button', { name: /add the first one/i }))
 
     goto('#/map')

@@ -465,20 +465,35 @@ export const useStore = create<StoreState>()(
             break
           }
           case 'key': {
+            // On the first device nothing signs with yet. Walking the steps in
+            // order means the device was described one step ago, and a key
+            // that ignored it read as "no device, no backup" and failed.
+            const used = new Set(draft.keys.map((entry) => entry.deviceId))
+            const free = draft.devices.find((device) => !used.has(device.id))
             const key = createKey({
               label: letterLabel(
                 'Key',
                 draft.keys.map((entry) => entry.label)
               ),
+              deviceId: free?.id ?? null,
             })
             draft.keys.push(key)
             created = key.id
             break
           }
           case 'wallet': {
+            // Spent with the keys already described, a majority of them, rather
+            // than with none: a wallet of one-of-nothing is three critical
+            // findings for having followed the steps in order.
+            const keyIds = draft.keys.map((entry) => entry.id)
             const wallet = createWallet({
               label: draft.wallets.length === 0 ? 'Vault' : `Wallet ${draft.wallets.length + 1}`,
-              paths: [createSpendPath({ threshold: 1, keyIds: [] })],
+              paths: [
+                createSpendPath({
+                  threshold: keyIds.length <= 1 ? 1 : Math.floor(keyIds.length / 2) + 1,
+                  keyIds,
+                }),
+              ],
             })
             draft.wallets.push(wallet)
             created = wallet.id

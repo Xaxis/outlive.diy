@@ -119,7 +119,10 @@ export function DescribeShape({
       </p>
       {needKey && !key ? (
         <div className="mt-2">
-          <KeyForm onDone={() => setNeedKey(false)} />
+          <KeyForm
+            onDone={() => setNeedKey(false)}
+            sent="the description you typed above, and nothing from any plan"
+          />
         </div>
       ) : null}
       {error ? (

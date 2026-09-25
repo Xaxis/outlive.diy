@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { LoaderCircle, Wand2 } from 'lucide-react'
 import { improve, newId, type Plan } from '@outlive/core'
 import { Button } from '@/components/ui/Button.tsx'
 import { baseName, useStore } from '@/lib/store.ts'
-import { knownNextMove } from '@/components/findings/NextMove.tsx'
+import { nextMoveFor } from '@/components/findings/NextMove.tsx'
 import { netChange } from '@/lib/net.ts'
 import { navigateTo } from '@/lib/router.ts'
 
@@ -29,9 +29,18 @@ export function ImproveButton({
   const notify = useStore((state) => state.notify)
   const [busy, setBusy] = useState(false)
 
-  // Where the overview already looked and found nothing structural, a button
-  // promising fixes would only lead to a toast saying there are none.
-  if (knownNextMove(plan)?.steps.length === 0) return null
+  // Beside "no single change closes more than it opens", a primary button
+  // promising fixes contradicted the panel under it and led to a toast saying
+  // there were none. It looks after a paint, from the same search, and stays
+  // away when there is nothing to offer.
+  const [nothing, setNothing] = useState<Plan | null>(null)
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (nextMoveFor(plan).steps.length === 0) setNothing(plan)
+    }, 80)
+    return () => window.clearTimeout(timer)
+  }, [plan])
+  if (nothing === plan) return null
 
   return (
     <Button

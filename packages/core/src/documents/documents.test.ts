@@ -206,12 +206,20 @@ describe('the successor letter', () => {
     }
   })
 
-  it('warns about the two failures that look like theft', () => {
+  it('warns about the failures that look like theft, and counts them', () => {
+    // Multisig only: one thing, and the printed heading says one.
     const person = repaired().people[0]
-    const letter = successorLetter(ctx(), person)
-    const headings = letter.sections.map((section) => section.heading)
-    expect(headings).toContain('Two things that will look like failures and are not')
-    expect(headings).toContain('What never to do')
+    const one = successorLetter(ctx(), person).sections.map((section) => section.heading)
+    expect(one).toContain('One thing that will look like a failure and is not')
+    expect(one).toContain('What never to do')
+
+    // A passphrase as well: two.
+    const plan = repaired()
+    plan.keys[0].passphrase.enabled = true
+    const two = successorLetter(createContext(plan, { today: TODAY }), plan.people[0])
+    expect(two.sections.map((section) => section.heading)).toContain(
+      'Two things that will look like failures and are not'
+    )
   })
 
   it('says what it deliberately leaves out', () => {

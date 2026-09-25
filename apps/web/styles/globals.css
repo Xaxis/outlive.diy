@@ -166,7 +166,10 @@ body {
 
 /* One focus treatment everywhere, including inside dense grids where an outline
    would be clipped by an ancestor's overflow. */
-:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+/* Not a region focused by script, such as main after a change of view: that
+   moves the screen reader's place, and ringing a whole column in cyan on
+   arrival told everybody else something had gone wrong. */
+:where(a, button, input, select, textarea, [tabindex]:not([tabindex='-1'])):focus-visible {
   outline: 2px solid var(--c-accent);
   outline-offset: 2px;
   border-radius: 4px;

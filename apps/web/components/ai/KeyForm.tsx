@@ -14,7 +14,18 @@ import { setClaudeKey } from '@/lib/ai/key.ts'
  * accepted, because this is the one switch that makes the program talk to
  * something.
  */
-export function KeyForm({ onDone }: { onDone?: () => void }) {
+export function KeyForm({
+  onDone,
+  sent = 'your plan\u2019s structure and its findings, with every note removed',
+}: {
+  onDone?: () => void
+  /**
+   * What the request that asked for the key sends. Said where the key is
+   * asked for, and it has to be true of that request: the builder sends what
+   * was typed into it, not the plan.
+   */
+  sent?: string
+}) {
   const id = useId()
   const [value, setValue] = useState('')
   const [remember, setRemember] = useState(false)
@@ -37,8 +48,7 @@ export function KeyForm({ onDone }: { onDone?: () => void }) {
       <ul className="list-disc space-y-0.5 pl-4 leading-relaxed">
         <li>Requests go from this browser straight to Anthropic, and nowhere else.</li>
         <li>
-          Sent: your plan&apos;s structure and its findings, with every note removed. Never a seed,
-          key or address; the guard checks the request before it leaves.
+          Sent: {sent}. Never a seed, key or address; the guard checks the request before it leaves.
         </li>
         <li>You pay Anthropic for what you use, on your own account.</li>
       </ul>

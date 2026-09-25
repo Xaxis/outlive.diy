@@ -43,6 +43,9 @@ export function OpenFileButton({
         type="file"
         accept="application/json,.json"
         aria-label="Choose a plan file to open"
+        // The visible button opens it; a second, invisible stop in the tab order
+        // is a key press that appears to do nothing.
+        tabIndex={-1}
         className="sr-only"
         onChange={async (event) => {
           const file = event.target.files?.[0]

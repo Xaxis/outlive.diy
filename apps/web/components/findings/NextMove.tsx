@@ -21,9 +21,13 @@ import { useStore } from '@/lib/store.ts'
 
 const cache = new WeakMap<Plan, Improvement>()
 
-/** The next move for a plan if it has already been searched for, or null. */
-export function knownNextMove(plan: Plan): Improvement | null {
-  return cache.get(plan) ?? null
+/** The next move for a plan, searched for once and then remembered. */
+export function nextMoveFor(plan: Plan): Improvement {
+  const known = cache.get(plan)
+  if (known) return known
+  const found = improve(plan, { maxSteps: 1 })
+  cache.set(plan, found)
+  return found
 }
 
 export function NextMove({ plan }: { plan: Plan }) {
@@ -36,8 +40,7 @@ export function NextMove({ plan }: { plan: Plan }) {
     if (cache.has(plan)) return
     // After a paint, so the overview is on screen while the search runs.
     const timer = window.setTimeout(() => {
-      const found = improve(plan, { maxSteps: 1 })
-      cache.set(plan, found)
+      const found = nextMoveFor(plan)
       setMove(found)
       setSearched(plan)
     }, 60)

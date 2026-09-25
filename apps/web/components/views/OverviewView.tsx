@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { ArrowUpRight, Compass, TriangleAlert } from 'lucide-react'
+import { ArrowUpRight, Circle, Compass, TriangleAlert } from 'lucide-react'
 import {
   baseWorld,
   buildGraph,
@@ -218,7 +218,13 @@ export function OverviewView() {
           </Panel>
 
           <Panel className="p-4">
-            <SectionHeading title="Overdue" hint="What has gone back to being an assumption." />
+            {/* A plan built a minute ago has checks nobody could have done
+                yet. Calling them overdue, each with a warning, read as a
+                telling-off; they are due, and the late ones say so. */}
+            <SectionHeading
+              title="Checks due"
+              hint="Never done, or done too long ago: each is still an assumption until it is done."
+            />
             {overdue.length === 0 ? (
               <p className="text-sm text-muted">
                 {plan.verifications.length === 0
@@ -229,7 +235,14 @@ export function OverviewView() {
               <ul className="space-y-2">
                 {overdue.slice(0, 5).map((entry) => (
                   <li key={entry.verification.id} className="flex items-start gap-2.5">
-                    <TriangleAlert className="mt-0.5 size-3.5 flex-none text-medium" aria-hidden />
+                    {entry.lastVerifiedAt === null ? (
+                      <Circle className="mt-0.5 size-3.5 flex-none text-faint" aria-hidden />
+                    ) : (
+                      <TriangleAlert
+                        className="mt-0.5 size-3.5 flex-none text-medium"
+                        aria-hidden
+                      />
+                    )}
                     <span className="min-w-0 flex-1 text-sm leading-snug text-body">
                       {VERIFICATION_KIND[entry.verification.kind]}
                       {subjectLabel(entry.verification.subject) ? (
@@ -240,7 +253,7 @@ export function OverviewView() {
                       ) : null}
                       <span className="block text-xs text-faint">
                         {entry.lastVerifiedAt === null
-                          ? 'never done'
+                          ? 'not done yet'
                           : `${entry.overdueDays} days overdue`}
                       </span>
                     </span>

@@ -41,7 +41,7 @@ describe('naming a device by what it is', () => {
     const plain = coldcard('Signer A')
     const named = coldcard('Travel signer')
     const phone = createDevice({ label: 'Signer C', kind: 'mobile-wallet' })
-    expect(deviceChoiceLabel(phone, [plain, named, phone])).toBe('Phone wallet')
+    expect(deviceChoiceLabel(phone, [plain, named, phone])).toBe('Signer C · phone wallet')
     expect(deviceChoiceLabel(named, [plain, named, phone])).toBe(
       'Travel signer · Coinkite Coldcard Q'
     )

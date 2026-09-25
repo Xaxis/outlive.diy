@@ -13,7 +13,14 @@ import {
   User,
   Vault,
 } from 'lucide-react'
-import type { AccessCondition, Location, LocationAccess, LocationKind, Plan } from '@outlive/core'
+import {
+  createPerson,
+  type AccessCondition,
+  type Location,
+  type LocationAccess,
+  type LocationKind,
+  type Plan,
+} from '@outlive/core'
 import { Field, GuardedInput, PresetNumber, Select, Toggle } from '@/components/ui/Field.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { ItemList } from '@/components/ui/ItemList.tsx'
@@ -213,9 +220,26 @@ export function LocationInspector({ plan, location }: { plan: Plan; location: Lo
           }
         />
         {plan.people.length === 0 ? (
-          <p className="text-sm text-muted">
-            No people are described yet. Add one under People first.
-          </p>
+          // People are the next step, so sending the reader there first was a
+          // step backwards. The usual answer is one button away here.
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
+            Nobody but you can get into {location.label}.
+            <Button
+              size="sm"
+              icon={<Plus className="size-3.5" aria-hidden />}
+              onClick={() =>
+                edit((draft) => {
+                  const person = createPerson()
+                  draft.people.push(person)
+                  draft.locations
+                    .find((entry) => entry.id === location.id)
+                    ?.access.push({ personId: person.id, condition: 'after-death', delayDays: 0 })
+                })
+              }
+            >
+              A successor who can open it after you
+            </Button>
+          </div>
         ) : location.access.length === 0 ? (
           <p className="text-sm text-muted">Nobody but you can get into {location.label}.</p>
         ) : (

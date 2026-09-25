@@ -127,6 +127,10 @@ export function nameFromWhatItIs(
  * the description does not.
  */
 export function deviceChoiceLabel(device: Device, all: Device[]): string {
+  // Nothing said about what it is yet: its kind alone would be a name the
+  // devices step never showed, so it goes by the name that step shows.
+  if (!device.vendor?.trim() && !device.model?.trim())
+    return `${device.label} · ${DEVICE_KIND[device.kind].toLowerCase()}`
   const what = describeDevice(device)
   const named = !isPlaceholderName(device.label) && !device.label.startsWith(what)
   const ambiguous = all.some((entry) => entry.id !== device.id && describeDevice(entry) === what)
