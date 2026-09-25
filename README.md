@@ -71,7 +71,9 @@ a thing.
 **Build a plan in one screen.** Pick a shape (one key, 2 of 3, 3 of 5, or 2 of 3
 with a cosigning service), the places, and click what sits where. The drawing,
 the findings and every way it can fail are the real analysis, rerun on every
-click. Or describe the setup in a sentence and let Claude fill the builder in.
+click. Say whether it is already built, so the runbook starts at proving it
+works, and who inherits. Or describe the setup in a sentence and let Claude fill
+the builder in.
 Every step of describing a plan by hand also starts from a template: a home, a
 relative and a second home; three signers from three makers; a key on every
 signer with a steel backup; a two of three vault; the standard check schedule.
@@ -79,8 +81,10 @@ signer with a steel backup; a two of three vault; the standard check schedule.
 **Let it find the fixes.** For every finding the engine tries every small change
 it knows how to make, runs the whole analysis on each, and offers the ones that
 close the finding without opening anything as bad, with a button that makes the
-change. The overview leads with the single best next move. "Fix what can be
-fixed" applies them in order to a draft and shows the before and after.
+change. The overview leads with the single best next move, or, where no change
+wins outright, the trades on offer with what each costs. "Fix all in a draft"
+applies them in order to a draft and shows the before and after, with the
+change written as errands: take this there, copy that, tell somebody.
 
 **Take things away on the map.** A drawing of the whole plan: wallets, the keys
 each threshold needs, every object those keys exist as, the places those
@@ -88,7 +92,12 @@ objects sit in, and the people who can open the doors. Click a place, device,
 backup or person to take it away and watch every wallet's verdict change;
 click again to put it back; take several at once. Every world the engine
 enumerates is a strip above it, and a table of every world against every
-wallet is on the overview.
+wallet is on the overview. On a phone, each place, device and person is also a
+chip that takes it away.
+
+**Come back and check in.** The plan's card says how many checks are due, and
+the check-in takes them one at a time: how to do each in a sentence, then done,
+could not, or later. Ticking a gate in the runbook records the same check.
 
 **See it as time.** Each recovery route is a bar on one scale, against the time
 you said you could wait. Checks sit on the year ahead, late ones in red.
