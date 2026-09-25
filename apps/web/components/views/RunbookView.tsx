@@ -228,7 +228,10 @@ export function RunbookView() {
                           className={cn(
                             'card flex gap-3 p-3.5 print-block',
                             step.gate && 'border-accent/40',
-                            done(step) && 'opacity-60'
+                            // Marked done by colour and a quieter title, not by
+                            // fading the whole card: faded, the gate label fell
+                            // under 4.5:1.
+                            done(step) && 'border-ok/30 bg-ok/[0.03]'
                           )}
                         >
                           <button
@@ -249,14 +252,19 @@ export function RunbookView() {
                           </button>
                           <span className="print-only mt-0.5 flex-none self-start">☐</span>
                           <div className="min-w-0">
-                            <p className="flex flex-wrap items-baseline gap-2 text-[0.875rem] font-medium text-strong">
+                            <p
+                              className={cn(
+                                'flex flex-wrap items-baseline gap-2 text-[0.875rem] font-medium',
+                                done(step) ? 'text-muted' : 'text-strong'
+                              )}
+                            >
                               {step.title}
                               {step.gate ? (
                                 <span className="chip border-accent/50 text-accent">gate</span>
                               ) : null}
                               {done(step) ? (
                                 <span className="mono text-[0.6875rem] font-normal text-faint">
-                                  {plan.progress[step.id]}
+                                  {plan.progress[step.id] ?? 'recorded as a check'}
                                 </span>
                               ) : null}
                             </p>
