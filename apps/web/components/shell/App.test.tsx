@@ -1866,7 +1866,7 @@ describe('what a page shows at rest', () => {
     expect(
       within(rail).getByRole('button', { name: /phase 1, prepare: 1 of 3 done/i })
     ).toBeInTheDocument()
-    expect(within(rail).getByText(/^Verify firmware on every device/)).toBeInTheDocument()
+    expect(within(rail).getByText(/^Verify the firmware on every device/)).toBeInTheDocument()
   })
 
   it('says a phase-wide instruction once rather than once per key', async () => {

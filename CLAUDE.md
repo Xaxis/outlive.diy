@@ -102,8 +102,12 @@ in a session" true of the small wallet that is left. `tryFix` reports these as
 as opening one. Adding that fix exposed that the loss rules asked only whether
 a wallet could be spent today, which a wallet whose every route is timelocked
 never can, so a fire behind one went unreported and the deep vault looked as
-if it survived what the vault did not. `loss.ts` now asks those wallets after
-their wait. And a chain of changes is applied as the plan it produced, never
+if it survived what the vault did not, and every other view painted it as
+lost today. `evaluateWallet` now answers such a wallet after its wait when you
+or your successor are asking, with `waitDays` saying how long, and asks
+somebody else about now, because an owner who can move the coins while the
+lock runs is the point of one. A deliberate wait is S020's to state; L009 does
+not count it again against the tolerance. And a chain of changes is applied as the plan it produced, never
 by replaying each: a change that creates keys gives them new ids on replay,
 and the next change then names keys that do not exist.
 

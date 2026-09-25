@@ -10,8 +10,14 @@
  */
 
 import type { Id, IsoDate, Plan, Ref, VerificationKind } from '../model/types.ts'
-import { createVerification } from '../model/factory.ts'
-import { isMultisig, keyHolderLabel, splitGroups, walletKeyIds } from '../model/selectors.ts'
+import { createVerification, today } from '../model/factory.ts'
+import {
+  daysBetween,
+  isMultisig,
+  keyHolderLabel,
+  splitGroups,
+  walletKeyIds,
+} from '../model/selectors.ts'
 import { indexPlan } from '../model/selectors.ts'
 
 export type RunbookPhase =
@@ -92,6 +98,10 @@ function step(
   }
 }
 
+// Where a gate keeps the date its check had before the gate was ticked, so
+// unticking puts that back rather than erasing a restore done months ago.
+const previousKey = (step: RunbookStep, subject: Ref) => `${step.id}~${subject.id}`
+
 const recordsFor = (plan: Plan, step: RunbookStep, date: IsoDate | null) => {
   if (!step.records) return
   for (const subject of step.subjects) {
@@ -101,10 +111,15 @@ const recordsFor = (plan: Plan, step: RunbookStep, date: IsoDate | null) => {
         entry.subject.type === subject.type &&
         entry.subject.id === subject.id
     )
+    const kept = previousKey(step, subject)
     if (date === null) {
-      if (existing) existing.lastVerifiedAt = null
-    } else if (existing) existing.lastVerifiedAt = date
-    else
+      if (existing) existing.lastVerifiedAt = plan.progress[kept] ?? null
+      delete plan.progress[kept]
+    } else if (existing) {
+      if (existing.lastVerifiedAt && existing.lastVerifiedAt !== date)
+        plan.progress[kept] = existing.lastVerifiedAt
+      existing.lastVerifiedAt = date
+    } else
       plan.verifications.push(
         createVerification({ kind: step.records, subject, lastVerifiedAt: date })
       )
@@ -112,16 +127,20 @@ const recordsFor = (plan: Plan, step: RunbookStep, date: IsoDate | null) => {
 }
 
 /** Whether a step is done: ticked, or for a gate, its check recorded for every subject. */
-export function stepDone(plan: Plan, step: RunbookStep): boolean {
+export function stepDone(plan: Plan, step: RunbookStep, on: IsoDate = today()): boolean {
   if (plan.progress[step.id]) return true
   if (!step.records || step.subjects.length === 0) return false
+  // Passed means passed recently enough to still count: a restore done longer
+  // ago than its own interval is overdue on the overview and was a passed
+  // gate here, which is the same fact read two ways.
   return step.subjects.every((subject) =>
     plan.verifications.some(
       (entry) =>
         entry.kind === step.records &&
         entry.subject.type === subject.type &&
         entry.subject.id === subject.id &&
-        entry.lastVerifiedAt !== null
+        entry.lastVerifiedAt !== null &&
+        daysBetween(entry.lastVerifiedAt, on) <= entry.intervalDays
     )
   )
 }
@@ -174,8 +193,8 @@ export function buildRunbook(plan: Plan): Runbook {
       step(
         'firmware',
         'prepare',
-        'Verify firmware on every device before it holds anything',
-        'Check the signature the vendor publishes, on a machine that is not the one you will use for anything else. A device compromised before the key exists compromises the key at the moment it is created, and nothing later fixes that.',
+        'Verify the firmware on every device',
+        'Check the signature the vendor publishes, on a machine that is not the one you will use for anything else. Do it before a device holds a key if you can: a device compromised before the key exists compromises the key at the moment it is created, and nothing later fixes that. On a setup that already exists, it is still the check that the device you trust is the one you think it is.',
         {
           gate: true,
           subjects: boxes.map((device) => ({ type: 'device', id: device.id })),

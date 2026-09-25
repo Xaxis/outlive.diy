@@ -205,8 +205,14 @@ export function analyseSuccession(ctx: AnalysisContext): Finding[] {
       )
     }
 
+    // The recovery's skill is asked of whoever will do it. An executor
+    // handles the estate and holds nothing, and a finding that they could not
+    // rebuild a multisig wallet was true and beside the point.
     const required = requiredSkill(plan)
-    if (SKILL_ORDER.indexOf(person.technicalSkill) < SKILL_ORDER.indexOf(required.skill)) {
+    if (
+      person.role !== 'executor' &&
+      SKILL_ORDER.indexOf(person.technicalSkill) < SKILL_ORDER.indexOf(required.skill)
+    ) {
       findings.push(
         makeFinding(plan, {
           rule: 'U005',

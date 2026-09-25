@@ -4,6 +4,8 @@ import { parsePlanFile, referentialProblems } from './schema.ts'
 import { inspectDeep } from '../guard/guard.ts'
 import { analyze } from '../analysis/analyze.ts'
 import { baseWorld, evaluateWallet } from '../analysis/availability.ts'
+import { createContext } from '../analysis/context.ts'
+import { enumerateScenarios } from '../analysis/scenarios.ts'
 import { buildRunbook } from '../documents/runbook.ts'
 
 const shapes: Record<string, Shape> = {
@@ -106,5 +108,20 @@ describe('a shape somebody already has', () => {
     )
     expect(runbook.gates.some(done)).toBe(false)
     expect(runbook.steps.find((step) => !done(step))?.gate).toBe(true)
+  })
+})
+
+describe('a successor and an executor', () => {
+  it('asks the recovery of the successor, and nothing of the executor they could not do', () => {
+    const plan = planFromShape({ ...defaultShape(), executor: true })
+    const executor = plan.people.find((person) => person.role === 'executor')!
+    const findings = analyze(plan, { includeScenarios: true }).findings
+    const aboutExecutor = findings.filter((finding) =>
+      finding.subjects.some((subject) => subject.id === executor.id)
+    )
+    expect(aboutExecutor.map((finding) => finding.rule)).not.toContain('U005')
+    const worlds = enumerateScenarios(createContext(plan)).map((scenario) => scenario.label)
+    expect(worlds.some((label) => label.includes('Executor acts alone'))).toBe(false)
+    expect(worlds.some((label) => label.includes('Successor 1 acts alone'))).toBe(true)
   })
 })

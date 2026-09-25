@@ -19,6 +19,7 @@ import {
   createWallet,
 } from '../model/factory.ts'
 import type { Plan } from '../model/types.ts'
+import { exampleById } from '../model/examples.ts'
 
 /** A 2-of-3 with one key per site and a steel backup beside each device. */
 function twoOfThree(overrides: Partial<Plan> = {}): Plan {
@@ -309,5 +310,18 @@ describe('unknown placement', () => {
       reachable: new Set(['a']),
     }
     expect(evaluateKey(plan, plan.keys[0], theirs).usable).toBe(false)
+  })
+})
+
+describe('a wallet that only opens after a wait', () => {
+  it('is spendable after its wait for you, says how long, and is not spendable now for anyone else', () => {
+    const plan = exampleById('one-signer')!
+    const wallet = plan.wallets[0]
+    for (const path of wallet.paths) path.timelockDays = 90
+    const mine = evaluateWallet(plan, wallet, baseWorld(plan))
+    expect(mine.spendable).toBe(true)
+    expect(mine.waitDays).toBe(90)
+    const theirs = evaluateWallet(plan, wallet, { ...baseWorld(plan), actor: 'adversary' })
+    expect(theirs.spendable).toBe(false)
   })
 })

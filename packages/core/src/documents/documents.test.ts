@@ -357,3 +357,36 @@ describe('a gate and its check are one record', () => {
     expect(stepDone(plan, restore)).toBe(true)
   })
 })
+
+describe('a gate ticked and unticked', () => {
+  it('puts back the date its check had, rather than erasing it', () => {
+    const plan = repaired()
+    const restore = buildRunbook(plan).gates.find((gate) => gate.records === 'backup-restore')!
+    const subject = restore.subjects[0]
+    const check = () =>
+      plan.verifications.find(
+        (entry) => entry.kind === 'backup-restore' && entry.subject.id === subject.id
+      )
+    if (!check()) plan.verifications.push(createVerification({ kind: 'backup-restore', subject }))
+    check()!.lastVerifiedAt = '2026-01-15'
+    setStepDone(plan, restore, true, TODAY)
+    expect(check()!.lastVerifiedAt).toBe(TODAY)
+    setStepDone(plan, restore, false, TODAY)
+    expect(check()!.lastVerifiedAt).toBe('2026-01-15')
+  })
+
+  it('does not count a check done longer ago than its interval as a passed gate', () => {
+    const plan = repaired()
+    const restore = buildRunbook(plan).gates.find((gate) => gate.records === 'backup-restore')!
+    plan.verifications.push(
+      createVerification({
+        kind: 'backup-restore',
+        subject: restore.subjects[0],
+        lastVerifiedAt: '2025-01-01',
+        intervalDays: 180,
+      })
+    )
+    expect(stepDone(plan, restore, TODAY)).toBe(false)
+    expect(stepDone(plan, restore, '2025-03-01')).toBe(true)
+  })
+})

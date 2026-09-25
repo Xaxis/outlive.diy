@@ -137,6 +137,10 @@ export function WalletStanding({
                     aria-hidden
                   />
                   {verdict}
+                  {/* Answered after its wait, so the wait is said with it. */}
+                  {availability.waitDays > 0 ? (
+                    <span className="text-muted"> · after {availability.waitDays} days</span>
+                  ) : null}
                 </span>
 
                 {/* Time only means anything when the answer is that you can get

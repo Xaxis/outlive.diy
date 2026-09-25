@@ -265,6 +265,12 @@ export interface WalletAvailability {
   /** Spare capacity on the best satisfied path. Zero means the next loss is fatal. */
   margin: number
   blockers: string[]
+  /**
+   * Days still to wait before a wallet whose every route is timelocked can be
+   * spent, or zero. Such a wallet is answered after its wait (see below), and
+   * this is what says the answer comes with one.
+   */
+  waitDays: number
 }
 
 /**
@@ -296,7 +302,19 @@ export function configAvailable(plan: Plan, wallet: Wallet, world: World): boole
   return false
 }
 
-export function evaluateWallet(plan: Plan, wallet: Wallet, world: World): WalletAvailability {
+export function evaluateWallet(plan: Plan, wallet: Wallet, asked: World): WalletAvailability {
+  // A wallet whose every route is timelocked cannot be spent today by design,
+  // and asked only about today it read as unspendable in every world, the
+  // world where nothing is wrong included, and a deep vault somebody had just
+  // been advised to build read as lost the moment it existed. For you or your
+  // successor it is asked after the wait, and says how long the wait is.
+  // Somebody else is still asked about now: an owner who can move the coins
+  // while the lock runs is the reason to build one.
+  const soonest =
+    wallet.paths.length > 0 ? Math.min(...wallet.paths.map((path) => path.timelockDays)) : 0
+  const waits = soonest > 0 && asked.actor !== 'adversary'
+  const waitDays = waits ? Math.max(0, soonest - asked.elapsedDays) : 0
+  const world = waits ? { ...asked, elapsedDays: Math.max(asked.elapsedDays, soonest) } : asked
   const keyState = new Map<Id, KeyAvailability>()
   for (const key of plan.keys) keyState.set(key.id, evaluateKey(plan, key, world))
 
@@ -337,6 +355,7 @@ export function evaluateWallet(plan: Plan, wallet: Wallet, world: World): Wallet
   }
 
   return {
+    waitDays,
     walletId: wallet.id,
     spendable: config && best !== null,
     configAvailable: config,

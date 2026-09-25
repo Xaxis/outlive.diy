@@ -31,23 +31,9 @@ function names(items: readonly string[]): string {
   return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
 }
 
-/**
- * Whether a wallet can be spent in a world, waiting out its timelock when
- * waiting is the only way it is ever spent. A wallet whose every route is
- * timelocked is unspendable today by design, and asked only about today it
- * was never counted as live, so a fire that took every key behind it went
- * unreported. Wallets with a route open now are asked exactly as before.
- */
-function spendable(ctx: AnalysisContext, wallet: Wallet, world: Scenario['world']): boolean {
-  const waits = wallet.paths.length > 0 && wallet.paths.every((path) => path.timelockDays > 0)
-  const settled = waits
-    ? {
-        ...world,
-        elapsedDays: Math.max(world.elapsedDays, ...wallet.paths.map((path) => path.timelockDays)),
-      }
-    : world
-  return evaluateWallet(ctx.plan, wallet, settled).spendable
-}
+/** The evaluator's answer; it already waits out a timelock that is the only way in. */
+const spendable = (ctx: AnalysisContext, wallet: Wallet, world: Scenario['world']) =>
+  evaluateWallet(ctx.plan, wallet, world).spendable
 
 /** Wallets that go from spendable to unspendable in this scenario. */
 function broken(ctx: AnalysisContext, scenario: Scenario, live: readonly Wallet[]): Wallet[] {
@@ -287,6 +273,10 @@ export function analyseLoss(ctx: AnalysisContext): Finding[] {
   // This is the only rule that reads the stated tolerance against measured
   // time, which is what makes that number on the profile worth answering.
   for (const wallet of live) {
+    // A wallet whose every route waits cannot meet any tolerance shorter than
+    // its wait, by design, and S020 already says so with the number. Measured
+    // here as well it was one fact counted twice, and at critical.
+    if (wallet.paths.length > 0 && wallet.paths.every((path) => path.timelockDays > 0)) continue
     const survivable = plan.locations
       .map((location) => locationLostScenario(ctx, location.id))
       .filter((scenario) => spendable(ctx, wallet, scenario.world))

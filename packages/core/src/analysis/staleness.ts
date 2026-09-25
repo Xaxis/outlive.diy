@@ -82,7 +82,7 @@ export function checksDue(ctx: AnalysisContext): Overdue[] {
     )
       implicit('backup-restore', { type: 'key', id: key.id })
   for (const wallet of plan.wallets) {
-    implicit('spend-test', { type: 'wallet', id: wallet.id })
+    if (canSpendTest(wallet)) implicit('spend-test', { type: 'wallet', id: wallet.id })
     if (isMultisig(wallet) && wallet.configBackups.length > 0)
       implicit('config-backup-restore', { type: 'wallet', id: wallet.id })
   }
@@ -93,6 +93,16 @@ export function checksDue(ctx: AnalysisContext): Overdue[] {
     if (device.kind !== 'service-cosigner')
       implicit('device-firmware', { type: 'device', id: device.id })
   return due
+}
+
+/**
+ * Whether a small spend can test a wallet at all. One whose every route waits
+ * for months without movement cannot be spent to test it without that wait,
+ * and asking for it put "send a small amount out" on the list for a vault
+ * that was locked by design.
+ */
+function canSpendTest(wallet: { paths: { timelockDays: number }[] }): boolean {
+  return wallet.paths.some((path) => path.timelockDays === 0)
 }
 
 /** Whether a claim of this kind has ever been recorded as done. */
@@ -174,7 +184,8 @@ export function analyseStaleness(ctx: AnalysisContext): Finding[] {
     }
 
     const untested = plan.wallets.filter(
-      (wallet) => !everDone(ctx, 'spend-test', { type: 'wallet', id: wallet.id })
+      (wallet) =>
+        canSpendTest(wallet) && !everDone(ctx, 'spend-test', { type: 'wallet', id: wallet.id })
     )
     if (untested.length > 0) {
       findings.push(

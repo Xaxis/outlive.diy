@@ -376,7 +376,11 @@ export function enumerateScenarios(ctx: AnalysisContext): Scenario[] {
   }
   scenarios.push(userDeathScenario(ctx, null))
   for (const person of ctx.plan.people) {
-    if (person.role !== 'successor' && person.role !== 'executor') continue
+    // One world per person who might recover the coins alone. An executor is
+    // part of the estate acting together, in the world above, and not
+    // somebody expected to spend alone: that world read as a failure of a
+    // plan that never asked them to.
+    if (person.role !== 'successor') continue
     scenarios.push(userDeathScenario(ctx, person.id))
   }
   scenarios.push(coercionScenario(ctx))

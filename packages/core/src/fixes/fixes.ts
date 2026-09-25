@@ -198,7 +198,9 @@ export function candidateFixes(plan: Plan, today = todayDate()): Fix[] {
   if (!hasTimelock)
     for (const wallet of plan.wallets) {
       const path = wallet.paths[0]
-      if (wallet.decoy || wallet.stake === 'small' || !path || path.keyIds.length === 0) continue
+      // Multisig only: on one key it moved the one-key findings to the new
+      // wallet and counted them as closed on the old one.
+      if (wallet.decoy || wallet.stake === 'small' || !path || path.keyIds.length < 2) continue
       fixes.push({
         id: `deep-vault:${wallet.id}`,
         kind: 'structure',

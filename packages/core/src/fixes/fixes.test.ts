@@ -133,6 +133,11 @@ describe('a tier out of reach of one afternoon', () => {
     // Same keys, same places: whatever a loss did to the vault it does to the
     // deep vault, so no loss finding may read as eased.
     expect(result.shifts.some((pair) => pair.before.rule.startsWith('L'))).toBe(false)
+    // And taking it is worth it: nothing critical opens and it comes out ahead,
+    // so it is what the next move offers.
+    expect(result.opens.filter((finding) => finding.severity === 'critical')).toEqual([])
+    expect(result.gain).toBeGreaterThan(0)
+    expect(improve(plan, { maxSteps: 1, today: TODAY }).steps[0]?.fix.id).toBe(deep.id)
   })
 
   it('is offered once, and never beside a timelocked route', () => {
