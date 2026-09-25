@@ -26,7 +26,7 @@ Runtime, with a deliberately invalid key (no cost):
 PW=/tmp/outlive-pw node .claude/skills/verify/scripts/drive.mjs --base http://localhost:$PORT --example "Two of three, three sites" --path "/app/#/overview" --do "await p.getByRole('button',{name:'Review my plan'}).click(); await p.getByLabel('Anthropic API key').fill('sk-ant-invalid'); await p.getByRole('button',{name:'Use this key'}).click(); await p.getByRole('button',{name:'Review my plan'}).click(); await p.waitForTimeout(5000)" --print "p.getByRole('alert').first().innerText()"
 ```
 
-Proves it when: it prints `Anthropic did not accept that key.`, the outside-requests line is exactly `["POST api.anthropic.com/v1/messages"]`, and nothing was requested before the key was entered. On `--base https://outlive.diy` the same run proves the deployed policy allows the request.
+Proves it when: it prints a line beginning `Anthropic did not accept that key.`, the outside-requests line is exactly `["POST api.anthropic.com/v1/messages"]`, and nothing was requested before the key was entered. On `--base https://outlive.diy` the same run proves the deployed policy allows the request.
 
 WebMCP, with a stand-in `document.modelContext` (no browser ships it without a flag):
 

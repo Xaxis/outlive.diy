@@ -28,14 +28,17 @@ Static: `make test-web` ("building a plan by its shape", "starting a step from a
 Runtime:
 
 ```sh
-PW=/tmp/outlive-pw node .claude/skills/verify/scripts/drive.mjs --base http://localhost:$PORT --path "/app/#/build" --do "await p.getByRole('button',{name:/create this plan/i}).click(); await p.waitForTimeout(800)" --print "p.locator('h1').first().innerText()"
-PW=/tmp/outlive-pw node .claude/skills/verify/scripts/drive.mjs --base http://localhost:$PORT --example "Two of three, three sites" --path "/app/#/design/devices" --do "await p.getByRole('combobox',{name:'Maker'}).selectOption('Other…'); await p.getByRole('textbox',{name:'Maker name'}).fill('Homebrew')" --print "p.evaluate(()=>JSON.parse(localStorage.getItem('outlive.diy/plan-file/v1')).plans[0].devices[0].vendor)"
+PW=/tmp/outlive-pw node .claude/skills/verify/scripts/drive.mjs --base http://localhost:$PORT --path "/app/#/build" --do "await p.getByRole('button',{name:/create this plan/i}).first().click(); await p.waitForTimeout(800)" --print "p.locator('h1').first().innerText()"
+PW=/tmp/outlive-pw node .claude/skills/verify/scripts/drive.mjs --base http://localhost:$PORT --example "Two of three, three sites" --path "/app/#/design/devices" --do "await p.getByRole('combobox',{name:'Maker'}).selectOption('Coinkite'); await p.getByRole('combobox',{name:'Maker'}).selectOption('Other…'); await p.getByRole('textbox',{name:'Maker name'}).fill('Homebrew'); await p.getByRole('textbox',{name:'Maker name'}).blur()" --print "p.evaluate(()=>JSON.parse(localStorage.getItem('outlive.diy/plan-file/v1')).plans[0].devices[0].vendor)"
 PW=/tmp/outlive-pw node .claude/skills/verify/scripts/drive.mjs --base http://localhost:$PORT --example "Two of three, three sites" --path "/app/#/design/wallets" --do "await p.getByRole('button',{name:/more keys needed/i}).click()" --print "p.getByRole('group',{name:/everyday: keys needed/i}).innerText()"
 ```
 
 Proves it when: the builder lands on a heading of `My plan`; the stored maker reads back `Homebrew`; the quorum reads `3 of 3`.
 
 ## Gotchas
+
+- The builder has "Create this plan" at the top and again at the bottom; a recipe takes `.first()`.
+- A worked example's devices have typed makers, so the Maker dropdown reads "Other: Vendor One" and has no "Other…" until a listed maker is picked.
 
 - Store actions that write hydrate first; a test that sets `ready: false` exercises that.
 - The design step's pictures use a deferred copy of the plan, so they lag typing by a frame on purpose.

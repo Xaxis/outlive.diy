@@ -6,9 +6,9 @@ What breaks, what to do about it, and the map where things are taken away.
 
 ## Sub-features
 
-- next move: the overview names the single change that closes most without opening anything critical; "Make this change" applies it, Cmd-Z undoes.
+- next move: the overview names the single change that closes most without opening anything critical; "Apply this change" applies it; the toast's Undo (or Cmd-Z) undoes, and the toast reads "Closed N." or "Closed N, opened M.".
 - every way it fails: overview matrix of worlds by wallets; a cell opens that world on the map.
-- overdue: "Done today" per overdue check.
+- checks due: "Checks due" lists never-done checks (plain circle, "not done yet") and late ones (warning, "N days overdue"), each with "Done today". "Fix all in a draft" is hidden when the next-move search finds nothing.
 - fixes: an open finding lists changes found by trying them (`packages/core/src/fixes`), with Apply; records say "Record it".
 - fix all in a draft: applies every structural fix to a draft and opens compare.
 - finding picture: an open finding draws its world with its subjects tagged "this".
@@ -25,12 +25,12 @@ Static: `make test-web` ("the next move", "fixing a finding", "the map, as one i
 Runtime:
 
 ```sh
-PW=/tmp/outlive-pw node .claude/skills/verify/scripts/drive.mjs --base http://localhost:$PORT --example "Two of three, three sites" --path "/app/#/overview" --do "await p.getByRole('button',{name:/make this change/i}).click()" --print "p.getByText(/Closed \\d+\\. Cmd-Z undoes it/).count()"
+PW=/tmp/outlive-pw node .claude/skills/verify/scripts/drive.mjs --base http://localhost:$PORT --example "Two of three, three sites" --path "/app/#/overview" --do "await p.getByRole('button',{name:/apply this change/i}).click()" --print "p.getByText(/^Closed \\d+\\.( |$)/).count()"
 PW=/tmp/outlive-pw node .claude/skills/verify/scripts/drive.mjs --base http://localhost:$PORT --example "Two of three, three sites" --path "/app/#/findings" --do "await p.getByText(/Vault has only one copy/).click(); await p.getByRole('button',{name:/^apply$/i}).first().click()" --print "p.getByText(/Vault has only one copy/).count()"
 PW=/tmp/outlive-pw node .claude/skills/verify/scripts/drive.mjs --base http://localhost:$PORT --example "Two of three, three sites" --path "/app/#/map" --do "await p.getByRole('button',{name:/^Site A.*place\./}).first().click()" --print "p.getByRole('list',{name:/what happens to each wallet/i}).innerText()"
 ```
 
-Proves it when: the first prints `1` (the confirmation, "Closed N. Cmd-Z undoes it."); the second prints `0`; the third shows Vault and Daily `unspendable` and the outside-requests line is `[]`.
+Proves it when: the first prints `1` (the toast reads "Closed N." with an Undo button); the second prints `0`; the third shows Vault and Daily `unspendable` and the outside-requests line is `[]`.
 
 ## Gotchas
 

@@ -12,7 +12,8 @@ Three documents joined by page loads: the landing page, the app, the terms; plus
 - app: `/app/` draws nothing until storage is read; with no plan it shows the start screen.
 - home: the logo and the sidebar's Home load `/`.
 - terms: `/terms/`, linked from the landing footer, the sidebar and the scope notice.
-- palette: Cmd-K or Ctrl-K opens "Go to"; words must begin words; Enter goes.
+- palette: Cmd-K or Ctrl-K opens "Go to" and "Do" (build a new plan, save, print, undo, switch theme); words must begin words; equal matches rank findings by severity; Enter goes.
+- toasts: a change that is one undo step shows Undo in its toast; a toast clears when the view changes; the phone drawer closes on Escape and on any route change.
 - no-overwrite: any store action that writes reads storage first, so the landing page cannot replace saved plans.
 - offline: `make offline` output opens from disk and works end to end.
 - no-network: `make no-network` allows the SDK in one file and one host in the policy.
